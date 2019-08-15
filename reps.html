@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+	<title>NanoTicker</title>
+	<meta name="application-name" content="netdata">
+
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:url" content="http://my-netdata.io/"/>
+	<meta property="og:type" content="website"/>
+	<meta property="og:site_name" content="netdata"/>
+	<meta property="og:title" content="NanoTicker - Realtime Rep Monitor"/>
+	<meta property="og:description" content="Displays average statistics from nano representatives based on NodeMonitor API." />
+
+	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190814">
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+
+  <!-- Tool tip -->
+  <script type="text/javascript">
+    $(document).ready(function(){
+      $( function() {
+          $( document ).tooltip();
+        } );
+      });
+  </script>
+</head>
+<script>
+// this section has to appear before loading dashboard.js
+
+// Select a theme.
+// uncomment one of the two themes:
+
+//var netdataTheme = 'default'; // this is white
+var netdataTheme = 'slate'; // this is dark
+
+
+// Set the default netdata server.
+// on charts without a 'data-host', this one will be used.
+// the default is the server that dashboard.js is downloaded from.
+
+// var netdataServer = 'http://my.server:19999/';
+</script>
+
+<!--
+    Load dashboard.js
+
+    to host this HTML file on your web server,
+    you have to load dashboard.js from the netdata server.
+
+    So, pick one the two below
+    If you pick the first, set the server name/IP.
+
+    The second assumes you host this file on /usr/share/netdata/web
+    and that you have chown it to be owned by netdata:netdata
+-->
+<!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
+<script type="text/javascript" src="dashboard.js?v20181025-1"></script>
+
+<script>
+// Set options for TV operation
+// This has to be done, after dashboard.js is loaded
+
+// destroy charts not shown (lowers memory on the browser)
+NETDATA.options.current.destroy_on_hide = false;
+
+// set this to false, to always show all dimensions
+NETDATA.options.current.eliminate_zero_dimensions = false;
+
+// lower the pressure on this browser
+NETDATA.options.current.concurrent_refreshes = false;
+
+// if the tv browser is too slow (a pi?)
+// set this to false
+NETDATA.options.current.parallel_refresher = true;
+
+// always update the charts, even if focus is lost
+NETDATA.options.current.stop_updates_when_focus_is_lost = false;
+
+// Since you may render charts from many servers and any of them may
+// become offline for some time, the charts will break.
+// This will reload the page every RELOAD_EVERY minutes
+
+var RELOAD_EVERY = 5;
+setTimeout(function(){
+    location.reload();
+}, RELOAD_EVERY * 60 * 1000);
+
+</script>
+<body>
+
+<div class="div-main">
+	<h1>Nano Reps Performance</h1>
+  <h5>Combined measurements accross public Nano Node Monitors. Hover over Titles to show more info.</h5>
+	<div class="div-float left">
+    <div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="Block count (saved) and cemented blocks (confirmed). Value from the top node.">Saved and Confirmed [MAX]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats_local.block_count_max"
+					data-title="Block Count Max"
+				  data-decimal-digits="0"
+					data-common-max="repstats_local.block_count_max"
+					data-common-min="repstats_local.block_count_max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+    <div class="div-graph">
+			<div class="div-header">
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min. Value from the top node.">BPS and CPS over 10min [MAX]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats_local.tps_max"
+					data-title="TPS Average Max"
+					data-decimal-digits="3"
+					data-common-max="repstats_local.tps_max"
+					data-common-min="repstats_local.tps_max"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Unchecked blocks from block count. Value from the top node.">Unchecked Blocks</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats_local.unchecked"
+          data-title="Unchecked"
+          data-decimal-digits="0"
+          data-common-max="repstats_local.unchecked"
+          data-common-min="repstats_local.unchecked"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+	    <div class="div-header">
+        <span class="title" title="Connection count to other nodes. Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
+	    </div>
+	    <div class="div-graph-data">
+        <div data-netdata="repstats_local.peers"
+          data-title="Peers"
+          data-decimal-digits="0"
+          data-common-max="repstats_local.peers"
+          data-common-min="repstats_local.peers"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+    </div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Consumed machine RAM. Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats_local.memory"
+          data-title="RAM Use"
+          data-decimal-digits="3"
+          data-common-max="repstats_local.memory"
+          data-common-min="repstats_local.memory"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Number of unique measurements used in this system.
+        The top number represents discovered monitors that have a block count above 50% of the maximum block count from all nodes.">Connected Monitors</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats_local.supported"
+          data-title="Stat Support"
+          data-decimal-digits="0"
+          data-common-max="repstats_local.supported"
+          data-common-min="repstats_local.supported"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474 #e174e8"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+	<div class="div-float right">
+		<div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="Block count (saved) and cemented blocks (confirmed). Median value from all monitored nodes.">Saved and Confirmed [MEDIAN]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats_local.block_count_median"
+					data-title="Block Count Median"
+				  data-decimal-digits="0"
+					data-common-max="repstats_local.block_count_median"
+					data-common-min="repstats_local.block_count_median"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+		<div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min. Median value from all monitored nodes.">BPS and CPS over 10min [MEDIAN]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats_local.tps_median"
+					data-title="TPS Average Median"
+					data-decimal-digits="3"
+					data-common-max="repstats_local.tps_median"
+					data-common-min="repstats_local.tps_median"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+		<div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Block confirmation time past 10min or max 2048 blocks. The percentiles are represented as median values from all monitored nodes.
+        P50=Median of Median. P99=99% of blocks were confirmed that fast. Average min is the lowest measured average value taken from one node.">Block Confirmation Time [MEDIAN]</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats_local.confirmations"
+          data-title="Percentiles over 10min or max 2048 blocks | P50=Median"
+          data-decimal-digits="0"
+          data-common-max="repstats_local.confirmations"
+          data-common-min="repstats_local.confirmations"
+          data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+	    <div class="div-header">
+        <span class="title" title="Percentage of maximum block count that nodes have saved/synced. Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+	    </div>
+	    <div class="div-graph-data">
+        <div data-netdata="repstats_local.block_sync"
+          data-title="Block Sync"
+          data-decimal-digits="2"
+          data-common-max="100"
+          data-common-min="repstats_local.block_sync"
+          data-units="%"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+	   </div>
+     <div class="div-graph">
+       <div class="div-header">
+         <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).
+         Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+       </div>
+       <div class="div-graph-data">
+         <div data-netdata="repstats_local.api_time"
+           data-title="API Process"
+           data-decimal-digits="0"
+           data-common-max="repstats_local.api_time"
+           data-common-min="repstats_local.api_time"
+           data-chart-library="dygraph"
+           data-width="90%"
+           data-height="100%"
+           data-after="-4500"
+           data-colors="#e87474 #7ad96e #747de8"
+         ></div>
+       </div>
+     </div>
+   </div>
+	<div class="div-footer">
+		<p class="footer-text">
+			<span><strong>Version 1.0 - <a href="https://github.com/Joohansson/rep-stats">Github Source</a></strong></span><br/>
+			<span><strong>Developer Nano Donation:</strong> xrb_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo</span>
+		</p>
+	</div>
+</div>
+</body>
+</html>
