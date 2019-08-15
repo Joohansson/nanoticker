@@ -1,3 +1,7 @@
+body {
+  /* color: #DDD !important;*/
+}
+
 h2 {
 	margin-top: 30px !important;
 }
@@ -30,6 +34,7 @@ h2 {
 	width: 48%;
 	text-align: center;
 	display: inline-block;
+  margin-bottom: 30px;
 }
 
 .div-graph {
@@ -70,6 +75,34 @@ h2 {
 .title {
   cursor: pointer;
   font-weight: bold;
+}
+
+div.ui-tooltip {
+    max-width: 500px !important;
+}
+
+.dataTables_filter input {
+  height: 28px;
+}
+
+.table tbody {
+  text-align: left;
+}
+
+.table {
+  width: 100%;
+}
+
+.section {
+    height: 1px;
+    width: 100%;
+    background-color: #333;
+    display: inline-block;
+}
+
+.monitors-wrapper {
+  margin: 0 auto;
+  width: 95%;
 }
 
 .div-footer {

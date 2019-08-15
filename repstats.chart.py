@@ -23,20 +23,20 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 
 # charts order (can be overridden if you want less charts, or different order)
 
-ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median', 'confirmations', 'block_sync', 'memory', 'api_time', 'supported']
+ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median', 'confirmations', 'block_sync', 'memory', 'api_time', 'supported', 'peerstat']
 
 CHARTS = {
     'block_count_max': {
-        'options': [None, 'Blocks Max', 'blocks', 'Block Count','reps.blocks', 'area'],
+        'options': [None, 'Blocks Max', 'blocks', 'Checked Blocks','reps.blocks', 'area'],
         'lines': [
-            ["saved_blocks_max", "saved", None, 'absolute'],
+            ["saved_blocks_max", "checked", None, 'absolute'],
             ["confirmed_max", "conf", None, 'absolute']
         ]
     },
     'block_count_median': {
-        'options': [None, 'Blocks Median', 'blocks', 'Block Count','reps.blocks', 'area'],
+        'options': [None, 'Blocks Median', 'blocks', 'Checked Blocks','reps.blocks', 'area'],
         'lines': [
-            ["saved_blocks_median", "saved", None, 'absolute'],
+            ["saved_blocks_median", "checked", None, 'absolute'],
             ["confirmed_median", "conf", None, 'absolute']
         ]
     },
@@ -73,7 +73,7 @@ CHARTS = {
     'confirmations': {
         'options': [None, 'Confirmation Time', 'ms', 'Conf-Time Max 5min/2048tx','reps.conf', 'line'],
         'lines': [
-            ["average_min", "ave_min", None, 'absolute'],
+            ["average_min", "ave min", None, 'absolute'],
             ["average_median", "average", None, 'absolute'],
             ["perc_50", "perc 50", None, 'absolute'],
             #["perc_75", "perc 75", None, 'absolute'],
@@ -116,7 +116,17 @@ CHARTS = {
             ["supported_proc", "proc time", None, 'absolute'],
             ["supported_memory", "memory", None, 'absolute']
         ]
-    }
+    },
+    'peerstat': {
+        'options': [None, 'Peers & Stake', '%', 'Protocol and weight from connected nodes','reps.peerstat', 'line'],
+        'lines': [
+            ["latest_version", None, 'absolute',1,1000],
+            ["tcp", None, 'absolute',1,1000],
+            ["stake_req", None, 'absolute',1,1000],
+            ["stake_latest", None, 'absolute',1,1000],
+            ["stake_tot", None, 'absolute',1,1000]
+        ]
+    },
 }
 
 class Service(UrlService):
@@ -155,13 +165,15 @@ class Service(UrlService):
             ('sync_min','syncMin',float,1000),('memory_max','memoryMax',int,1),('memory_median','memoryMedian',int,1),('memory_min','memoryMin',int,1),
             ('api_max','procTimeMax',int,1),('api_median','procTimeMedian',int,1),('api_min','procTimeMin',int,1),
             ('supported_blocks','lenBlockCount',int,1),('supported_cemented','lenCemented',int,1),('supported_peers','lenPeers',int,1),
-            ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_memory','lenMemory',int,1),]
+            ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_memory','lenMemory',int,1),
+            ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
+            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
         r = dict()
 
         #Extract data from json based on repstat keys
         for new_key, orig_key, keytype, mul in apiKeys:
             try:
-                r[new_key] = keytype(mul * parsed[orig_key])
+                r[new_key] = keytype(mul * parsed[orig_key]) #for example multiply by 1000 here
             except Exception:
                 r[new_key] = 0 #replace with 0 if value missing from API
                 continue

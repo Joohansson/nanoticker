@@ -17,6 +17,8 @@ import re
 nodeUrl = 'http://[::1]:7076'
 ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
 statFile = '/var/www/monitor/main/stats.json'
+monitorFile = '/usr/share/netdata/web/monitors.json'
+#statFile = '/var/www/monitor/stats.json'
 minCount = 1 #initial required block count
 timeout = 5 #http request timeout for API
 runAPIEvery = 15 #run API check every X sec
@@ -29,6 +31,7 @@ pTypesStat = 0 #percentage running tcp
 pStakeTotalStat = 0 #percentage connected online weight of maximum
 pStakeRequiredStat = 0 #percentage of connected online weight of maxium required for voting
 pStakeLatestVersionStat = 0 #percentage of connected online weight that is on latest version
+peerInfo = [] #connected peers with weight info
 
 reps = \
 [
@@ -237,6 +240,14 @@ def chunks(l, n):
 
 async def getAPI():
     global minCount
+    global pLatestVersionStat
+    global pTypesStat
+    global pStakeTotalStat
+    global pStakeRequiredStat
+    global pStakeLatestVersionStat
+    global peerInfo
+
+    await asyncio.sleep(10) #Wait for some values to be calculated from getPeers
     while 1:
         print("Get API")
         jsonData = []
@@ -299,27 +310,33 @@ async def getAPI():
                     continue
 
                 try:
-                    name = 'N/A'
                     name = j['nanoNodeName']
                 except Exception as e:
+                    name = -1
                     fail = True
 
                 try:
-                    nanoNodeAccount = 'N/A'
                     nanoNodeAccount = j['nanoNodeAccount']
                 except Exception as e:
+                    nanoNodeAccount = -1
                     fail = True
 
                 try:
-                    protocolVersion = 'N/A'
                     protocolVersion = j['protocol_version']
                 except Exception as e:
+                    protocolVersion = -1
                     pass
 
                 try:
-                    version = 'N/A'
                     version = j['version']
                 except Exception as e:
+                    version = -1
+                    pass
+
+                try:
+                    weight = j['votingWeight']
+                except Exception as e:
+                    weight = -1
                     pass
 
                 try:
@@ -404,13 +421,15 @@ async def getAPI():
                 if (procTime > 0):
                     procTimeData.append(procTime)
 
-                if fail:
-                    limitedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount, 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
-                    'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'memory':memory, 'procTime':procTime})
-                    fail = False
-                else:
-                    supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount, 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
-                    'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'memory':memory, 'procTime':procTime})
+                #If weight missing, try find matching weight from peer table
+                if weight < 0:
+                    for p in peerInfo:
+                        if str(nanoNodeAccount) == str(p['account']):
+                            weight = str(int(p['weight']) / int(1000000000000000000000000000000))
+
+                supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount[0:9]+'..'+nanoNodeAccount[-5:], 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
+                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'weight':weight, 'memory':memory, 'procTime':procTime, "supported":not fail})
+                fail = False
 
             else:
                 print('No data in json')
@@ -524,9 +543,13 @@ async def getAPI():
             "lenConf50":int(len(conf50Data)),\
             "lenMemory":int(len(memoryData)),\
             "lenProcTime":int(len(procTimeData)),\
-            "limitedReps":limitedReps,\
-            "supportedReps":supportedReps,\
+            "pLatestVersionStat":pLatestVersionStat,\
+            "pTypesStat":pTypesStat,\
+            "pStakeTotalStat":pStakeTotalStat,\
+            "pStakeRequiredStat":pStakeRequiredStat,\
+            "pStakeLatestVersionStat":pStakeLatestVersionStat,\
             "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
+            "lastUpdatedUnix":str(time.time()),\
             }
 
         if blockCountMedian > 0 and blockCountMax > 0:
@@ -534,7 +557,13 @@ async def getAPI():
                 with open(statFile, 'w') as outfile:
                     outfile.write(simplejson.dumps(statData, indent=2))
             except Exception as e:
-                print('Could not write data. Error: %r' %e)
+                print('Could not write stat data. Error: %r' %e)
+
+            try:
+                with open(monitorFile, 'w') as outfile:
+                    outfile.write(simplejson.dumps(supportedReps, indent=2))
+            except Exception as e:
+                print('Could not write monitor ata. Error: %r' %e)
 
         #print(time.time() - startTime)
         #calculate final sleep based on execution time
@@ -548,6 +577,7 @@ async def getPeers():
     global pStakeTotalStat
     global pStakeRequiredStat
     global pStakeLatestVersionStat
+    global peerInfo
 
     while 1:
         startTime = time.time() #to measure the loop speed
@@ -608,14 +638,11 @@ async def getPeers():
 
                     #Read protocol version and type
                     pVersions.append(value['protocol_version'])
-                    pPeers.append({'ip':ipv6, 'version':value['protocol_version'], 'type':value['type']})
+                    pPeers.append({"ip":ipv6, "version":value["protocol_version"], "type":value["type"], "weight":0, "account": ""})
 
         except Exception as e:
             print(f"Could not read peers from node RPC. {e}")
             pass
-
-        #Combine with a saved list of peers to show a more stable number past 24h due to disconnects
-        #TODO
 
         #Grab voting weight stat
         params = {
@@ -631,12 +658,15 @@ async def getPeers():
             for peer in resp.json()['peers']:
                 for i,cPeer in enumerate(pPeers):
                     if peer['ip'] == cPeer['ip']:
-                        pPeers[i] = dict(cPeer, **{'weight': peer['weight']})
+                        pPeers[i] = dict(cPeer, **{"weight": peer['weight'], "account": peer['account']}) #update previous vaule
                         continue
 
         except Exception as e:
             print(f"Could not read quorum from node RPC. {e}")
             pass
+
+        #Save as global list
+        peerInfo = pPeers.copy()
 
         #Grab supply
         params = {
@@ -644,49 +674,58 @@ async def getPeers():
         }
         try:
             resp = requests.post(url=nodeUrl, json=params, timeout=10)
-            supply = resp.json()['available']
+            tempSupply = resp.json()['available']
+            if int(tempSupply) > 0: #To ensure no devision by zero
+                supply = tempSupply
 
         except Exception as e:
             print(f"Could not read quorum from node RPC. {e}")
             pass
 
-        #Calculate percentage stats
+        #PERCENTAGE STATS
         maxVersion = int(max(pVersions))
-        print(supply)
-        print(pStakeTot)
-        print(pStakeReq)
 
-        counter = 0
+        #Calculate percentage of nodes on latest version
+        versionCounter = 0
         for version in pVersions:
             if int(version) == maxVersion:
-                counter = counter + 1
+                versionCounter += 1
 
         #Require at least 5 monitors to be at latest version to use as base, or use second latest version
-        if counter < 5:
+        if versionCounter < 5:
             #extract second largest number by first removing duplicates
             simplified = list(set(pVersions))
             simplified.sort()
             maxVersion = int(simplified[-2])
-            counter = 0
+            versionCounter = 0
             for version in pVersions:
                 if int(version) == maxVersion:
-                    counter = counter + 1
+                    versionCounter += 1
 
         if len(pVersions) > 0:
-            pLatestVersionStat = counter / int(len(pVersions)) *100
+            pLatestVersionStat = versionCounter / int(len(pVersions)) * 100
         else:
             pLatestVersionStat = 0
 
         pStakeTotalStat = int(pStakeTot) / int(supply) * 100
         pStakeRequiredStat = int(pStakeReq) / int(supply) * 100
-        print(pStakeTotalStat)
-        print(pStakeRequiredStat)
 
-        #Calculate portion of weight in different versions
-        
+        #Calculate portion of weight and TCP in the latest versions
+        combinedWeightInLatest = 0
+        TCPInLatestCounter = 0
+        for peer in pPeers:
+            if int(peer['version']) == int(maxVersion):
+                combinedWeightInLatest = combinedWeightInLatest + int(peer['weight'])
 
-        #pTypesStat
-        #pStakeLatestVersionStat
+            if (peer['type'] == 'tcp'):
+                TCPInLatestCounter += 1
+
+        pStakeLatestVersionStat = int(combinedWeightInLatest) / int(supply) * 100
+
+        if len(pPeers) > 0:
+            pTypesStat = TCPInLatestCounter / int(len(pPeers)) * 100
+        else:
+            pTypesStat = 0
 
         #Get monitors from Ninja API
         try:
@@ -755,10 +794,6 @@ async def getPeers():
 
         #Update the final list
         reps = validPaths.copy()
-        #print('Length reps'+str(len(reps)))
-        #print('Accounts'+str(len(repAccounts)))
-
-
 
         sleep = runPeersEvery - (time.time() - startTime)
         await asyncio.sleep(sleep)
@@ -767,9 +802,9 @@ loop = asyncio.get_event_loop()
 #PYTHON >3.7
 ignore_aiohttp_ssl_error(loop) #ignore python bug
 
-#futures = [getPeers(), getAPI()]
+futures = [getPeers(), getAPI()]
 #futures = [getAPI()]
-futures = [getPeers()]
+#futures = [getPeers()]
 
 try:
     loop.run_until_complete(asyncio.wait(futures))

@@ -8,30 +8,47 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 	<meta property="og:locale" content="en_US" />
-	<meta property="og:url" content="http://my-netdata.io/"/>
+	<meta property="og:url" content="https://nanoticker.info"/>
 	<meta property="og:type" content="website"/>
-	<meta property="og:site_name" content="netdata"/>
+	<meta property="og:site_name" content="NanoTicker"/>
 	<meta property="og:title" content="NanoTicker - Realtime Rep Monitor"/>
 	<meta property="og:description" content="Displays average statistics from nano representatives based on NodeMonitor API." />
 
 	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190814">
   <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
-  <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- MDBootstrap Datatables  -->
+  <link href="css/addons/datatables.min.css" rel="stylesheet">
 
-  <!-- Tool tip -->
-  <script type="text/javascript">
-    $(document).ready(function(){
-      $( function() {
-          $( document ).tooltip();
-        } );
+  <!-- JQuery -->
+  <script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
+  <!-- For jquery tooltip -->
+  <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>-->
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <!-- Bootstrap tooltips -->
+  <script type="text/javascript" src="js/popper.min.js"></script>
+  <!-- MDB core JavaScript -->
+  <script type="text/javascript" src="js/mdb.min.js"></script>
+  <!-- MDBootstrap Datatables  -->
+  <script type="text/javascript" src="js/addons/datatables.min.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      //Tooltip
+      $(document).tooltip({
+        content: function (callback) {
+          callback($(this).prop('title'));
+        }
       });
+    });
   </script>
+
 </head>
 <script>
 // this section has to appear before loading dashboard.js
@@ -40,7 +57,8 @@
 // uncomment one of the two themes:
 
 //var netdataTheme = 'default'; // this is white
-var netdataTheme = 'slate'; // this is dark
+//var netdataTheme = 'slate'; // this is dark
+var netdataTheme = 'darkly'; // this is darker
 
 
 // Set the default netdata server.
@@ -98,16 +116,18 @@ setTimeout(function(){
 <body>
 
 <div class="div-main">
-	<h1>Nano Reps Performance</h1>
-  <h5>Combined measurements accross public Nano Node Monitors. Hover over Titles to show more info.</h5>
+	<h1>NanoTicker - Reps Performance</h1>
+  <h5>Combined measurements accross public Nano Node Monitors. Hover titles to show info.</h5>
+  <div class="section"></div>
 	<div class="div-float left">
     <div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="Block count (saved) and cemented blocks (confirmed). Value from the top node.">Saved and Confirmed [MAX]</span>
+				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
+        Value from the top node.">Checked and Confirmed [MAX]</span>
 			</div>
 			<div class="div-graph-data">
 				<div data-netdata="repstats_local.block_count_max"
-					data-title="Block Count Max"
+					data-title="Checked Blocks Max"
 				  data-decimal-digits="0"
 					data-common-max="repstats_local.block_count_max"
 					data-common-min="repstats_local.block_count_max"
@@ -121,7 +141,8 @@ setTimeout(function(){
 		</div>
     <div class="div-graph">
 			<div class="div-header">
-        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min. Value from the top node.">BPS and CPS over 10min [MAX]</span>
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
+        Value from the top node.">BPS and CPS over 10min [MAX]</span>
 			</div>
 			<div class="div-graph-data">
 				<div data-netdata="repstats_local.tps_max"
@@ -140,7 +161,8 @@ setTimeout(function(){
 		</div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Unchecked blocks from block count. Value from the top node.">Unchecked Blocks</span>
+        <span class="title" title="Unchecked blocks from block count.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Unchecked Blocks</span>
       </div>
       <div class="div-graph-data">
         <div data-netdata="repstats_local.unchecked"
@@ -159,7 +181,8 @@ setTimeout(function(){
     </div>
     <div class="div-graph">
 	    <div class="div-header">
-        <span class="title" title="Connection count to other nodes. Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
+        <span class="title" title="Connection count to other nodes.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
 	    </div>
 	    <div class="div-graph-data">
         <div data-netdata="repstats_local.peers"
@@ -178,7 +201,8 @@ setTimeout(function(){
     </div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Consumed machine RAM. Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
+        <span class="title" title="Consumed machine RAM.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
       </div>
       <div class="div-graph-data">
         <div data-netdata="repstats_local.memory"
@@ -196,8 +220,9 @@ setTimeout(function(){
     </div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Number of unique measurements used in this system.
-        The top number represents discovered monitors that have a block count above 50% of the maximum block count from all nodes.">Connected Monitors</span>
+        <span class="title" title="Number of unique measurements used in this system.<br/>
+        The top number represents the max amount of discovered monitors.<br/>
+        Nodes with a block count below 50% of the maximum block count is not included.">Connected Monitors</span>
       </div>
       <div class="div-graph-data">
         <div data-netdata="repstats_local.supported"
@@ -218,7 +243,8 @@ setTimeout(function(){
 	<div class="div-float right">
 		<div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="Block count (saved) and cemented blocks (confirmed). Median value from all monitored nodes.">Saved and Confirmed [MEDIAN]</span>
+				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
+        Median value from all monitored nodes.">Checked and Confirmed [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data">
 				<div data-netdata="repstats_local.block_count_median"
@@ -236,7 +262,8 @@ setTimeout(function(){
 		</div>
 		<div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min. Median value from all monitored nodes.">BPS and CPS over 10min [MEDIAN]</span>
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
+        Median value from all monitored nodes.">BPS and CPS over 10min [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data">
 				<div data-netdata="repstats_local.tps_median"
@@ -255,8 +282,11 @@ setTimeout(function(){
 		</div>
 		<div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Block confirmation time past 10min or max 2048 blocks. The percentiles are represented as median values from all monitored nodes.
-        P50=Median of Median. P99=99% of blocks were confirmed that fast. Average min is the lowest measured average value taken from one node.">Block Confirmation Time [MEDIAN]</span>
+        <span class="title" title="Block confirmation time past 10min or max 2048 blocks.<br/>
+        <b>The percentiles</b> are represented as median values from all monitored nodes.<br/>
+        <b>perc 50</b>: Median of Median<br/>
+        <b>perc 99</b>: 99% of blocks were confirmed that fast<br/>
+        <b>ave min</b>: The lowest average value, taken from one node">Block Confirmation Time [MEDIAN]</span>
       </div>
       <div class="div-graph-data">
         <div data-netdata="repstats_local.confirmations"
@@ -275,7 +305,8 @@ setTimeout(function(){
     </div>
     <div class="div-graph">
 	    <div class="div-header">
-        <span class="title" title="Percentage of maximum block count that nodes have saved/synced. Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+        <span class="title" title="Percentage of maximum block count that nodes have saved/synced.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
 	    </div>
 	    <div class="div-graph-data">
         <div data-netdata="repstats_local.block_sync"
@@ -294,7 +325,7 @@ setTimeout(function(){
 	   </div>
      <div class="div-graph">
        <div class="div-header">
-         <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).
+         <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).<br/>
          Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
        </div>
        <div class="div-graph-data">
@@ -311,7 +342,52 @@ setTimeout(function(){
          ></div>
        </div>
      </div>
-   </div>
+     <div class="div-graph">
+       <div class="div-header">
+         <span class="title" title="Portion of connected nodes and portion of weight of the current supply.<br/>
+         <b>latest_version:</b> Nodes running on latest version<br/>
+         <b>tcp:</b> Nodes running tcp<br/>
+         <b>stake_req:</b> Required weight needed for confirmations<br/>
+         <b>stake_latest:</b> Connected weight on latest version<br/>
+         <b>stake_tot:</b> Total connected weight">Protocol Info and Connected Voting Weight</span>
+       </div>
+       <div class="div-graph-data">
+         <div data-netdata="repstats_local.peerstat"
+           data-title="Protocol and weight from connected nodes"
+           data-decimal-digits="1"
+           data-common-max="100"
+           data-common-min="repstats_local.peerstat"
+           data-units="%"
+           data-chart-library="dygraph"
+           data-width="90%"
+           data-height="100%"
+           data-after="-4500"
+           data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
+         ></div>
+       </div>
+     </div>
+  </div>
+  <div class="section"></div>
+  <div class="monitors-wrapper">
+    <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Checked</th>
+          <th scope="col">Confirmed</th>
+          <th scope="col">Unchecked</th>
+          <th scope="col">Weight</th>
+          <th scope="col">Peers</th>
+          <th scope="col">Conf. Average</th>
+          <th scope="col">Memory</th>
+          <th scope="col">Version</th>
+          <th scope="col">Account</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
 	<div class="div-footer">
 		<p class="footer-text">
 			<span><strong>Version 1.0 - <a href="https://github.com/Joohansson/rep-stats">Github Source</a></strong></span><br/>
@@ -319,5 +395,68 @@ setTimeout(function(){
 		</p>
 	</div>
 </div>
+<script>
+  var tpsUpdateInterval = 15000; //Interval for client side update
+  $.ajaxSetup({ cache: false });
+
+  function timeConverter(UNIX_timestamp){
+      var a = new Date(UNIX_timestamp * 1000);
+      var year = a.getFullYear();
+      var month = "0" + a.getMonth();
+      var date = "0" + a.getDate();
+      var hour = a.getHours();
+      var min = "0" + a.getMinutes();
+      var sec = "0" + a.getSeconds();
+      var time = year + '-' + month.substr(-2) + '-' + date.substr(-2) + ' ' + hour + ':' + min.substr(-2) + ':' + sec.substr(-2) ;
+      return time;
+  }
+
+  function loadMonitorData() {
+    $.getJSON( "monitors.json", function(data) {
+
+      //Correct the data
+      $.each(data, function (index, entry) {
+        var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(2);
+        if(entry['name'] == '') {
+          data[index]['name'] = 'N/A'
+        }
+
+        var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(2);
+        if(weight < 0) {
+          weight = "N/A"
+        }
+        data[index]['weight'] = weight
+      });
+
+      //Load  datatable
+      var table = $('#dtMonitors').DataTable({
+        paging: false, // false to disable pagination (or any other option)
+        searching: true, //search function
+        scrollX: true, //horizontal scrolling on small screens
+        info: false, // hide info below table
+        aaSorting: [[2, 'desc']], //default sorting column
+        data : data,
+        columns : [
+            { data : "name" },
+            { data : "currentBlock" },
+            { data : "cementedBlocks" },
+            { data : "unchecked" },
+            { data : "weight" },
+            { data : "numPeers" },
+            { data : "confAve" },
+            { data : "memory" },
+            { data : "protocolVersion" },
+            { data : "nanoNodeAccount" }
+        ]
+      });
+      $('.dataTables_length').addClass('bs-select');
+    });
+  }
+  $(document).ready(function () {
+    setTimeout(function() { //Bug where table header is not correct size
+      loadMonitorData()
+    }, 100);
+  });
+</script>
 </body>
 </html>
