@@ -460,59 +460,71 @@ setTimeout(function(){
     return false;
   }
 
-  function loadMonitorData(reload=true) {
-    $.getJSON( "monitors.json", function(data) {
+  function initTable() {
+    table = $('#dtMonitors').DataTable({
+      ajax: {
+        url: "monitors.json",
+        type: 'GET',
+        serverSide: true, //allow cross domain
+        dataFilter: function(data){
+            var json = jQuery.parseJSON(data);
+            json.recordsTotal = json.total;
+            json.recordsFiltered = json.total;
+            json.data = json.list;
 
-      //Correct the data
-      $.each(data, function (index, entry) {
-        var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(2);
-        if(entry['name'] == '') {
-          data[index]['name'] = 'N/A'
+            return JSON.stringify( json ); // return JSON string
+        },
+        dataSrc: function(data) {
+          //Correct the data
+          $.each(data, function (index, entry) {
+            if(entry['name'] == '') {
+              data[index]['name'] = 'N/A'
+            }
+            else if (entry['name'].length > 24) {
+              data[index]['name'] = entry['name'].slice(0, 24) + '..'
+            }
+
+            var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(1);
+            if(weight < 0) {
+              weight = "N/A"
+            }
+            data[index]['weight'] = weight
+          });
+
+          //Update monitor count
+          $('#monitorCount').text(data.length)
+          return data;
         }
-
-        var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(2);
-        if(weight < 0) {
-          weight = "N/A"
-        }
-        data[index]['weight'] = weight
-      });
-
-      //Update monitor count
-      $('#monitorCount').text(data.length)
-
-      //Load  datatable (first time)
-      if (!reload) {
-        table = $('#dtMonitors').DataTable({
-          paging:         false, // false to disable pagination (or any other option)
-          searching:      true, //search function
-          scrollX:        true, //horizontal scrolling on small screens,
-          scrollY:        "500px",
-          scrollCollapse: true,
-          info:           false, // hide info below table
-          aaSorting:      [1, 'desc'], //default sorting column
-          data : data,
-          columns : [
-              { data : "name" },
-              { data : "currentBlock" },
-              { data : "cementedBlocks" },
-              { data : "unchecked" },
-              { data : "weight" },
-              { data : "numPeers" },
-              { data : "confMedian" },
-              { data : "memory" },
-	            { data : "procTime" },
-              { data : "protocolVersion" },
-              { data : "nanoNodeAccount" }
-          ]
-        });
-        $('.dataTables_length').addClass('bs-select');
-      }
-      else {
-        table.clear().draw();
-        able.rows.add(data); // Add new data
-        table.columns.adjust().draw(); // Redraw the DataTable
-      }
+      },
+      paging:         false, // false to disable pagination (or any other option)
+      searching:      true, //search function
+      scrollX:        true, //horizontal scrolling on small screens,
+      scrollY:        "500px",
+      scrollCollapse: true,
+      info:           false, // hide info below table
+      aaSorting:      [1, 'desc'], //default sorting column
+      stateSave:      true,
+      autoWidth:      true,
+      columns : [
+          { data : "name" },
+          { data : "currentBlock" },
+          { data : "cementedBlocks" },
+          { data : "unchecked" },
+          { data : "weight" },
+          { data : "numPeers" },
+          { data : "confMedian" },
+          { data : "memory" },
+          { data : "procTime" },
+          { data : "protocolVersion" },
+          { data : "nanoNodeAccount" }
+      ]
     });
+    $('.dataTables_length').addClass('bs-select');
+  }
+
+  function refreshData() {
+    table.ajax.reload(null, false); // user paging is not reset on reload
+
     //Update last updated time
     $.getJSON( "stats.json", function(data) {
       $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
@@ -520,9 +532,9 @@ setTimeout(function(){
   }
 
   $(document).ready(function () {
-    setTimeout(function() { //Bug where table header is not correct size
-      loadMonitorData(false)
-      window.setInterval(loadMonitorData, monitorsUpdateInterval)
+    setTimeout(function() { //Bug where table header is not correct size, small delay
+      initTable()
+      window.setInterval(refreshData, monitorsUpdateInterval)
 
       /* Define share link modal jquery function */
       $.fn.psendmodal = function() {
