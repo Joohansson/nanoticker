@@ -8,7 +8,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+	<meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=2.0, minimum-scale=0.8, shrink-to-fit=no">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -16,10 +16,10 @@
 	<meta property="og:url" content="https://nanoticker.info"/>
 	<meta property="og:type" content="website"/>
 	<meta property="og:site_name" content="NanoTicker"/>
-	<meta property="og:title" content="NanoTicker - Realtime Rep Monitor"/>
-	<meta property="og:description" content="Displays average statistics from nano representatives based on NodeMonitor API." />
+	<meta property="og:title" content="NanoTicker - Realtime Performance"/>
+	<meta property="og:description" content="Displays average statistics from public Nano monitors along with specific node stats." />
 
-	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190814">
+	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190815">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -67,7 +67,7 @@ var netdataTheme = 'darkly'; // this is darker
 -->
 <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
 <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
-<script type="text/javascript" src="dashboard_custom.js?v20190816"></script>
+<script type="text/javascript" src="dashboard_custom.js?v20190816-1"></script>
 
 <script>
 // Set options for TV operation
@@ -102,8 +102,10 @@ setTimeout(function(){
 <body>
 
 <div class="div-main">
-	<h1>NanoTicker - Reps Performance</h1>
-  <h5>Combined measurements accross public Nano Node Monitors. Hover titles to show info.</h5>
+  <div class="title-text">
+    <h1>NanoTicker - Network Performance</h1>
+    <h5>Combined measurements accross public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover titles to show info.</h5>
+  </div>
   <div class="section"></div>
 	<div class="div-float left">
     <div class="div-graph">
@@ -312,7 +314,7 @@ setTimeout(function(){
      <div class="div-graph">
        <div class="div-header">
          <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).<br/>
-         Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+         Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
        </div>
        <div class="div-graph-data">
          <div data-netdata="repstats_local.api_time"
@@ -335,7 +337,7 @@ setTimeout(function(){
          <b>tcp:</b> Nodes running tcp<br/>
          <b>stake_req:</b> Required weight needed for confirmations<br/>
          <b>stake_latest:</b> Connected weight on latest version<br/>
-         <b>stake_tot:</b> Total connected weight">Protocol Info and Connected Voting Weight</span>
+         <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [LOCAL NODE]</span>
        </div>
        <div class="div-graph-data">
          <div data-netdata="repstats_local.peerstat"
@@ -369,8 +371,9 @@ setTimeout(function(){
           <th scope="col">Unchecked</th>
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
-          <th scope="col">Conf. Median</th>
-          <th scope="col">Memory</th>
+          <th scope="col">Conf. Median [ms]</th>
+          <th scope="col">Memory [MB]</th>
+	  <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
         </tr>
@@ -483,10 +486,10 @@ setTimeout(function(){
           paging:         false, // false to disable pagination (or any other option)
           searching:      true, //search function
           scrollX:        true, //horizontal scrolling on small screens,
-          scrollY:        "700px",
+          scrollY:        "500px",
           scrollCollapse: true,
           info:           false, // hide info below table
-          aaSorting: [[1, 'desc']], //default sorting column
+          aaSorting:      [1, 'desc'], //default sorting column
           data : data,
           columns : [
               { data : "name" },
@@ -497,6 +500,7 @@ setTimeout(function(){
               { data : "numPeers" },
               { data : "confMedian" },
               { data : "memory" },
+	            { data : "procTime" },
               { data : "protocolVersion" },
               { data : "nanoNodeAccount" }
           ]
@@ -505,7 +509,7 @@ setTimeout(function(){
       }
       else {
         table.clear().draw();
-        table.rows.add(data); // Add new data
+        able.rows.add(data); // Add new data
         table.columns.adjust().draw(); // Redraw the DataTable
       }
     });

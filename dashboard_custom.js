@@ -1778,7 +1778,7 @@ NETDATA.themes = {
     darkly: {
         //bootstrap_css: NETDATA.serverStatic + 'css/bootstrap-slate-flat-3.3.7.css?v20161229-1',
         bootstrap_css: NETDATA.serverStatic + 'css/bootstrap-darkly.css?v20190815',
-        dashboard_css: NETDATA.serverStatic + 'dashboard.darkly.css?v20190815-1',
+        dashboard_css: NETDATA.serverStatic + 'css/dashboard.darkly.css?v20190815-1',
         background: '#272b30',
         foreground: '#C8C8C8',
         grid: '#20282b',

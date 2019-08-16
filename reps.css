@@ -22,6 +22,11 @@ h2 {
 	text-align: center;
 }
 
+.title-text {
+	width: 95%;
+	margin: 0 auto;
+}
+
 .div-system {
 	width: 100%;
 	text-align: center;
@@ -113,7 +118,7 @@ div.ui-tooltip {
 }
 
 .table-info span {
-  font-size: 1.3em;
+  font-size: 1.25em;
 }
 
 .section {
@@ -159,10 +164,20 @@ div.ui-tooltip {
   text-decoration: underline;
 }
 
+/* Hide default tooltip */
+.ui-helper-hidden-accessible {
+  display: none;
+}
+
 @media only screen and (max-width: 1000px) {
 	.div-float {
 		width: 100%;
 	}
+
+	h5 {
+                margin-top: 15px !important;
+                font-size: 0.8em !important;
+        }
 
 	.div-system-group {
 		width: 90%;
@@ -190,9 +205,9 @@ div.ui-tooltip {
 		margin-top: 15px !important;
 		font-size: 1.5em !important;
 	}
-  h5 {
+  	h5 {
 		margin-top: 15px !important;
-		font-size: 0.9em !important;
+		font-size: 0.6em !important;
 	}
 
 	.div-header {
@@ -206,6 +221,9 @@ div.ui-tooltip {
 
 	.div-system-group-c {
 		margin-top: 10px !important;
+	}
+	.table-info span {
+  		font-size: 0.8em;
 	}
 }
 

@@ -14,7 +14,8 @@ import requests
 import re
 
 """VARS"""
-nodeUrl = 'http://[::1]:7076'
+nodeUrl = 'http://[::1]:7076' #main
+#nodeUrl = 'http://[::1]:55000' #beta
 ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
 statFile = '/usr/share/netdata/web/stats.json'
 monitorFile = '/usr/share/netdata/web/monitors.json'
@@ -24,6 +25,7 @@ timeout = 5 #http request timeout for API
 runAPIEvery = 15 #run API check every X sec
 runPeersEvery = 120 #run API check every X sec
 maxURLRequests = 250 #maximum concurrent requests
+activeCurrency = 'nano' #nano, banano or beta-nano
 
 """CONSTANTS"""
 pLatestVersionStat = 0 #percentage running latest protocol version
@@ -246,6 +248,7 @@ async def getAPI():
     global pStakeRequiredStat
     global pStakeLatestVersionStat
     global peerInfo
+    global activeCurrency
 
     await asyncio.sleep(10) #Wait for some values to be calculated from getPeers
     while 1:
@@ -308,6 +311,14 @@ async def getAPI():
                 except Exception as e:
                     count = 0
                     continue
+
+                #Validate if the monitor is for nano, banano or nano-beta (if possible)
+                try:
+                    currency = j['currency']
+                    if currency != activeCurrency:
+                        continue
+                except Exception as e:
+                    pass
 
                 try:
                     name = j['nanoNodeName']
@@ -601,40 +612,43 @@ async def getPeers():
             #print(resp.json())
             peers = resp.json()['peers']
             for ipv6,value in peers.items():
-                ip = re.search('ffff:(.*)\]:', ipv6)
+                if '[::ffff:' in ipv6: #ipv4
+                    ip = re.search('ffff:(.*)\]:', ipv6).group(1)
+                else: #ipv6
+                    ip = '[' + re.search('\[(.*)\]:', ipv6).group(1) +']'
                 if ip is not "":
                     #Combine with previous list and ignore duplicates
                     exists = False
                     for url in monitorPaths:
-                        if 'http://'+ip.group(1) == url:
+                        if 'http://'+ip == url:
                             exists = True
                             break
                     if not exists:
-                        monitorPaths.append('http://'+ip.group(1))
+                        monitorPaths.append('http://'+ip)
 
                     exists = False
                     for url in monitorPaths:
-                        if 'http://'+ip.group(1)+'/nano' == url:
+                        if 'http://'+ip+'/nano' == url:
                             exists = True
                             break
                     if not exists:
-                        monitorPaths.append('http://'+ip.group(1)+'/nano')
+                        monitorPaths.append('http://'+ip+'/nano')
 
                     exists = False
                     for url in monitorPaths:
-                        if 'http://'+ip.group(1)+'/nanoNodeMonitor' == url:
+                        if 'http://'+ip+'/nanoNodeMonitor' == url:
                             exists = True
                             break
                     if not exists:
-                        monitorPaths.append('http://'+ip.group(1)+'/nanoNodeMonitor')
+                        monitorPaths.append('http://'+ip+'/nanoNodeMonitor')
 
                     exists = False
                     for url in monitorPaths:
-                        if 'http://'+ip.group(1)+'/monitor' == url:
+                        if 'http://'+ip+'/monitor' == url:
                             exists = True
                             break
                     if not exists:
-                        monitorPaths.append('http://'+ip.group(1)+'/monitor')
+                        monitorPaths.append('http://'+ip+'/monitor')
 
                     #Read protocol version and type
                     pVersions.append(value['protocol_version'])
@@ -666,7 +680,8 @@ async def getPeers():
             pass
 
         #Save as global list
-        peerInfo = pPeers.copy()
+        if len(pPeers) > 0:
+            peerInfo = pPeers.copy()
 
         #Grab supply
         params = {
@@ -692,7 +707,7 @@ async def getPeers():
                 versionCounter += 1
 
         #Require at least 5 monitors to be at latest version to use as base, or use second latest version
-        if versionCounter < 5:
+        if versionCounter < 5 and len(pVersions) > 0:
             #extract second largest number by first removing duplicates
             simplified = list(set(pVersions))
             simplified.sort()
