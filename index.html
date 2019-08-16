@@ -20,7 +20,7 @@
 	<meta property="og:description" content="Displays average statistics from nano representatives based on NodeMonitor API." />
 
 	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190814">
-  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
   <!-- MDBootstrap Datatables  -->
@@ -30,24 +30,11 @@
   <script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
   <!-- For jquery tooltip -->
   <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>-->
-  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src="js/jquery-ui-1.12.1.min.js"></script>
   <!-- Bootstrap tooltips -->
-  <script type="text/javascript" src="js/popper.min.js"></script>
-  <!-- MDB core JavaScript -->
-  <script type="text/javascript" src="js/mdb.min.js"></script>
+  <!--<script type="text/javascript" src="js/popper.min.js"></script>-->
   <!-- MDBootstrap Datatables  -->
   <script type="text/javascript" src="js/addons/datatables.min.js"></script>
-
-  <script>
-    $(document).ready(function () {
-      //Tooltip
-      $(document).tooltip({
-        content: function (callback) {
-          callback($(this).prop('title'));
-        }
-      });
-    });
-  </script>
 
 </head>
 <script>
@@ -55,11 +42,9 @@
 
 // Select a theme.
 // uncomment one of the two themes:
-
 //var netdataTheme = 'default'; // this is white
 //var netdataTheme = 'slate'; // this is dark
 var netdataTheme = 'darkly'; // this is darker
-
 
 // Set the default netdata server.
 // on charts without a 'data-host', this one will be used.
@@ -81,20 +66,21 @@ var netdataTheme = 'darkly'; // this is darker
     and that you have chown it to be owned by netdata:netdata
 -->
 <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
-<script type="text/javascript" src="dashboard.js?v20181025-1"></script>
+<!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
+<script type="text/javascript" src="dashboard_custom.js?v20190816"></script>
 
 <script>
 // Set options for TV operation
 // This has to be done, after dashboard.js is loaded
 
 // destroy charts not shown (lowers memory on the browser)
-NETDATA.options.current.destroy_on_hide = false;
+NETDATA.options.current.destroy_on_hide = true;
 
 // set this to false, to always show all dimensions
 NETDATA.options.current.eliminate_zero_dimensions = false;
 
 // lower the pressure on this browser
-NETDATA.options.current.concurrent_refreshes = false;
+NETDATA.options.current.concurrent_refreshes = true;
 
 // if the tv browser is too slow (a pi?)
 // set this to false
@@ -107,7 +93,7 @@ NETDATA.options.current.stop_updates_when_focus_is_lost = false;
 // become offline for some time, the charts will break.
 // This will reload the page every RELOAD_EVERY minutes
 
-var RELOAD_EVERY = 5;
+var RELOAD_EVERY = 10;
 setTimeout(function(){
     location.reload();
 }, RELOAD_EVERY * 60 * 1000);
@@ -368,6 +354,11 @@ setTimeout(function(){
      </div>
   </div>
   <div class="section"></div>
+  <div class="table-info">
+    <span class="title" title="Discovered monitors with a block count above 50% of max block count">Connected Monitors (</span>
+    <span class="title" id="monitorCount"></span><span class="title"> ) - </span>
+    <span class="title" id="monitorLastUpdated">)</span>
+  </div>
   <div class="monitors-wrapper">
     <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
       <thead>
@@ -378,7 +369,7 @@ setTimeout(function(){
           <th scope="col">Unchecked</th>
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
-          <th scope="col">Conf. Average</th>
+          <th scope="col">Conf. Median</th>
           <th scope="col">Memory</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
@@ -390,14 +381,14 @@ setTimeout(function(){
   </div>
 	<div class="div-footer">
 		<p class="footer-text">
-			<span><strong>Version 1.0 - <a href="https://github.com/Joohansson/rep-stats">Github Source</a></strong></span><br/>
-			<span><strong>Developer Nano Donation:</strong> xrb_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo</span>
+			<span class="link-span" onClick="showOwnerModal()">About Owner</span> | <a href="https://github.com/Joohansson/">Github Projects</a> | <a href="https://nano.org">Nano Home</a> | <a href="https://nanolinks.info">Nano Guide</a> | <span class="link-span" onClick="showDonateModal()">Send me a donation</span>
 		</p>
 	</div>
 </div>
 <script>
-  var tpsUpdateInterval = 15000; //Interval for client side update
+  var monitorsUpdateInterval = 15000; //Interval for client side update
   $.ajaxSetup({ cache: false });
+  var table = null
 
   function timeConverter(UNIX_timestamp){
       var a = new Date(UNIX_timestamp * 1000);
@@ -411,7 +402,62 @@ setTimeout(function(){
       return time;
   }
 
-  function loadMonitorData() {
+  /* Show donate modal */
+  function showDonateModal() {
+    $(document).psendmodal();
+    var account = 'nano_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo';
+
+    var content =  '<div class="public_link_modal">'+
+              '<strong>Scan the QR, <a href="xrb:nano_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo">open in wallet</a><br/> or click the donation address to copy</strong><br/>'+
+              '<img class="donation-qr" id="donation" src="img/donation.png" alt="QR Image"/>'+
+              '<div class="form-group">'+
+                '<textarea id="shareArea" class="input-large public_link_copy form-control" rows="2" readonly>' + account + '</textarea>'+
+              '</div>'+
+              '<div class="copied">Succesfully copied to clipboard</div>'+
+              '<div class="copied_not">Content could not be copied to clipboard</div>'+
+            '</div>';
+    var title 	= 'DONATE DEVELOPER';
+    $('.modal_title span').html(title);
+    $('.modal_content').html(content);
+
+    /* Auto select text */
+    var textBox = document.getElementById("shareArea");
+    textBox.onfocus = function() {
+      textBox.select();
+
+      if (document.execCommand("copy")) {
+        /* Inform user about copy */
+        document.getElementsByClassName("copied")[0].style.display = "block";
+      }
+      else {
+        document.getElementsByClassName("copied_not")[0].style.display = "block";
+      }
+
+      // Work around Chrome's little problem
+      textBox.onmouseup = function() {
+          // Prevent further mouseup intervention
+          textBox.onmouseup = null;
+          return false;
+      };
+    };
+    return false;
+  }
+
+  /* Show donate modal */
+  function showOwnerModal() {
+    $(document).psendmodal();
+    var content =  '<div class="public_link_modal">'+
+              '<strong>Who is hosting this service?</strong><br/>'+
+              'A community manager for the Nano Foundation, moderator of <a href="https://www.reddit.com/r/nanocurrency">/r/nanocurrency</a> / <a href="https://chat.nano.org/">nano discord</a> and creator of some other services like <a href="https://nanolinks.info">Nano Links</a>, <a href="https://nanogift.me/">Nano Gift</a>, <a href="https://nanocards.net/">Nano Cards</a> and <a href="https://github.com/Joohansson/NanoNodeGraphics">Nano Node Graphics</a>.<br/>'+
+              '<br/>If you find any bugs or have feedback, please don\'t hesitate to contact me at reddit or discord! You find me under alias Joohansson or Json.';
+    var title 	= 'ABOUT OWNER';
+    $('.modal_title span').html(title);
+    $('.modal_content').html(content);
+
+    return false;
+  }
+
+  function loadMonitorData(reload=true) {
     $.getJSON( "monitors.json", function(data) {
 
       //Correct the data
@@ -428,35 +474,104 @@ setTimeout(function(){
         data[index]['weight'] = weight
       });
 
-      //Load  datatable
-      var table = $('#dtMonitors').DataTable({
-        paging: false, // false to disable pagination (or any other option)
-        searching: true, //search function
-        scrollX: true, //horizontal scrolling on small screens
-        info: false, // hide info below table
-        aaSorting: [[2, 'desc']], //default sorting column
-        data : data,
-        columns : [
-            { data : "name" },
-            { data : "currentBlock" },
-            { data : "cementedBlocks" },
-            { data : "unchecked" },
-            { data : "weight" },
-            { data : "numPeers" },
-            { data : "confAve" },
-            { data : "memory" },
-            { data : "protocolVersion" },
-            { data : "nanoNodeAccount" }
-        ]
-      });
-      $('.dataTables_length').addClass('bs-select');
+      //Update monitor count
+      $('#monitorCount').text(data.length)
+
+      //Load  datatable (first time)
+      if (!reload) {
+        table = $('#dtMonitors').DataTable({
+          paging:         false, // false to disable pagination (or any other option)
+          searching:      true, //search function
+          scrollX:        true, //horizontal scrolling on small screens,
+          scrollY:        "700px",
+          scrollCollapse: true,
+          info:           false, // hide info below table
+          aaSorting: [[1, 'desc']], //default sorting column
+          data : data,
+          columns : [
+              { data : "name" },
+              { data : "currentBlock" },
+              { data : "cementedBlocks" },
+              { data : "unchecked" },
+              { data : "weight" },
+              { data : "numPeers" },
+              { data : "confMedian" },
+              { data : "memory" },
+              { data : "protocolVersion" },
+              { data : "nanoNodeAccount" }
+          ]
+        });
+        $('.dataTables_length').addClass('bs-select');
+      }
+      else {
+        table.clear().draw();
+        table.rows.add(data); // Add new data
+        table.columns.adjust().draw(); // Redraw the DataTable
+      }
+    });
+    //Update last updated time
+    $.getJSON( "stats.json", function(data) {
+      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
     });
   }
+
   $(document).ready(function () {
     setTimeout(function() { //Bug where table header is not correct size
-      loadMonitorData()
+      loadMonitorData(false)
+      window.setInterval(loadMonitorData, monitorsUpdateInterval)
+
+      /* Define share link modal jquery function */
+      $.fn.psendmodal = function() {
+        var modal_structure = '<div class="modal_overlay"></div>'+
+                    '<div class="modal_psend">'+
+                      '<div class="modal_title">'+
+                        '<span>&nbsp;</span>'+
+                        '<a href="#" class="modal_close">&times;</a>'+
+                      '</div>'+
+                      '<div class="modal_content"></div>'+
+                    '</div>';
+
+        $('body').append(modal_structure);
+        show_modal();
+
+        function show_modal() {
+          $('.modal_overlay').stop(true, true).fadeIn();
+          $('.modal_psend').stop(true, true).fadeIn();
+        }
+
+        window.remove_modal = function() {
+          $('.modal_overlay').stop(true, true).fadeOut(500, function() { $(this).remove(); });
+          $('.modal_psend').stop(true, true).fadeOut(500, function() { $(this).remove(); });
+          return false;
+        }
+
+        $(".modal_close").click(function(e) {
+          e.preventDefault();
+          window.remove_modal();
+        });
+
+        $(".modal_overlay").click(function(e) {
+          e.preventDefault();
+          window.remove_modal();
+        });
+
+        $(document).keyup(function(e) {
+          if (e.keyCode === 27) { // Esc
+            window.remove_modal();
+          }
+        });
+      };
     }, 100);
   });
-</script>
+  //Tooltip
+  $(document).tooltip({
+    content: function (callback) {
+      callback($(this).prop('title'));
+    }
+  });
+  </script>
+
+  <!-- MDB core JavaScript -->
+  <script type="text/javascript" src="js/mdb.min.js"></script>
 </body>
 </html>

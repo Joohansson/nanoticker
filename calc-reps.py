@@ -16,7 +16,7 @@ import re
 """VARS"""
 nodeUrl = 'http://[::1]:7076'
 ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
-statFile = '/var/www/monitor/main/stats.json'
+statFile = '/usr/share/netdata/web/stats.json'
 monitorFile = '/usr/share/netdata/web/monitors.json'
 #statFile = '/var/www/monitor/stats.json'
 minCount = 1 #initial required block count
@@ -428,7 +428,7 @@ async def getAPI():
                             weight = str(int(p['weight']) / int(1000000000000000000000000000000))
 
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount[0:9]+'..'+nanoNodeAccount[-5:], 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
-                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'weight':weight, 'memory':memory, 'procTime':procTime, "supported":not fail})
+                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'memory':memory, 'procTime':procTime, "supported":not fail})
                 fail = False
 
             else:
