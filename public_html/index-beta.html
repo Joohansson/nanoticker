@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<!-- SPDX-License-Identifier: GPL-3.0-or-later -->
+<html lang="en">
+<head>
+	<title>NanoTicker Beta</title>
+	<meta name="application-name" content="netdata">
+
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=2.0, minimum-scale=0.8, shrink-to-fit=no">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+	<meta property="og:locale" content="en_US" />
+	<meta property="og:url" content="https://beta.nanoticker.info"/>
+	<meta property="og:type" content="website"/>
+	<meta property="og:site_name" content="NanoTicker"/>
+	<meta property="og:title" content="NanoTicker - Realtime Performance"/>
+	<meta property="og:description" content="Displays combined statistics from public Nano monitors along with individual node stats." />
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+  <meta name="msapplication-TileColor" content="#2d89ef">
+  <meta name="theme-color" content="#ffffff">
+
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190816-4">
+  <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
+  <!-- MDBootstrap Datatables  -->
+  <link href="css/addons/datatables.min.css" rel="stylesheet">
+
+  <!-- JQuery -->
+  <script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
+  <!-- For jquery tooltip -->
+  <!--<script src="https://code.jquery.com/jquery-1.12.4.js"></script>-->
+  <script src="js/jquery-ui-1.12.1.min.js"></script>
+  <!-- Bootstrap tooltips -->
+  <!--<script type="text/javascript" src="js/popper.min.js"></script>-->
+  <!-- MDBootstrap Datatables  -->
+  <script type="text/javascript" src="js/addons/datatables.min.js"></script>
+
+</head>
+<script>
+// this section has to appear before loading dashboard.js
+
+// Select a theme.
+// uncomment one of the two themes:
+//var netdataTheme = 'default'; // this is white
+//var netdataTheme = 'slate'; // this is dark
+var netdataTheme = 'darkly'; // this is darker
+
+// Set the default netdata server.
+// on charts without a 'data-host', this one will be used.
+// the default is the server that dashboard.js is downloaded from.
+
+// var netdataServer = 'http://my.server:19999/';
+</script>
+
+<!--
+    Load dashboard.js
+
+    to host this HTML file on your web server,
+    you have to load dashboard.js from the netdata server.
+
+    So, pick one the two below
+    If you pick the first, set the server name/IP.
+
+    The second assumes you host this file on /usr/share/netdata/web
+    and that you have chown it to be owned by netdata:netdata
+-->
+<!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
+<!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
+<script type="text/javascript">var netdataServer = "https://node.nanolinks.info";</script>
+<script type="text/javascript" src="https://node.nanolinks.info/dashboard_custom.js?v20190816-1"></script>
+
+<script>
+// Set options for TV operation
+// This has to be done, after dashboard.js is loaded
+
+// destroy charts not shown (lowers memory on the browser)
+NETDATA.options.current.destroy_on_hide = true;
+
+// set this to false, to always show all dimensions
+NETDATA.options.current.eliminate_zero_dimensions = false;
+
+// lower the pressure on this browser
+NETDATA.options.current.concurrent_refreshes = true;
+
+// if the tv browser is too slow (a pi?)
+// set this to false
+NETDATA.options.current.parallel_refresher = true;
+
+// always update the charts, even if focus is lost
+NETDATA.options.current.stop_updates_when_focus_is_lost = false;
+
+// Since you may render charts from many servers and any of them may
+// become offline for some time, the charts will break.
+// This will reload the page every RELOAD_EVERY minutes
+
+var RELOAD_EVERY = 10;
+setTimeout(function(){
+    location.reload();
+}, RELOAD_EVERY * 60 * 1000);
+
+</script>
+<body>
+
+<div class="div-main">
+  <div class="title-text">
+    <h1>NanoTicker - Network Performance</h1>
+    <h5>Combined measurements accross public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover titles to show info.</h5>
+  </div>
+  <div class="section"></div>
+	<div class="div-float left">
+    <div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
+        Value from the top node.">Checked and Confirmed [MAX]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats-b_local.block_count_max"
+					data-title="Checked Blocks Max"
+				  data-decimal-digits="0"
+					data-common-max="repstats-b_local.block_count_max"
+					data-common-min="repstats-b_local.block_count_max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+    <div class="div-graph">
+			<div class="div-header">
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
+        Value from the top node.">BPS and CPS over 10min [MAX]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats-b_local.tps_max"
+					data-title="TPS Average Max"
+					data-decimal-digits="3"
+					data-common-max="repstats-b_local.tps_max"
+					data-common-min="repstats-b_local.tps_max"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Unchecked blocks from block count.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Unchecked Blocks</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.unchecked"
+          data-title="Unchecked"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.unchecked"
+          data-common-min="repstats-b_local.unchecked"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+	    <div class="div-header">
+        <span class="title" title="Connection count to other nodes.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
+	    </div>
+	    <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.peers"
+          data-title="Peers"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.peers"
+          data-common-min="repstats-b_local.peers"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+    </div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Consumed machine RAM.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.memory"
+          data-title="RAM Use"
+          data-decimal-digits="3"
+          data-common-max="repstats-b_local.memory"
+          data-common-min="repstats-b_local.memory"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Number of unique measurements used in this system.<br/>
+        The top number represents the max amount of discovered monitors.<br/>
+        Nodes with a block count below 50% of the maximum block count is not included.">Connected Monitors</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.supported"
+          data-title="Stat Support"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.supported"
+          data-common-min="repstats-b_local.supported"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474 #e174e8"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+	<div class="div-float right">
+		<div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
+        Median value from all monitored nodes.">Checked and Confirmed [MEDIAN]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats-b_local.block_count_median"
+					data-title="Block Count Median"
+				  data-decimal-digits="0"
+					data-common-max="repstats-b_local.block_count_median"
+					data-common-min="repstats-b_local.block_count_median"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+		<div class="div-graph">
+			<div class="div-header">
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
+        Median value from all monitored nodes.">BPS and CPS over 10min [MEDIAN]</span>
+			</div>
+			<div class="div-graph-data">
+				<div data-netdata="repstats-b_local.tps_median"
+					data-title="TPS Average Median"
+					data-decimal-digits="3"
+					data-common-max="repstats-b_local.tps_median"
+					data-common-min="repstats-b_local.tps_median"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+		</div>
+		<div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Block confirmation time past 10min or max 2048 blocks.<br/>
+        <b>The percentiles</b> are represented as median values from all monitored nodes.<br/>
+        <b>perc 50</b>: Median of Median<br/>
+        <b>perc 99</b>: 99% of blocks were confirmed that fast<br/>
+        <b>ave min</b>: The lowest average value, taken from one node">Block Confirmation Time [MEDIAN]</span>
+      </div>
+      <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.confirmations"
+          data-title="Percentiles over 10min or max 2048 blocks | P50=Median"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.confirmations"
+          data-common-min="repstats-b_local.confirmations"
+          data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
+        ></div>
+      </div>
+    </div>
+    <div class="div-graph">
+	    <div class="div-header">
+        <span class="title" title="Percentage of maximum block count that nodes have saved/synced.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+	    </div>
+	    <div class="div-graph-data">
+        <div data-netdata="repstats-b_local.block_sync"
+          data-title="Block Sync"
+          data-decimal-digits="2"
+          data-common-max="100"
+          data-common-min="repstats-b_local.block_sync"
+          data-units="%"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+	   </div>
+     <div class="div-graph">
+       <div class="div-header">
+         <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).<br/>
+         Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
+       </div>
+       <div class="div-graph-data">
+         <div data-netdata="repstats-b_local.api_time"
+           data-title="API Process"
+           data-decimal-digits="0"
+           data-common-max="repstats-b_local.api_time"
+           data-common-min="repstats-b_local.api_time"
+           data-chart-library="dygraph"
+           data-width="90%"
+           data-height="100%"
+           data-after="-4500"
+           data-colors="#e87474 #7ad96e #747de8"
+         ></div>
+       </div>
+     </div>
+     <div class="div-graph">
+       <div class="div-header">
+         <span class="title" title="Portion of connected nodes and portion of weight of the current supply.<br/>
+         <b>latest_version:</b> Nodes running on latest version<br/>
+         <b>tcp:</b> Nodes running tcp<br/>
+         <b>stake_req:</b> Required weight needed for confirmations<br/>
+         <b>stake_latest:</b> Connected weight on latest version<br/>
+         <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [LOCAL NODE]</span>
+       </div>
+       <div class="div-graph-data">
+         <div data-netdata="repstats-b_local.peerstat"
+           data-title="Protocol and weight from connected nodes"
+           data-decimal-digits="1"
+           data-common-max="100"
+           data-common-min="repstats-b_local.peerstat"
+           data-units="%"
+           data-chart-library="dygraph"
+           data-width="90%"
+           data-height="100%"
+           data-after="-4500"
+           data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
+         ></div>
+       </div>
+     </div>
+  </div>
+  <div class="section"></div>
+  <div class="table-info">
+    <span class="title" title="Discovered monitors with a block count above 50% of max block count.<br/>
+    Emty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Connected Monitors (</span>
+    <span class="title" id="monitorCount"></span><span class="title"> ) - </span>
+    <span class="title" id="monitorLastUpdated"></span>
+  </div>
+  <div class="monitors-wrapper">
+    <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Checked</th>
+          <th scope="col">Confirmed</th>
+          <th scope="col">Unchecked</th>
+          <th scope="col">Weight</th>
+          <th scope="col">Peers</th>
+          <th scope="col">Conf. Median [ms]</th>
+          <th scope="col">Memory [MB]</th>
+	        <th scope="col">API Time [ms]</th>
+          <th scope="col">Version</th>
+          <th scope="col">Account</th>
+        </tr>
+      </thead>
+      <tfoot>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Checked</th>
+          <th scope="col">Confirmed</th>
+          <th scope="col">Unchecked</th>
+          <th scope="col">Weight</th>
+          <th scope="col">Peers</th>
+          <th scope="col">Confirmation</th>
+          <th scope="col">Memory</th>
+	        <th scope="col">API Time</th>
+          <th scope="col">Version</th>
+          <th scope="col">Account</th>
+        </tr>
+      </tfoot>
+      <tbody>
+      </tbody>
+    </table>
+  </div>
+	<div class="div-footer">
+		<p class="footer-text">
+			<span class="link-span" onClick="showOwnerModal()">About Owner</span> | <a href="https://github.com/Joohansson/">Github Projects</a> | <a href="https://nano.org">Nano Home</a> | <a href="https://nanolinks.info">Nano Guide</a> | <span class="link-span" onClick="showDonateModal()">Send me a donation</span>
+		</p>
+	</div>
+</div>
+<script>
+  var monitorsUpdateInterval = 15000; //Interval for client side update
+  var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
+  var statFile = 'https://json.nanoticker.info/stats-beta.json'
+  $.ajaxSetup({ cache: false });
+  var table = null
+
+  function timeConverter(UNIX_timestamp){
+      var a = new Date(UNIX_timestamp * 1000);
+      var year = a.getFullYear();
+      var month = "0" + a.getMonth();
+      var date = "0" + a.getDate();
+      var hour = a.getHours();
+      var min = "0" + a.getMinutes();
+      var sec = "0" + a.getSeconds();
+      var time = year + '-' + month.substr(-2) + '-' + date.substr(-2) + ' ' + hour + ':' + min.substr(-2) + ':' + sec.substr(-2) ;
+      return time;
+  }
+
+  /* Show donate modal */
+  function showDonateModal() {
+    $(document).psendmodal();
+    var account = 'nano_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo';
+
+    var content =  '<div class="public_link_modal">'+
+              '<strong>Scan the QR, <a href="xrb:nano_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo">open in wallet</a><br/> or click the donation address to copy</strong><br/>'+
+              '<img class="donation-qr" id="donation" src="img/donation.png" alt="QR Image"/>'+
+              '<div class="form-group">'+
+                '<textarea id="shareArea" class="input-large public_link_copy form-control" rows="2" readonly>' + account + '</textarea>'+
+              '</div>'+
+              '<div class="copied">Succesfully copied to clipboard</div>'+
+              '<div class="copied_not">Content could not be copied to clipboard</div>'+
+            '</div>';
+    var title 	= 'DONATE DEVELOPER';
+    $('.modal_title span').html(title);
+    $('.modal_content').html(content);
+
+    /* Auto select text */
+    var textBox = document.getElementById("shareArea");
+    textBox.onfocus = function() {
+      textBox.select();
+
+      if (document.execCommand("copy")) {
+        /* Inform user about copy */
+        document.getElementsByClassName("copied")[0].style.display = "block";
+      }
+      else {
+        document.getElementsByClassName("copied_not")[0].style.display = "block";
+      }
+
+      // Work around Chrome's little problem
+      textBox.onmouseup = function() {
+          // Prevent further mouseup intervention
+          textBox.onmouseup = null;
+          return false;
+      };
+    };
+    return false;
+  }
+
+  /* Show donate modal */
+  function showOwnerModal() {
+    $(document).psendmodal();
+    var content =  '<div class="public_link_modal">'+
+              '<strong>Who is hosting this service?</strong><br/>'+
+              'A community manager for the Nano Foundation, moderator of <a href="https://www.reddit.com/r/nanocurrency">/r/nanocurrency</a> / <a href="https://chat.nano.org/">nano discord</a> and creator of some other services like <a href="https://nanolinks.info">Nano Links</a>, <a href="https://nanogift.me/">Nano Gift</a>, <a href="https://nanocards.net/">Nano Cards</a> and <a href="https://github.com/Joohansson/NanoNodeGraphics">Nano Node Graphics</a>.<br/>'+
+              '<br/>If you find any bugs or have feedback, please don\'t hesitate to contact me at reddit or discord! You find me under alias Joohansson or Json.';
+    var title 	= 'ABOUT OWNER';
+    $('.modal_title span').html(title);
+    $('.modal_content').html(content);
+
+    return false;
+  }
+
+  //Thousand separator
+  function addCommas(nStr) {
+    nStr += '';
+    var x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + ',' + '$2');
+    }
+    return x1 + x2;
+}
+
+  function initTable() {
+    table = $('#dtMonitors').DataTable({
+      ajax: {
+        url: monitorFile,
+        type: 'GET',
+        serverSide: true, //allow cross domain
+        dataFilter: function(data){
+            var json = jQuery.parseJSON(data);
+            json.recordsTotal = json.total;
+            json.recordsFiltered = json.total;
+            json.data = json.list;
+
+            return JSON.stringify( json ); // return JSON string
+        },
+        dataSrc: function(data) {
+          //Correct the data
+          $.each(data, function (index, entry) {
+            if(entry['name'] == '') {
+              data[index]['name'] = 'N/A'
+            }
+            else if (entry['name'].length > 24) {
+              data[index]['name'] = entry['name'].slice(0, 24) + '..'
+            }
+
+            if (entry['currentBlock'] < 0) {
+              data[index]['currentBlock'] = null
+            }
+            else {
+              data[index]['currentBlock'] = addCommas(entry['currentBlock'])
+            }
+
+            if (entry['cementedBlocks'] < 0) {
+              data[index]['cementedBlocks'] = null
+            }
+            else {
+              data[index]['cementedBlocks'] = addCommas(entry['cementedBlocks'])
+            }
+
+            if (entry['unchecked'] < 0) {
+              data[index]['unchecked'] = null
+            }
+            else {
+              data[index]['unchecked'] = addCommas(entry['unchecked'])
+            }
+
+            //var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(1);
+            if(entry['weight'] < 0) {
+              data[index]['weight'] = null
+            }
+            else {
+              data[index]['weight'] = addCommas(parseInt(entry['weight']))
+            }
+
+            if (entry['confMedian'] < 0) {
+              data[index]['confMedian'] = null
+            }
+            else {
+              data[index]['confMedian'] = addCommas(entry['confMedian'])
+            }
+
+            if (entry['numPeers'] < 0) {
+              data[index]['numPeers'] = null
+            }
+            else {
+              data[index]['numPeers'] = addCommas(entry['numPeers'])
+            }
+
+            if (entry['memory'] < 0) {
+              data[index]['memory'] = null
+            }
+            else {
+              data[index]['memory'] = addCommas(entry['memory'])
+            }
+
+            if (entry['procTime'] < 0) {
+              data[index]['procTime'] = null
+            }
+            else {
+              data[index]['procTime'] = addCommas(entry['procTime'])
+            }
+
+            if (entry['protocolVersion'] < 0) {
+              data[index]['protocolVersion'] = 'N/A'
+            }
+          });
+
+          //Update monitor count
+          $('#monitorCount').text(data.length)
+          return data;
+        }
+      },
+      paging:         false, // false to disable pagination (or any other option)
+      searching:      true, //search function
+      scrollX:        true, //horizontal scrolling on small screens,
+      scrollY:        '450px',
+      scrollCollapse: true,
+      info:           false, // hide info below table
+      aaSorting:      [1, 'desc'], //default sorting column
+      stateSave:      true,
+      autoWidth:      true,
+      language: {
+            "decimal": ".",
+            "thousands": ","
+      },
+      columns : [
+          { data : "name" },
+          { data : "currentBlock", type: "num-fmt" },
+          { data : "cementedBlocks", type: "num-fmt" },
+          { data : "unchecked", type: "num-fmt" },
+          { data : "weight", type: "num-fmt" },
+          { data : "numPeers", type: "num-fmt" },
+          { data : "confMedian", type: "num-fmt"},
+          { data : "memory", type: "num-fmt" },
+          { data : "procTime", type: "num-fmt" },
+          { data : "protocolVersion" },
+          { data : "nanoNodeAccount" }
+      ]
+    });
+    $('.dataTables_length').addClass('bs-select');
+
+    //Update last updated time
+    $.getJSON( statFile, function(data) {
+      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
+    });
+  }
+
+  function refreshData() {
+    table.ajax.reload(null, false); // user paging is not reset on reload
+
+    //Update last updated time
+    $.getJSON( statFile, function(data) {
+      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
+    });
+  }
+
+  $(document).ready(function () {
+    setTimeout(function() { //Bug where table header is not correct size, small delay
+      initTable()
+      window.setInterval(refreshData, monitorsUpdateInterval)
+
+      /* Define share link modal jquery function */
+      $.fn.psendmodal = function() {
+        var modal_structure = '<div class="modal_overlay"></div>'+
+                    '<div class="modal_psend">'+
+                      '<div class="modal_title">'+
+                        '<span>&nbsp;</span>'+
+                        '<a href="#" class="modal_close">&times;</a>'+
+                      '</div>'+
+                      '<div class="modal_content"></div>'+
+                    '</div>';
+
+        $('body').append(modal_structure);
+        show_modal();
+
+        function show_modal() {
+          $('.modal_overlay').stop(true, true).fadeIn();
+          $('.modal_psend').stop(true, true).fadeIn();
+        }
+
+        window.remove_modal = function() {
+          $('.modal_overlay').stop(true, true).fadeOut(500, function() { $(this).remove(); });
+          $('.modal_psend').stop(true, true).fadeOut(500, function() { $(this).remove(); });
+          return false;
+        }
+
+        $(".modal_close").click(function(e) {
+          e.preventDefault();
+          window.remove_modal();
+        });
+
+        $(".modal_overlay").click(function(e) {
+          e.preventDefault();
+          window.remove_modal();
+        });
+
+        $(document).keyup(function(e) {
+          if (e.keyCode === 27) { // Esc
+            window.remove_modal();
+          }
+        });
+      };
+    }, 100);
+  });
+  //Tooltip
+  $(document).tooltip({
+    content: function (callback) {
+      callback($(this).prop('title'));
+    }
+  });
+  </script>
+
+  <!-- MDB core JavaScript -->
+  <script type="text/javascript" src="js/mdb.min.js"></script>
+</body>
+</html>

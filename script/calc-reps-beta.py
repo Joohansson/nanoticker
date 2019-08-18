@@ -15,16 +15,16 @@ import re
 import logging
 
 """CUSTOM VARS"""
-nodeUrl = 'http://[::1]:7076' #main
-#nodeUrl = 'http://[::1]:55000' #beta
-statFile = '/var/www/repstat/public_html/json/stats.json' #placed in a web server for public access
-monitorFile = '/var/www/repstat/public_html/json/monitors.json' #placed in a web server for public access
-logFile = '/root/py/nano/repstat.log'
-activeCurrency = 'nano' #nano, banano or nano-beta
+#nodeUrl = 'http://[::1]:7076' #main
+nodeUrl = 'http://[::1]:55000' #beta
+logFile="repstat.log"
+statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
+monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
+activeCurrency = 'nano-beta' #nano, banano or nano-beta
 
 """LESS CUSTOM VARS"""
-ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #main
-#ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
+#ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #main
+ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
 minCount = 1 #initial required block count
 timeout = 5 #http request timeout for API
 runAPIEvery = 15 #run API check every X sec
@@ -40,92 +40,14 @@ pStakeLatestVersionStat = 0 #percentage of connected online weight that is on la
 peerInfo = [] #connected peers with weight info
 
 #Default starting node list. Is dynamically updated
-reps = \
-[
-    'https://nano.nifni.net/api.php',
-    'https://repnode.org/api.php',
-    'https://nano.voting/api.php',
-    'https://dbachm123-nano.mynanorep.com/api.php',
-    'https://warai.me/api.php',
-    'http://polishnanonode.cc/api.php',
-    'http://185.243.8.228/api.php',
-    'https://nonna.just-dmitry.ru/api.php',
-    'http://173.249.54.87/api.php',
-    'https://moomoo.cryptohell.io/api.php',
-    'http://node.wean.de/api.php',
-    'http://3dpenis.io/api.php',
-    'http://node.fastfeeless.com/api.php',
-    'http://95.216.206.138/api.php',
-    'https://nano2.strnmn.me/api.php',
-    'https://blankslate.tk/api.php',
-    'http://nanode.cc/api.php',
-    'http://oflipstaro.247node.com/api.php',
-    'http://rep.nanoisfast.com/api.php',
-    'http://arainode.com/api.php',
-    'http://139.59.181.118/api.php',
-    'https://monitor.nanolinks.info/api.php',
-    'https://nano-rep.xyz/api.php',
-    'http://bbdevelopment.website/api.php',
-    'https://node.nanoes.info/api.php',
-    'https://nano.ganknodes.online/api.php',
-    'http://nanotipbot.com/nanoNodeMonitor/api.php',
-    'http://vmi220922.contaboserver.net/api.php',
-    'http://nano.nodegasm.com/api.php',
-    'http://159.65.95.42/api.php',
-    'http://hronanos.duckdns.org/api.php',
-    'https://srvicentehd.info/nano/api.php',
-    'http://nano-node-01.scheler.io/api.php',
-    'http://nanode.blizznerds.com/nano/api.php',
-    'https://node.nanoble.org/api.php',
-    'https://nanomakonode.com/api.php',
-    'https://monitor.mynano.ninja/api.php',
-    'http://50.99.115.219:8080/api.php',
-    'https://lightnano.rocks/api.php',
-    'http://104.131.79.207/api.php',
-    'http://188.166.18.100/api.php',
-    'https://nano.mehl.no/api.php',
-    'https://nanoodle.io/nanoNodeMonitor/api.php',
-    'http://antennano.ch/api.php',
-    'http://167.86.102.128/api.php',
-    'https://brainblocks.io/monitor/api.php',
-    'http://37.235.52.37/nanoNodeMonitor/api.php',
-    'http://46.101.114.167/api.php',
-    'http://80.241.211.21/api.php',
-    'http://81.169.174.237/api.php',
-    'http://95.216.228.244/monitor/api.php',
-    'http://98.26.20.44/monitor/api.php',
-    'http://104.131.169.14/api.php',
-    'http://134.0.113.170/api.php',
-    'http://146.198.58.202/api.php',
-    'http://148.251.12.252/api.php',
-    'http://159.89.125.101/api.php',
-    'http://159.203.117.254/api.php',
-    'http://163.172.69.5/api.php',
-    'http://167.71.111.204/nanoNodeMonitor/api.php',
-    'http://172.83.15.108/nanoNodeMonitor/api.php',
-    'http://174.107.247.162/api.php',
-    'http://193.31.24.222/api.php',
-    'http://206.189.18.189/api.php',
-    'http://206.189.20.214/api.php',
-    'https://node.mansour.io/api.php',
-    'https://nano.muffin-mafia.de/api.php',
-    'https://yapraiwallet.space/nanoNodeMonitor/api.php',
-    'https://brainblocks.io/monitor/nw/api.php',
-    'https://node.nanovault.io/api.php',
-    'https://brainblocks.io/monitor/nm/api.php',
-    'http://node.nanologin.com/api.php',
-    'https://www.freenanofaucet.com/nanoNodeMonitor/api.php',
-    'https://node.nano.lat/api.php',
-    'http://numsu.tk:13080/api.php',
-    'https://nanoslo.0x.no/api.php',
-    'http://dangilsystem.zapto.org/nanoNodeMonitor/api.php',
-    'http://51.15.62.124/api.php',
-    'http://120.27.224.224/api.php',
-    'http://134.209.61.219/api.php',
-    'http://159.89.112.19/api.php',
-    'http://159.89.146.74/api.php',
-    'https://www.nanoskynode.com/api.php',
-]
+reps = ['https://beta.api.nanocrawler.cc',
+    'https://monitor-beta.mynano.ninja',
+    'http://beta.warai.me',
+    'http://benna.just-dmitry.ru',
+    'https://beta.nanoskynode.com',
+    'https://b.repnode.org',
+    'https://nano-faucet.org/beta/monitor',
+    'http://beta.nanode.cc']
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -162,7 +84,7 @@ async def getMonitor(url):
                     #print('Could not read json 1. Error: %r' %e)
                     pass
         except Exception as e:
-            #print(f'Could not read API from {url}. Error: %r' %e)
+            #print('Could not read API from %r. Error: %r' %(url, e))
             pass
 
 async def verifyMonitor(url):
@@ -187,7 +109,7 @@ async def verifyMonitor(url):
                     #print('Could not read json 1. Error: %r' %e)
                     pass
         except Exception as e:
-            #print(f'Could not read API from {url}. Error: %r' %e)
+            #print('Could not read API from %r. Error: %r' %(url,e))
             pass
 
 SSL_PROTOCOLS = (asyncio.sslproto.SSLProtocol,)
@@ -270,7 +192,7 @@ async def getAPI():
             tasks = []
             for path in chunk:
                 if len(path) > 6:
-                    tasks.append(asyncio.ensure_future(getMonitor(f'{path}/api.php')))
+                    tasks.append(asyncio.ensure_future(getMonitor('%s/api.php' %path)))
 
             try:
                 with async_timeout.timeout(timeout):
@@ -285,9 +207,9 @@ async def getAPI():
                             if task.result() is not None and task.result():
                                 if task.result()['currentBlock'] > 0:
                                     jsonData.append(task.result())
-                                    print(task.result()['nanoNodeName'])
+                                    #print(task.result()['nanoNodeName'])
                         except Exception as e:
-                            #print('Could not read json for %r. Error: %r' %(task.result(),e))
+                            print('Could not read json for %r. Error: %r' %(task.result(),e))
                             pass
 
         countData = []
@@ -610,13 +532,14 @@ async def getPeers():
         supply = 133248061996216572282917317807824970865
 
         #log.info(timeLog("Updating peers"))
+        monitorPaths = reps.copy()
 
         #Grab connected peer IPs from the node
         params = {
             "action": "peers",
             "peer_details": True,
         }
-        monitorPaths = reps.copy()
+
         try:
             resp = requests.post(url=nodeUrl, json=params, timeout=10)
             peers = resp.json()['peers']
@@ -625,7 +548,9 @@ async def getPeers():
                     ip = re.search('ffff:(.*)\]:', ipv6).group(1)
                 else: #ipv6
                     ip = '[' + re.search('\[(.*)\]:', ipv6).group(1) +']'
+
                 if ip is not "":
+                    """
                     #Combine with previous list and ignore duplicates
                     exists = False
                     for url in monitorPaths:
@@ -658,13 +583,14 @@ async def getPeers():
                             break
                     if not exists:
                         monitorPaths.append('http://'+ip+'/monitor')
+                    """
 
                     #Read protocol version and type
                     pVersions.append(value['protocol_version'])
                     pPeers.append({"ip":ipv6, "version":value["protocol_version"], "type":value["type"], "weight":0, "account": ""})
 
         except Exception as e:
-            log.warning(timeLog(f"Could not read peers from node RPC. {e}"))
+            log.warning(timeLog("Could not read peers from node RPC. %r" %e))
             sleep = runPeersEvery - (time.time() - startTime)
             await asyncio.sleep(sleep)
             continue #break out of main loop and try again next iteration
@@ -687,7 +613,7 @@ async def getPeers():
                         continue
 
         except Exception as e:
-            log.warning(timeLog(f"Could not read quorum from node RPC. {e}"))
+            log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
             pass
 
         #Save as global list
@@ -705,17 +631,19 @@ async def getPeers():
                 supply = tempSupply
 
         except Exception as e:
-            log.warning(timeLog(f"Could not read supply from node RPC. {e}"))
+            log.warning(timeLog("Could not read supply from node RPC. %r" %e))
             pass
 
         #PERCENTAGE STATS
-        maxVersion = int(max(pVersions))
-
-        #Calculate percentage of nodes on latest version
+        maxVersion = 0
         versionCounter = 0
-        for version in pVersions:
-            if int(version) == maxVersion:
-                versionCounter += 1
+        if len(pVersions) > 0:
+            maxVersion = int(max(pVersions))
+            #Calculate percentage of nodes on latest version
+            versionCounter = 0
+            for version in pVersions:
+                if int(version) == maxVersion:
+                    versionCounter += 1
 
         #Require at least 5 monitors to be at latest version to use as base, or use second latest version
         if versionCounter < 5 and len(pVersions) > 0:
@@ -780,7 +708,7 @@ async def getPeers():
                             log.warning(timeLog("Invalid Ninja monitor"))
 
         except Exception as e:
-            log.warning(timeLog(f"Could not read monitors from ninja. {e}"))
+            log.warning(timeLog("Could not read monitors from ninja. %r" %e))
 
         #Verify all URLS
         validPaths = []
@@ -790,7 +718,7 @@ async def getPeers():
             tasks = []
             for path in chunk:
                 if len(path) > 6:
-                    tasks.append(asyncio.ensure_future(verifyMonitor(f'{path}/api.php')))
+                    tasks.append(asyncio.ensure_future(verifyMonitor('%s/api.php' %path)))
 
             try:
                 with async_timeout.timeout(timeout):
@@ -816,7 +744,7 @@ async def getPeers():
                                 repAccounts.append(task.result()[0])
 
                         except Exception as e:
-                            #print('Could not read json for %r. Error: %r' %(task.result(),e))
+                            print('Could not read json for %r. Error: %r' %(task.result(),e))
                             pass
 
         #Update the final list
