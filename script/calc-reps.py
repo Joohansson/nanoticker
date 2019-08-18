@@ -12,13 +12,17 @@ import ssl
 import sys
 import requests
 import re
+import logging
+
+logging.basicConfig(level=logging.INFO,filename='/root/py/nano/repstat.log', filemode='a', format='%(name)s - %(levelname)s - %(message)s')
+log = logging.getLogger(__name__)
 
 """VARS"""
 nodeUrl = 'http://[::1]:7076' #main
 #nodeUrl = 'http://[::1]:55000' #beta
 ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
-statFile = '/usr/share/netdata/web/stats.json'
-monitorFile = '/usr/share/netdata/web/monitors.json'
+statFile = '/var/www/repstat/public_html/json/stats.json'
+monitorFile = '/var/www/repstat/public_html/json/monitors.json'
 #statFile = '/var/www/monitor/stats.json'
 minCount = 1 #initial required block count
 timeout = 5 #http request timeout for API
@@ -134,7 +138,6 @@ def median(lst):
         return (sortedLst[index] + sortedLst[index + 1])/2.0
 
 async def getMonitor(url):
-    #print(url)
     async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
         try:
             async with session.get(url) as response:
@@ -240,6 +243,9 @@ def chunks(l, n):
     for i in range(0, len(l), n):
         yield l[i:i + n]
 
+def timeLog(msg):
+    return str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')) + ": " + msg
+
 async def getAPI():
     global minCount
     global pLatestVersionStat
@@ -252,7 +258,7 @@ async def getAPI():
 
     await asyncio.sleep(10) #Wait for some values to be calculated from getPeers
     while 1:
-        print("Get API")
+        #log.info(timeLog("Get API"))
         jsonData = []
         startTime = time.time() #to measure the loop speed
         """Split URLS in max X concurrent requests"""
@@ -275,7 +281,7 @@ async def getAPI():
                             if task.result() is not None and task.result():
                                 if task.result()['currentBlock'] > 0:
                                     jsonData.append(task.result())
-                                    #print(task.result()['nanoNodeName'])
+                                    print(task.result()['nanoNodeName'])
                         except Exception as e:
                             #print('Could not read json for %r. Error: %r' %(task.result(),e))
                             pass
@@ -443,7 +449,7 @@ async def getAPI():
                 fail = False
 
             else:
-                print('No data in json')
+                log.warning(timeLog("Empty json from API calls"))
 
         blockCountMedian = 0
         cementedMedian = 0
@@ -568,13 +574,13 @@ async def getAPI():
                 with open(statFile, 'w') as outfile:
                     outfile.write(simplejson.dumps(statData, indent=2))
             except Exception as e:
-                print('Could not write stat data. Error: %r' %e)
+                log.error(timeLog('Could not write stat data. Error: %r' %e))
 
             try:
                 with open(monitorFile, 'w') as outfile:
                     outfile.write(simplejson.dumps(supportedReps, indent=2))
             except Exception as e:
-                print('Could not write monitor ata. Error: %r' %e)
+                log.error(timeLog('Could not write monitor data. Error: %r' %e))
 
         #print(time.time() - startTime)
         #calculate final sleep based on execution time
@@ -599,7 +605,7 @@ async def getPeers():
         pStakeLatest = 0
         supply = 133248061996216572282917317807824970865
 
-        print("Updating peers")
+        #log.info(timeLog("Updating peers"))
 
         #Grab connected peer IPs from the node
         params = {
@@ -609,7 +615,6 @@ async def getPeers():
         monitorPaths = reps.copy()
         try:
             resp = requests.post(url=nodeUrl, json=params, timeout=10)
-            #print(resp.json())
             peers = resp.json()['peers']
             for ipv6,value in peers.items():
                 if '[::ffff:' in ipv6: #ipv4
@@ -655,8 +660,10 @@ async def getPeers():
                     pPeers.append({"ip":ipv6, "version":value["protocol_version"], "type":value["type"], "weight":0, "account": ""})
 
         except Exception as e:
-            print(f"Could not read peers from node RPC. {e}")
-            pass
+            log.warning(timeLog(f"Could not read peers from node RPC. {e}"))
+            sleep = runPeersEvery - (time.time() - startTime)
+            await asyncio.sleep(sleep)
+            continue #break out of main loop and try again next iteration
 
         #Grab voting weight stat
         params = {
@@ -676,7 +683,7 @@ async def getPeers():
                         continue
 
         except Exception as e:
-            print(f"Could not read quorum from node RPC. {e}")
+            log.warning(timeLog(f"Could not read quorum from node RPC. {e}"))
             pass
 
         #Save as global list
@@ -694,7 +701,7 @@ async def getPeers():
                 supply = tempSupply
 
         except Exception as e:
-            print(f"Could not read quorum from node RPC. {e}")
+            log.warning(timeLog(f"Could not read supply from node RPC. {e}"))
             pass
 
         #PERCENTAGE STATS
@@ -766,9 +773,10 @@ async def getPeers():
                             if not exists:
                                 monitorPaths.append(url)
                         except:
-                            print("Invalid Ninja monitor")
+                            log.warning(timeLog("Invalid Ninja monitor"))
+
         except Exception as e:
-            print(f"Could not read monitors from ninja. {e}")
+            log.warning(timeLog(f"Could not read monitors from ninja. {e}"))
 
         #Verify all URLS
         validPaths = []
@@ -820,6 +828,7 @@ ignore_aiohttp_ssl_error(loop) #ignore python bug
 futures = [getPeers(), getAPI()]
 #futures = [getAPI()]
 #futures = [getPeers()]
+log.info(timeLog("Starting script"))
 
 try:
     loop.run_until_complete(asyncio.wait(futures))

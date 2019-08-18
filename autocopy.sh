@@ -2,39 +2,44 @@
 #!/bin/bash
 # Copy source files to netdata directories
 echo "Copy plugin"
-cp repstats.chart.py /usr/libexec/netdata/python.d/
+cp netdata/repstats.chart.py /usr/libexec/netdata/python.d/
 
-echo "Copy plugin config to default location"
-cp repstats.conf /usr/lib/netdata/conf.d/python.d
+echo "Copy plugin configs"
+cp netdata/repstats.conf /usr/lib/netdata/conf.d/python.d
+cp netdata/repstats.conf /etc/netdata/python.d/
 
-echo "Renaming default index.html to full.html"
-mv /usr/share/netdata/web/index.html /usr/share/netdata/web/full.html
+echo "Copy custom dashboard js"
+cp netdata/dashboard_custom.js /usr/share/netdata/web/
 
-echo "Copy dashboard"
-cp index.html /usr/share/netdata/web
+echo "Copy dashboard main page"
+cp public_html/index.html /var/www/repstats/
 
-echo "Copy dashboard style"
-cp reps.css /usr/share/netdata/web
+echo "Copy dashboard help files"
+cp -R public_html/css /var/www/repstats/
+cp -R public_html/scss /var/www/repstats/
+cp -R public_html/font /var/www/repstats/
+cp -R public_html/img /var/www/repstats/
+cp -R public_html/js /var/www/repstats/
+cp -R public_html/json /var/www/repstats/
 
-echo "Copy custom dashboard"
-cp dashboard_custom.js /usr/share/netdata/web/
-
-echo "Copy sample json files"
-cp stats.json /usr/share/netdata/web/
-cp monitor.json /usr/share/netdata/web/
-
-echo "Copy datatable bootstrap files"
-cp -R css /usr/share/netdata/web/
-cp -R scss /usr/share/netdata/web/
-cp -R font /usr/share/netdata/web/
-cp -R img /usr/share/netdata/web/
-cp -R js /usr/share/netdata/web/
+echo "Copy icon files"
+cp public_html/android-chrome-192x192.png /var/www/repstats/
+cp public_html/android-chrome-512x512.png /var/www/repstats/
+cp public_html/apple-touch-icon.png /var/www/repstats/
+cp public_html/browserconfig.xml /var/www/repstats/
+cp public_html/favicon-16x16.png /var/www/repstats/
+cp public_html/favicon-32x32.png /var/www/repstats/
+cp public_html/favicon.ico /var/www/repstats/
+cp public_html/mstile-70x70.png /var/www/repstats/
+cp public_html/mstile-144x144.png /var/www/repstats/
+cp public_html/mstile-150x150.png /var/www/repstats/
+cp public_html/mstile-310x150.png /var/www/repstats/
+cp public_html/mstile-310x310.png /var/www/repstats/
+cp public_html/safari-pinned-tab.svg /var/www/repstats/
+cp public_html/site.webmanifest /var/www/repstats/
 
 echo "Set netdata read access for dashboard and style"
 chown -R netdata:netdata /usr/share/netdata/web/
 
-echo "Set write permission for all users to netdata folders (to allow calc-reps.py to be run locally)"
-chmod -R o+w /usr/share/netdata/web/
-
-echo "Copy plugin config to user location"
-cp repstats.conf /etc/netdata/python.d/
+echo "Set write permission for json files (to allow calc-reps.py to be run locally)"
+chmod -R o+w /var/www/repstats/json

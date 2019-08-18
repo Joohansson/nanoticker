@@ -17,9 +17,17 @@
 	<meta property="og:type" content="website"/>
 	<meta property="og:site_name" content="NanoTicker"/>
 	<meta property="og:title" content="NanoTicker - Realtime Performance"/>
-	<meta property="og:description" content="Displays average statistics from public Nano monitors along with specific node stats." />
+	<meta property="og:description" content="Displays combined statistics from public Nano monitors along with individual node stats." />
 
-	<link rel="stylesheet" type="text/css" href="reps.css?ver=20190815">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+  <meta name="msapplication-TileColor" content="#2d89ef">
+  <meta name="theme-color" content="#ffffff">
+
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190816-4">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -67,7 +75,8 @@ var netdataTheme = 'darkly'; // this is darker
 -->
 <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
 <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
-<script type="text/javascript" src="dashboard_custom.js?v20190816-1"></script>
+<script type="text/javascript">var netdataServer = "https://node.nanolinks.info";</script>
+<script type="text/javascript" src="https://node.nanolinks.info/dashboard_custom.js?v20190816-1"></script>
 
 <script>
 // Set options for TV operation
@@ -357,9 +366,10 @@ setTimeout(function(){
   </div>
   <div class="section"></div>
   <div class="table-info">
-    <span class="title" title="Discovered monitors with a block count above 50% of max block count">Connected Monitors (</span>
+    <span class="title" title="Discovered monitors with a block count above 50% of max block count.<br/>
+    Emty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Connected Monitors (</span>
     <span class="title" id="monitorCount"></span><span class="title"> ) - </span>
-    <span class="title" id="monitorLastUpdated">)</span>
+    <span class="title" id="monitorLastUpdated"></span>
   </div>
   <div class="monitors-wrapper">
     <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
@@ -373,11 +383,26 @@ setTimeout(function(){
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
           <th scope="col">Memory [MB]</th>
-	  <th scope="col">API Time [ms]</th>
+	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
         </tr>
       </thead>
+      <tfoot>
+        <tr>
+          <th scope="col">Name</th>
+          <th scope="col">Checked</th>
+          <th scope="col">Confirmed</th>
+          <th scope="col">Unchecked</th>
+          <th scope="col">Weight</th>
+          <th scope="col">Peers</th>
+          <th scope="col">Confirmation</th>
+          <th scope="col">Memory</th>
+	        <th scope="col">API Time</th>
+          <th scope="col">Version</th>
+          <th scope="col">Account</th>
+        </tr>
+      </tfoot>
       <tbody>
       </tbody>
     </table>
@@ -390,6 +415,8 @@ setTimeout(function(){
 </div>
 <script>
   var monitorsUpdateInterval = 15000; //Interval for client side update
+  var monitorFile = 'json/monitors.json'
+  var statFile = 'json/stats.json'
   $.ajaxSetup({ cache: false });
   var table = null
 
@@ -460,10 +487,23 @@ setTimeout(function(){
     return false;
   }
 
+  //Thousand separator
+  function addCommas(nStr) {
+    nStr += '';
+    var x = nStr.split('.');
+    var x1 = x[0];
+    var x2 = x.length > 1 ? '.' + x[1] : '';
+    var rgx = /(\d+)(\d{3})/;
+    while (rgx.test(x1)) {
+        x1 = x1.replace(rgx, '$1' + ',' + '$2');
+    }
+    return x1 + x2;
+}
+
   function initTable() {
     table = $('#dtMonitors').DataTable({
       ajax: {
-        url: "monitors.json",
+        url: monitorFile,
         type: 'GET',
         serverSide: true, //allow cross domain
         dataFilter: function(data){
@@ -484,11 +524,66 @@ setTimeout(function(){
               data[index]['name'] = entry['name'].slice(0, 24) + '..'
             }
 
-            var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(1);
-            if(weight < 0) {
-              weight = "N/A"
+            if (entry['currentBlock'] < 0) {
+              data[index]['currentBlock'] = null
             }
-            data[index]['weight'] = weight
+            else {
+              data[index]['currentBlock'] = addCommas(entry['currentBlock'])
+            }
+
+            if (entry['cementedBlocks'] < 0) {
+              data[index]['cementedBlocks'] = null
+            }
+            else {
+              data[index]['cementedBlocks'] = addCommas(entry['cementedBlocks'])
+            }
+
+            if (entry['unchecked'] < 0) {
+              data[index]['unchecked'] = null
+            }
+            else {
+              data[index]['unchecked'] = addCommas(entry['unchecked'])
+            }
+
+            //var weight = parseFloat(Math.round(entry['weight'] * 100) / 100).toFixed(1);
+            if(entry['weight'] < 0) {
+              data[index]['weight'] = null
+            }
+            else {
+              data[index]['weight'] = addCommas(parseInt(entry['weight']))
+            }
+
+            if (entry['confMedian'] < 0) {
+              data[index]['confMedian'] = null
+            }
+            else {
+              data[index]['confMedian'] = addCommas(entry['confMedian'])
+            }
+
+            if (entry['numPeers'] < 0) {
+              data[index]['numPeers'] = null
+            }
+            else {
+              data[index]['numPeers'] = addCommas(entry['numPeers'])
+            }
+
+            if (entry['memory'] < 0) {
+              data[index]['memory'] = null
+            }
+            else {
+              data[index]['memory'] = addCommas(entry['memory'])
+            }
+
+            if (entry['procTime'] < 0) {
+              data[index]['procTime'] = null
+            }
+            else {
+              data[index]['procTime'] = addCommas(entry['procTime'])
+            }
+
+            if (entry['protocolVersion'] < 0) {
+              data[index]['protocolVersion'] = 'N/A'
+            }
           });
 
           //Update monitor count
@@ -499,34 +594,43 @@ setTimeout(function(){
       paging:         false, // false to disable pagination (or any other option)
       searching:      true, //search function
       scrollX:        true, //horizontal scrolling on small screens,
-      scrollY:        "500px",
+      scrollY:        '450px',
       scrollCollapse: true,
       info:           false, // hide info below table
       aaSorting:      [1, 'desc'], //default sorting column
       stateSave:      true,
       autoWidth:      true,
+      language: {
+            "decimal": ".",
+            "thousands": ","
+      },
       columns : [
           { data : "name" },
-          { data : "currentBlock" },
-          { data : "cementedBlocks" },
-          { data : "unchecked" },
-          { data : "weight" },
-          { data : "numPeers" },
-          { data : "confMedian" },
-          { data : "memory" },
-          { data : "procTime" },
+          { data : "currentBlock", type: "num-fmt" },
+          { data : "cementedBlocks", type: "num-fmt" },
+          { data : "unchecked", type: "num-fmt" },
+          { data : "weight", type: "num-fmt" },
+          { data : "numPeers", type: "num-fmt" },
+          { data : "confMedian", type: "num-fmt"},
+          { data : "memory", type: "num-fmt" },
+          { data : "procTime", type: "num-fmt" },
           { data : "protocolVersion" },
           { data : "nanoNodeAccount" }
       ]
     });
     $('.dataTables_length').addClass('bs-select');
+
+    //Update last updated time
+    $.getJSON( statFile, function(data) {
+      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
+    });
   }
 
   function refreshData() {
     table.ajax.reload(null, false); // user paging is not reset on reload
 
     //Update last updated time
-    $.getJSON( "stats.json", function(data) {
+    $.getJSON( statFile, function(data) {
       $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
     });
   }
@@ -589,5 +693,15 @@ setTimeout(function(){
 
   <!-- MDB core JavaScript -->
   <script type="text/javascript" src="js/mdb.min.js"></script>
+
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-113887773-1"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-113887773-1');
+  </script>
 </body>
 </html>

@@ -111,6 +111,15 @@ div.ui-tooltip {
 
 .table tbody {
   text-align: left;
+  font-size: 0.9em;
+}
+
+.table thead {
+  font-size: 0.9em;
+}
+
+.table tfoot {
+  font-size: 0.9em;
 }
 
 .table {
