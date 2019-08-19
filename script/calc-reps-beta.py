@@ -40,14 +40,17 @@ pStakeLatestVersionStat = 0 #percentage of connected online weight that is on la
 peerInfo = [] #connected peers with weight info
 
 #Default starting node list. Is dynamically updated
-reps = ['https://beta.api.nanocrawler.cc',
+repsInit = ['https://beta.api.nanocrawler.cc',
     'https://monitor-beta.mynano.ninja',
     'http://beta.warai.me',
     'http://benna.just-dmitry.ru',
     'https://beta.nanoskynode.com',
     'https://b.repnode.org',
     'https://nano-faucet.org/beta/monitor',
-    'http://beta.nanode.cc']
+    'http://beta.nanode.cc',
+    'https://json.nanoticker.info']
+
+reps = repsInit
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -532,7 +535,7 @@ async def getPeers():
         supply = 133248061996216572282917317807824970865
 
         #log.info(timeLog("Updating peers"))
-        monitorPaths = reps.copy()
+        monitorPaths = repsInit.copy()
 
         #Grab connected peer IPs from the node
         params = {
