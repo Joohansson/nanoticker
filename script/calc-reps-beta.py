@@ -38,6 +38,8 @@ pStakeTotalStat = 0 #percentage connected online weight of maximum
 pStakeRequiredStat = 0 #percentage of connected online weight of maxium required for voting
 pStakeLatestVersionStat = 0 #percentage of connected online weight that is on latest version
 peerInfo = [] #connected peers with weight info
+confCountLimit = 1000 #lower limit for block count to include confirmation average
+confSpanLimit = 60000 #lower limit for time span to include confirmation average
 
 #Default starting node list. Is dynamically updated
 repsInit = ['https://beta.api.nanocrawler.cc',
@@ -334,6 +336,14 @@ async def getAPI():
                     confAve = -1
                     fail = True
                 try:
+                    confCount = int(j['confirmationInfo']['count'])
+                except Exception as e:
+                    confCount = -1
+                try:
+                    confSpan = int(j['confirmationInfo']['timeSpan'])
+                except Exception as e:
+                    confSpan = -1
+                try:
                     memory = int(j['usedMem'])
                 except Exception as e:
                     memory = -1
@@ -355,15 +365,15 @@ async def getAPI():
                     peersData.append(peers)
                 if (sync > 0):
                     syncData.append(sync)
-                if (conf50 > 0):
+                if (conf50 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf50Data.append(conf50)
-                if (conf75 > 0):
+                if (conf75 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf75Data.append(conf75)
-                if (conf90 > 0):
+                if (conf90 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf90Data.append(conf90)
-                if (conf99 > 0):
+                if (conf99 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf99Data.append(conf99)
-                if (confAve > 0):
+                if (confAve > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     confAveData.append(confAve)
                 if (memory > 0):
                     memoryData.append(memory)
@@ -537,7 +547,7 @@ async def getPeers():
         pStakeLatest = 0
         supply = 133248061996216572282917317807824970865
 
-        #log.info(timeLog("Updating peers"))
+        log.info(timeLog("Verifying peers"))
         monitorPaths = repsInit.copy()
 
         #Grab connected peer IPs from the node
@@ -755,6 +765,7 @@ async def getPeers():
 
         #Update the final list
         reps = validPaths.copy()
+        log.info(reps)
 
         sleep = runPeersEvery - (time.time() - startTime)
         await asyncio.sleep(sleep)
