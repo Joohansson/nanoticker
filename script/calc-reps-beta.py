@@ -48,7 +48,10 @@ repsInit = ['https://beta.api.nanocrawler.cc',
     'https://b.repnode.org',
     'https://nano-faucet.org/beta/monitor',
     'http://beta.nanode.cc',
-    'https://json.nanoticker.info']
+    'https://json.nanoticker.info',
+    'http://95.216.205.225',
+    'http://kamikaze.awiki.org/betaNanoNodeMonitor'
+    ]
 
 reps = repsInit
 
