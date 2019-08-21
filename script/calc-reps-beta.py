@@ -56,6 +56,7 @@ repsInit = ['https://beta.api.nanocrawler.cc',
     ]
 
 reps = repsInit
+latestOnlineWeight = 0 #used for calculating PR status
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -215,7 +216,7 @@ async def getAPI():
                             if task.result() is not None and task.result():
                                 if task.result()['currentBlock'] > 0:
                                     jsonData.append(task.result())
-                                    #print(task.result()['nanoNodeName'])
+                                    log.info(timeLog('Valid: ' + task.result()['nanoNodeName']))
                         except Exception as e:
                             print('Could not read json for %r. Error: %r' %(task.result(),e))
                             pass
@@ -239,6 +240,7 @@ async def getAPI():
         supportedReps = [] #reps supporting all parameters
 
         if jsonData is None or type(jsonData[0]) == bool:
+            log.info(timeLog('type error'))
             continue
         for j in jsonData:
             if len(j) > 0:
@@ -247,8 +249,10 @@ async def getAPI():
 
                     #skip if the node is out of sync
                     if count < minCount:
+                        log.info(timeLog('mincount warning'))
                         continue
                 except Exception as e:
+                    log.info(timeLog('currentBlock warning'))
                     count = 0
                     continue
 
@@ -256,6 +260,7 @@ async def getAPI():
                 try:
                     currency = j['currency']
                     if currency != activeCurrency:
+                        log.info(timeLog('curr warning'))
                         continue
                 except Exception as e:
                     pass
@@ -286,8 +291,13 @@ async def getAPI():
 
                 try:
                     weight = j['votingWeight']
+                    if (weight >= latestOnlineWeight*0.001):
+                        PRStatus = True
+                    else:
+                        PRStatus = False
                 except Exception as e:
                     weight = -1
+                    PRStatus = False
                     pass
 
                 try:
@@ -386,8 +396,10 @@ async def getAPI():
                         if str(nanoNodeAccount) == str(p['account']):
                             weight = str(int(p['weight']) / int(1000000000000000000000000000000))
 
-                supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount[0:9]+'..'+nanoNodeAccount[-5:], 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
-                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'memory':memory, 'procTime':procTime, "supported":not fail})
+                supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
+                'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
+                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight,
+                'memory':memory, 'procTime':procTime, 'supported':not fail, 'PR':PRStatus})
                 fail = False
 
             else:
@@ -507,10 +519,13 @@ async def getAPI():
             "pStakeTotalStat":pStakeTotalStat,\
             "pStakeRequiredStat":pStakeRequiredStat,\
             "pStakeLatestVersionStat":pStakeLatestVersionStat,\
+            "pStakeOnline":latestOnlineWeight,\
             "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
             "lastUpdatedUnix":str(time.time()),\
             }
 
+        log.info(timeLog('BlockCountMedian: ' + str(blockCountMedian)))
+        log.info(timeLog('blockCountMax: ' + str(blockCountMax)))
         if blockCountMedian > 0 and blockCountMax > 0:
             try:
                 with open(statFile, 'w') as outfile:
@@ -537,6 +552,7 @@ async def getPeers():
     global pStakeRequiredStat
     global pStakeLatestVersionStat
     global peerInfo
+    global latestOnlineWeight
 
     while 1:
         startTime = time.time() #to measure the loop speed
@@ -620,6 +636,7 @@ async def getPeers():
             resp = requests.post(url=nodeUrl, json=params, timeout=10)
             pStakeTot = resp.json()['peers_stake_total']
             pStakeReq = resp.json()['peers_stake_required']
+            latestOnlineWeight = int(resp.json()['online_stake_total']) / int(1000000000000000000000000000000) #used for calculating PR status
 
             #Find matching IP and include weight in original peer list
             for peer in resp.json()['peers']:
