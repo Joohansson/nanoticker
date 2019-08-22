@@ -52,8 +52,7 @@ repsInit = ['https://beta.api.nanocrawler.cc',
     'http://beta.nanode.cc',
     'https://json.nanoticker.info',
     'http://95.216.205.225',
-    'http://kamikaze.awiki.org/betaNanoNodeMonitor',
-    'http://173.249.54.87:8080'
+    'http://kamikaze.awiki.org/betaNanoNodeMonitor'
     ]
 
 reps = repsInit
@@ -73,56 +72,54 @@ def median(lst):
     else:
         return (sortedLst[index] + sortedLst[index + 1])/2.0
 
-async def fetch(session, url):
-    try:
-        with async_timeout.timeout(timeout+2):
-            async with session.get(url) as response:
-                try:
-                    r = await response.text()
-                except:
-                    r = None
-                return r
-
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout1: %r' %t))
-        pass
-
 async def getMonitor(url):
-    try:
-        with async_timeout.timeout(timeout+1):
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-                r = await fetch(session, url)
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+        try:
+            async with session.get(url) as response:
+                if response.status != 200 and response.headers['Content-Type'] != 'application/json':
+                    return
                 try:
-                    r = json.loads(r)
+                    #ensure the content is longer than 20 chars
+                    if int(response.headers['Content-Length']) < 20:
+                        return
+                except:
+                    pass
+                try:
+                    r = await response.json(content_type='application/json')
                     if r['currentBlock'] > 0:
                         return r
-                    else:
-                        return None
-                except:
-                    return None
 
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout2: %r' %t))
-        pass
+                except Exception as e:
+                    #print('Could not read json 1. Error: %r' %e)
+                    pass
+        except Exception as e:
+            #print('Could not read API from %r. Error: %r' %(url, e))
+            pass
 
 async def verifyMonitor(url):
-    try:
-        with async_timeout.timeout(timeout+1):
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-                r = await fetch(session, url)
+    async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+        try:
+            async with session.get(url) as response:
+                if response.status != 200 and response.headers['Content-Type'] != 'application/json':
+                    return
                 try:
-                    r = json.loads(r)
+                    #ensure the content is longer than 20 chars
+                    if int(response.headers['Content-Length']) < 20:
+                        return
+                except:
+                    pass
+                try:
+                    r = await response.json(content_type='application/json')
                     if r['currentBlock'] > 0:
                         url = url.replace('/api.php','')
                         return [r['nanoNodeAccount'], url]
-                    else:
-                        return None
-                except:
-                    return None
 
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout2: %r' %t))
-        pass
+                except Exception as e:
+                    #print('Could not read json 1. Error: %r' %e)
+                    pass
+        except Exception as e:
+            #print('Could not read API from %r. Error: %r' %(url,e))
+            pass
 
 SSL_PROTOCOLS = (asyncio.sslproto.SSLProtocol,)
 try:
@@ -184,14 +181,6 @@ def chunks(l, n):
 def timeLog(msg):
     return str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')) + ": " + msg
 
-async def apiSleep(startTime):
-    sleep = runAPIEvery - (time.time() - startTime)
-    await asyncio.sleep(sleep)
-
-async def peerSleep(startTime):
-    sleep = runPeersEvery - (time.time() - startTime)
-    await asyncio.sleep(sleep)
-
 async def getAPI():
     global minCount
     global pLatestVersionStat
@@ -204,7 +193,7 @@ async def getAPI():
 
     await asyncio.sleep(10) #Wait for some values to be calculated from getPeers
     while 1:
-        log.info(timeLog("Get API"))
+        #log.info(timeLog("Get API"))
         jsonData = []
         startTime = time.time() #to measure the loop speed
         """Split URLS in max X concurrent requests"""
@@ -217,20 +206,20 @@ async def getAPI():
             try:
                 with async_timeout.timeout(timeout):
                     await asyncio.gather(*tasks)
-
             except asyncio.TimeoutError as t:
+                #print('Monitor API read timeout: %r' %t)
                 pass
-                #log.warning(timeLog('Monitor API read timeout: %r' %t))
-
-            for i, task in enumerate(tasks):
-                try:
-                    if task.result()['currentBlock'] > 0:
-                        jsonData.append(task.result())
-                        log.info(timeLog('Valid: ' + task.result()['nanoNodeName']))
-
-                except Exception as e:
-                    pass
-                    log.warning(timeLog('Could not read json. Error: %r' %e))
+            finally:
+                for i, task in enumerate(tasks):
+                    if task.done() and not task.cancelled():
+                        try:
+                            if task.result() is not None and task.result():
+                                if task.result()['currentBlock'] > 0:
+                                    jsonData.append(task.result())
+                                    log.info(timeLog('Valid: ' + task.result()['nanoNodeName']))
+                        except Exception as e:
+                            print('Could not read json for %r. Error: %r' %(task.result(),e))
+                            pass
 
         countData = []
         cementedData = []
@@ -250,15 +239,9 @@ async def getAPI():
         limitedReps = [] #reps not supporting all parameters
         supportedReps = [] #reps supporting all parameters
 
-        try:
-            if jsonData is None or type(jsonData[0]) == bool:
-                log.info(timeLog('type error'))
-                await apiSleep(startTime)
-                continue
-        except:
-            await apiSleep(startTime)
+        if jsonData is None or type(jsonData[0]) == bool:
+            log.info(timeLog('type error'))
             continue
-
         for j in jsonData:
             if len(j) > 0:
                 try:
@@ -273,20 +256,20 @@ async def getAPI():
                     count = 0
                     continue
 
+                #Validate if the monitor is for nano, banano or nano-beta (if possible)
+                try:
+                    currency = j['currency']
+                    if currency != activeCurrency:
+                        log.info(timeLog('curr warning'))
+                        continue
+                except Exception as e:
+                    pass
+
                 try:
                     name = j['nanoNodeName']
                 except Exception as e:
                     name = -1
                     fail = True
-
-                #Validate if the monitor is for nano, banano or nano-beta (if possible)
-                try:
-                    currency = j['currency']
-                    if currency != activeCurrency:
-                        log.info(timeLog('Bad currency: ' + name))
-                        continue
-                except Exception as e:
-                    pass
 
                 try:
                     nanoNodeAccount = j['nanoNodeAccount']
@@ -408,13 +391,10 @@ async def getAPI():
                     procTimeData.append(procTime)
 
                 #If weight missing, try find matching weight from peer table
-                try:
-                    if weight < 0:
-                        for p in peerInfo:
-                            if str(nanoNodeAccount) == str(p['account']):
-                                weight = str(int(p['weight']) / int(1000000000000000000000000000000))
-                except:
-                    pass
+                if weight < 0:
+                    for p in peerInfo:
+                        if str(nanoNodeAccount) == str(p['account']):
+                            weight = str(int(p['weight']) / int(1000000000000000000000000000000))
 
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
                 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
@@ -455,99 +435,97 @@ async def getAPI():
         memoryMin = 0
         procTimeMin = 0
 
-        try:
-            if len(countData) > 0:
-                blockCountMedian = int(median(countData))
-                blockCountMax = int(max(countData))
-                blockCountMin = int(min(countData))
-                #Update the min allowed block count
-                minCount = int(blockCountMax/2)
+        if len(countData) > 0:
+            blockCountMedian = int(median(countData))
+            blockCountMax = int(max(countData))
+            blockCountMin = int(min(countData))
+            #Update the min allowed block count
+            minCount = int(blockCountMax/2)
 
-            if len(cementedData) > 0:
-                cementedMedian = int(median(cementedData))
-                cementedMax = int(max(cementedData))
-                cementedMin = int(min(cementedData))
-            if len(uncheckedData) > 0:
-                uncheckedMedian = int(median(uncheckedData))
-                uncheckedMax = int(max(uncheckedData))
-                uncheckedMin = int(min(uncheckedData))
-            if len(peersData) > 0:
-                peersMedian = int(median(peersData))
-                peersMax = int(max(peersData))
-                peersMin = int(min(peersData))
-            if len(syncData) > 0:
-                syncMedian = float(median(syncData))
-                syncMax = float(max(syncData))
-                syncMin = float(min(syncData))
-            if len(conf50Data) > 0:
-                conf50Median = int(median(conf50Data))
-            if len(conf75Data) > 0:
-                conf75Median = int(median(conf75Data))
-            if len(conf90Data) > 0:
-                conf90Median = int(median(conf90Data))
-            if len(conf99Data) > 0:
-                conf99Median = int(median(conf99Data))
-            if len(confAveData) > 0:
-                confAveMedian = int(median(confAveData))
-                confAveMin = int(min(confAveData))
-            if len(memoryData) > 0:
-                memoryMedian = int(median(memoryData))
-                memoryMax = int(max(memoryData))
-                memoryMin = int(min(memoryData))
-            if len(procTimeData) > 0:
-                procTimeMedian = int(median(procTimeData))
-                procTimeMax = int(max(procTimeData))
-                procTimeMin = int(min(procTimeData))
+        if len(cementedData) > 0:
+            cementedMedian = int(median(cementedData))
+            cementedMax = int(max(cementedData))
+            cementedMin = int(min(cementedData))
+        if len(uncheckedData) > 0:
+            uncheckedMedian = int(median(uncheckedData))
+            uncheckedMax = int(max(uncheckedData))
+            uncheckedMin = int(min(uncheckedData))
+        if len(peersData) > 0:
+            peersMedian = int(median(peersData))
+            peersMax = int(max(peersData))
+            peersMin = int(min(peersData))
+        if len(syncData) > 0:
+            syncMedian = float(median(syncData))
+            syncMax = float(max(syncData))
+            syncMin = float(min(syncData))
+        if len(conf50Data) > 0:
+            conf50Median = int(median(conf50Data))
+        if len(conf75Data) > 0:
+            conf75Median = int(median(conf75Data))
+        if len(conf90Data) > 0:
+            conf90Median = int(median(conf90Data))
+        if len(conf99Data) > 0:
+            conf99Median = int(median(conf99Data))
+        if len(confAveData) > 0:
+            confAveMedian = int(median(confAveData))
+            confAveMin = int(min(confAveData))
+        if len(memoryData) > 0:
+            memoryMedian = int(median(memoryData))
+            memoryMax = int(max(memoryData))
+            memoryMin = int(min(memoryData))
+        if len(procTimeData) > 0:
+            procTimeMedian = int(median(procTimeData))
+            procTimeMax = int(max(procTimeData))
+            procTimeMin = int(min(procTimeData))
 
-            #Write output file
-            statData = {\
-                "blockCountMedian":int(blockCountMedian),\
-                "blockCountMax":int(blockCountMax),\
-                "blockCountMin":int(blockCountMin),\
-                "cementedMedian":int(cementedMedian),\
-                "cementedMax":int(cementedMax),\
-                "cementedMin":int(cementedMin),\
-                "uncheckedMedian":int(uncheckedMedian),\
-                "uncheckedMax":int(uncheckedMax),\
-                "uncheckedMin":int(uncheckedMin),\
-                "peersMedian":str(peersMedian),\
-                "peersMax":int(peersMax),\
-                "peersMin":int(peersMin),\
-                "syncMedian":float(syncMedian),\
-                "syncMax":float(syncMax),\
-                "syncMin":float(syncMin),\
-                "memoryMedian":int(memoryMedian),\
-                "memoryMax":int(memoryMax),\
-                "memoryMin":int(memoryMin),\
-                "procTimeMedian":int(procTimeMedian),\
-                "procTimeMax":int(procTimeMax),\
-                "procTimeMin":int(procTimeMin),\
-                "conf50Median":int(conf50Median),\
-                "conf75Median":int(conf75Median),\
-                "conf90Median":int(conf90Median),\
-                "conf99Median":int(conf99Median),\
-                "confAveMedian":int(confAveMedian),\
-                "confAveMin":int(confAveMin),\
-                "lenBlockCount":int(len(countData)),\
-                "lenCemented":int(len(cementedData)),\
-                "lenUnchecked":int(len(uncheckedData)),\
-                "lenPeers":int(len(peersData)),\
-                "lenConf50":int(len(conf50Data)),\
-                "lenMemory":int(len(memoryData)),\
-                "lenProcTime":int(len(procTimeData)),\
-                "pLatestVersionStat":pLatestVersionStat,\
-                "pTypesStat":pTypesStat,\
-                "pStakeTotalStat":pStakeTotalStat,\
-                "pStakeRequiredStat":pStakeRequiredStat,\
-                "pStakeLatestVersionStat":pStakeLatestVersionStat,\
-                "pStakeOnline":latestOnlineWeight,\
-                "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
-                "lastUpdatedUnix":str(time.time()),\
-                }
+        #Write output file
+        statData = {\
+            "blockCountMedian":int(blockCountMedian),\
+            "blockCountMax":int(blockCountMax),\
+            "blockCountMin":int(blockCountMin),\
+            "cementedMedian":int(cementedMedian),\
+            "cementedMax":int(cementedMax),\
+            "cementedMin":int(cementedMin),\
+            "uncheckedMedian":int(uncheckedMedian),\
+            "uncheckedMax":int(uncheckedMax),\
+            "uncheckedMin":int(uncheckedMin),\
+            "peersMedian":str(peersMedian),\
+            "peersMax":int(peersMax),\
+            "peersMin":int(peersMin),\
+            "syncMedian":float(syncMedian),\
+            "syncMax":float(syncMax),\
+            "syncMin":float(syncMin),\
+            "memoryMedian":int(memoryMedian),\
+            "memoryMax":int(memoryMax),\
+            "memoryMin":int(memoryMin),\
+            "procTimeMedian":int(procTimeMedian),\
+            "procTimeMax":int(procTimeMax),\
+            "procTimeMin":int(procTimeMin),\
+            "conf50Median":int(conf50Median),\
+            "conf75Median":int(conf75Median),\
+            "conf90Median":int(conf90Median),\
+            "conf99Median":int(conf99Median),\
+            "confAveMedian":int(confAveMedian),\
+            "confAveMin":int(confAveMin),\
+            "lenBlockCount":int(len(countData)),\
+            "lenCemented":int(len(cementedData)),\
+            "lenUnchecked":int(len(uncheckedData)),\
+            "lenPeers":int(len(peersData)),\
+            "lenConf50":int(len(conf50Data)),\
+            "lenMemory":int(len(memoryData)),\
+            "lenProcTime":int(len(procTimeData)),\
+            "pLatestVersionStat":pLatestVersionStat,\
+            "pTypesStat":pTypesStat,\
+            "pStakeTotalStat":pStakeTotalStat,\
+            "pStakeRequiredStat":pStakeRequiredStat,\
+            "pStakeLatestVersionStat":pStakeLatestVersionStat,\
+            "pStakeOnline":latestOnlineWeight,\
+            "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
+            "lastUpdatedUnix":str(time.time()),\
+            }
 
-        except:
-            pass
-
+        log.info(timeLog('BlockCountMedian: ' + str(blockCountMedian)))
+        log.info(timeLog('blockCountMax: ' + str(blockCountMax)))
         if blockCountMedian > 0 and blockCountMax > 0:
             try:
                 with open(statFile, 'w') as outfile:
@@ -563,7 +541,8 @@ async def getAPI():
 
         #print(time.time() - startTime)
         #calculate final sleep based on execution time
-        await apiSleep(startTime)
+        sleep = runAPIEvery - (time.time() - startTime)
+        await asyncio.sleep(sleep)
 
 async def getPeers():
     global reps
@@ -644,7 +623,8 @@ async def getPeers():
 
         except Exception as e:
             log.warning(timeLog("Could not read peers from node RPC. %r" %e))
-            await peerSleep(startTime)
+            sleep = runPeersEvery - (time.time() - startTime)
+            await asyncio.sleep(sleep)
             continue #break out of main loop and try again next iteration
 
         #Grab voting weight stat
@@ -776,34 +756,36 @@ async def getPeers():
             try:
                 with async_timeout.timeout(timeout):
                     await asyncio.gather(*tasks)
-
             except asyncio.TimeoutError as t:
+                #print('Monitor API read timeout: %r' %t)
                 pass
-                #log.warning(timeLog('Monitor Peer read timeout: %r' %t))
+            finally:
+                for i, task in enumerate(tasks):
+                    if task.done() and not task.cancelled():
+                        try:
+                            if task.result() is not None and task.result():
+                                #Save valid peer urls
+                                #Check for duplicate account (IP same as hostname)
+                                exists = False
+                                for account in repAccounts:
+                                    if task.result()[0] == account:
+                                        exists = True
+                                        break
+                                if not exists:
+                                    #print("Valid"+task.result()[1])
+                                    validPaths.append(task.result()[1])
+                                repAccounts.append(task.result()[0])
 
-            for i, task in enumerate(tasks):
-                try:
-                    if task.result() is not None and task.result():
-                        #Save valid peer urls
-                        #Check for duplicate account (IP same as hostname)
-                        exists = False
-                        for account in repAccounts:
-                            if task.result()[0] == account:
-                                exists = True
-                                break
-                        if not exists:
-                            validPaths.append(task.result()[1])
-                        repAccounts.append(task.result()[0])
-
-                except Exception as e:
-                    print('Could not read json for %r. Error: %r' %(task.result(),e))
-                    pass
+                        except Exception as e:
+                            print('Could not read json for %r. Error: %r' %(task.result(),e))
+                            pass
 
         #Update the final list
         reps = validPaths.copy()
         log.info(reps)
 
-        await peerSleep(startTime)
+        sleep = runPeersEvery - (time.time() - startTime)
+        await asyncio.sleep(sleep)
 
 loop = asyncio.get_event_loop()
 #PYTHON >3.7
