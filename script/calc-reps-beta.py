@@ -56,6 +56,9 @@ repsInit = ['https://beta.api.nanocrawler.cc',
     'http://173.249.54.87:8080'
     ]
 
+#Excluded from any result
+blacklist = ['https://json.nanoticker.info']
+
 reps = repsInit
 latestOnlineWeight = 0 #used for calculating PR status
 
@@ -586,6 +589,13 @@ async def getPeers():
 
         log.info(timeLog("Verifying peers"))
         monitorPaths = repsInit.copy()
+
+        #Apply blacklist
+        for i,node in enumerate(monitorPaths):
+            for exl in blacklist:
+                if node == exl:
+                    del monitorPaths[i]
+                    break
 
         #Grab connected peer IPs from the node
         params = {
