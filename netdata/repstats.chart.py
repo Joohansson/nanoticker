@@ -413,6 +413,6 @@ class Service(UrlService):
         sum = 0
         for cps in self.cps_median_old_pr:
             sum = sum + cps
-        r['cps_median_10'] = sum / len(self.cps_median_old_pr)
+        r['cps_median_10_pr'] = sum / len(self.cps_median_old_pr)
 
         return r or None
