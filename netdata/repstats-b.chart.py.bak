@@ -23,10 +23,7 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 
 # charts order (can be overridden if you want less charts, or different order)
 
-ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median',\
-'confirmations', 'block_diff', 'memory', 'api_time', 'supported', 'peerstat',\
-'block_count_max_pr', 'block_count_median_pr', 'unchecked_pr', 'peers_pr', 'tps_max_pr', 'tps_median_pr',\
-'confirmations_pr', 'block_diff_pr', 'memory_pr', 'api_time_pr', 'supported_pr']
+ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median', 'confirmations', 'block_diff', 'memory', 'api_time', 'supported', 'peerstat']
 
 CHARTS = {
     'block_count_max': {
@@ -130,98 +127,6 @@ CHARTS = {
             ["stake_tot", None, 'absolute',1,1000]
         ]
     },
-    #PR ONLY
-    'block_count_max_pr': {
-        'options': [None, 'Blocks Max', 'blocks', 'Checked Blocks','reps.blocks', 'area'],
-        'lines': [
-            ["saved_blocks_max_pr", "checked", None, 'absolute'],
-            ["confirmed_max_pr", "conf", None, 'absolute']
-        ]
-    },
-    'block_count_median_pr': {
-        'options': [None, 'Blocks Median', 'blocks', 'Checked Blocks','reps.blocks', 'area'],
-        'lines': [
-            ["saved_blocks_median_pr", "checked", None, 'absolute'],
-            ["confirmed_median_pr", "conf", None, 'absolute']
-        ]
-    },
-    'unchecked_pr': {
-        'options': [None, 'Unchecked', 'blocks', 'Unchecked Blocks','reps.unchecked', 'line'],
-        'lines': [
-            ["unchecked_max_pr", "max", None, 'absolute'],
-            ["unchecked_median_pr", "median", None, 'absolute'],
-            ["unchecked_min_pr", "min", None, 'absolute']
-        ]
-    },
-    'peers_pr': {
-        'options': [None, 'Peers', 'peers', 'Peers','reps.peers', 'line'],
-        'lines': [
-            ["peers_max_pr", "max", None, 'absolute'],
-            ["peers_median_pr", "median", None, 'absolute'],
-            ["peers_min_pr", "min", None, 'absolute']
-        ]
-    },
-    'tps_max_pr': {
-        'options': [None, 'TPS Max', 'tx/s', 'TPS 10 min','reps.tps', 'line'],
-        'lines': [
-            ["bps_max_10_pr", None, 'absolute', 1, 1000],
-            ["cps_max_10_pr", None, 'absolute', 1, 1000]
-        ]
-    },
-    'tps_median_pr': {
-        'options': [None, 'TPS Median', 'tx/s', 'TPS 10 min','reps.tps', 'line'],
-        'lines': [
-            ["bps_median_10_pr", None, 'absolute', 1, 1000],
-            ["cps_median_10_pr", None, 'absolute', 1, 1000]
-        ]
-    },
-    'confirmations_pr': {
-        'options': [None, 'Confirmation Time', 'ms', 'Conf-Time Max 5min/2048tx','reps.conf', 'line'],
-        'lines': [
-            ["average_min_pr", "ave min", None, 'absolute'],
-            ["average_median_pr", "average", None, 'absolute'],
-            ["perc_50_pr", "perc 50", None, 'absolute'],
-            #["perc_75_pr", "perc 75", None, 'absolute'],
-            ["perc_90_pr", "perc 90", None, 'absolute'],
-            #["perc_95_pr", "perc 95", None, 'absolute'],
-            ["perc_99_pr", "perc 99", None, 'absolute']
-        ]
-    },
-    'block_diff_pr': {
-        'options': [None, 'Block Diff', 'blocks', 'Block Diff','reps.diff', 'line'],
-        'lines': [
-            ["diff_max_pr", None, 'absolute'],
-            ["diff_median_pr", None, 'absolute']
-
-        ]
-    },
-    'memory_pr': {
-        'options': [None, 'Memory', 'MB', 'Memory Usage','reps.memory', 'line'],
-        'lines': [
-            ["memory_max_pr", "max", None, 'absolute', 1, 1000],
-            ["memory_median_pr", "median", None, 'absolute', 1, 1000],
-            ["memory_min_pr", "min", None, 'absolute', 1, 1000]
-        ]
-    },
-    'api_time_pr': {
-        'options': [None, 'API Time', 'ms', 'API processing time','reps.api', 'line'],
-        'lines': [
-            ["api_max_pr", "max", None, 'absolute'],
-            ["api_median_pr", "median", None, 'absolute'],
-            ["api_min_pr", "min", None, 'absolute']
-        ]
-    },
-    'supported_pr': {
-        'options': [None, 'Supported', 'monitors', 'NodeMonitors Support','reps.supported', 'line'],
-        'lines': [
-            ["supported_blocks_pr", "block count", None, 'absolute'],
-            ["supported_cemented_pr", "cemented", None, 'absolute'],
-            ["supported_peers_pr", "peers", None, 'absolute'],
-            ["supported_conf_pr", "conf times", None, 'absolute'],
-            ["supported_proc_pr", "proc time", None, 'absolute'],
-            ["supported_memory_pr", "memory", None, 'absolute']
-        ]
-    },
 }
 
 class Service(UrlService):
@@ -238,16 +143,6 @@ class Service(UrlService):
         self.cemented_median_old = 0 #cemented count previous poll
         self.cps_max_old = deque([0]*40) #cps history last 20 polls, init with 20 zeroes
         self.cps_median_old = deque([0]*40) #cps history last 20 polls, init with 20 zeroes
-
-        #PR ONLY
-        self.blocks_max_old_pr = 0 #block count previous poll
-        self.blocks_median_old_pr = 0 #block count previous poll
-        self.bps_max_old_pr = deque([0]*40) #tps history last 20 polls, init with 20 zeroes
-        self.bps_median_old_pr = deque([0]*40) #tps history last 20 polls, init with 20 zeroes
-        self.cemented_max_old_pr = 0 #cemented count previous poll
-        self.cemented_median_old_pr = 0 #cemented count previous poll
-        self.cps_max_old_pr = deque([0]*40) #cps history last 20 polls, init with 20 zeroes
-        self.cps_median_old_pr = deque([0]*40) #cps history last 20 polls, init with 20 zeroes
 
     def _get_data(self):
         """
@@ -273,18 +168,6 @@ class Service(UrlService):
             ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_memory','lenMemory',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
-
-        apiKeys_pr = [('saved_blocks_max_pr','blockCountMax_pr',int,1), ('saved_blocks_median_pr','blockCountMedian_pr',int,1), ('confirmed_max_pr','cementedMax_pr',int,1), ('confirmed_median_pr','cementedMedian_pr',int,1),
-            ('unchecked_max_pr','uncheckedMax_pr',int,1),('unchecked_median_pr','uncheckedMedian_pr',int,1),('unchecked_min_pr','uncheckedMin_pr',int,1),('peers_max_pr','peersMax_pr',int,1),
-            ('peers_median_pr','peersMedian_pr',int,1),('peers_min_pr','peersMin_pr',int,1),('average_median_pr','confAveMedian_pr',int,1),('average_min_pr','confAveMin_pr',int,1),('perc_50_pr','conf50Median_pr',int,1),
-            ('perc_75_pr','conf75Median_pr',int,1),('perc_90_pr','conf90Median_pr',int,1),('perc_99_pr','conf99Median_pr',int,1),('diff_median_pr','diffMedian_pr',int,1),
-            ('diff_max_pr','diffMax_pr',int,1),('memory_max_pr','memoryMax_pr',int,1),('memory_median_pr','memoryMedian_pr',int,1),('memory_min_pr','memoryMin_pr',int,1),
-            ('api_max_pr','procTimeMax_pr',int,1),('api_median_pr','procTimeMedian_pr',int,1),('api_min_pr','procTimeMin_pr',int,1),
-            ('supported_blocks_pr','lenBlockCount_pr',int,1),('supported_cemented_pr','lenCemented_pr',int,1),('supported_peers_pr','lenPeers_pr',int,1),
-            ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_memory_pr','lenMemory_pr',int,1),
-            ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
-            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
-
         r = dict()
 
         #Extract data from json based on repstat keys
@@ -295,14 +178,7 @@ class Service(UrlService):
                 r[new_key] = 0 #replace with 0 if value missing from API
                 continue
 
-        #PR ONLY
-        for new_key, orig_key, keytype, mul in apiKeys_pr:
-            try:
-                r[new_key] = keytype(mul * parsed[orig_key]) #for example multiply by 1000 here
-            except Exception:
-                r[new_key] = 0 #replace with 0 if value missing from API
-                continue
-
+        #Calculate bps max based on previous block read
         if (self.blocks_max_old == 0):
             self.blocks_max_old = r['saved_blocks_max'] #Initialize with block count first time to not get large tps before running one iteration
         r['bps_max'] = 1000 * (r['saved_blocks_max']-self.blocks_max_old) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
@@ -357,62 +233,5 @@ class Service(UrlService):
         for cps in self.cps_median_old:
             sum = sum + cps
         r['cps_median_10'] = sum / len(self.cps_median_old)
-
-        #----------PR ONLY--------
-        #Calculate bps max based on previous block read
-        if (self.blocks_max_old_pr == 0):
-            self.blocks_max_old_pr = r['saved_blocks_max_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_max_pr'] = 1000 * (r['saved_blocks_max_pr']-self.blocks_max_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_max_old_pr = r['saved_blocks_max_pr'] #update for next iteration
-        self.bps_max_old_pr.append(r['bps_max_pr'])
-        self.bps_max_old_pr.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_max_old_pr:
-            sum = sum + bps
-        r['bps_max_10_pr'] = sum / len(self.bps_max_old_pr)
-
-        #Calculate bps median based on previous block read
-        if (self.blocks_median_old_pr == 0):
-            self.blocks_median_old_pr = r['saved_blocks_median_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_median_pr'] = 1000 * (r['saved_blocks_median_pr']-self.blocks_median_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_median_old_pr = r['saved_blocks_median_pr'] #update for next iteration
-        self.bps_median_old_pr.append(r['bps_median_pr'])
-        self.bps_median_old_pr.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_median_old_pr:
-            sum = sum + bps
-        r['bps_median_10_pr'] = sum / len(self.bps_median_old_pr)
-
-        #Calculate cps max based on previous block read
-        if (self.cemented_max_old_pr == 0):
-            self.cemented_max_old_pr = r['confirmed_max_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_max_pr'] = 1000 * (r['confirmed_max_pr']-self.cemented_max_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_max_old_pr = r['confirmed_max_pr'] #update for next iteration
-        self.cps_max_old_pr.append(r['cps_max_pr'])
-        self.cps_max_old_pr.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_max_old_pr:
-            sum = sum + cps
-        r['cps_max_10_pr'] = sum / len(self.cps_max_old_pr)
-
-        #Calculate cps median based on previous block read
-        if (self.cemented_median_old_pr == 0):
-            self.cemented_median_old_pr = r['confirmed_median_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_median_pr'] = 1000 * (r['confirmed_median_pr']-self.cemented_median_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_median_old_pr = r['confirmed_median_pr'] #update for next iteration
-        self.cps_median_old_pr.append(r['cps_median_pr'])
-        self.cps_median_old_pr.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_median_old_pr:
-            sum = sum + cps
-        r['cps_median_10'] = sum / len(self.cps_median_old_pr)
 
         return r or None
