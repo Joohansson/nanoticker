@@ -111,13 +111,13 @@ var netdataTheme = 'darkly'; // this is darker
 // This has to be done, after dashboard.js is loaded
 
 // destroy charts not shown (lowers memory on the browser)
-NETDATA.options.current.destroy_on_hide = true;
+NETDATA.options.current.destroy_on_hide = false;
 
 // set this to false, to always show all dimensions
 NETDATA.options.current.eliminate_zero_dimensions = false;
 
 // lower the pressure on this browser
-NETDATA.options.current.concurrent_refreshes = true;
+NETDATA.options.current.concurrent_refreshes = false;
 
 // if the tv browser is too slow (a pi?)
 // set this to false
@@ -722,7 +722,7 @@ setTimeout(function(){
     switch (order[0][0]) {
       case 1:
       case 2:
-        var diff = ''
+        var diff = 'Select a row..'
 
         if (order[0][1] == 'desc') {
           if (data) {

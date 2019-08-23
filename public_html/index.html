@@ -27,7 +27,7 @@
   <meta name="msapplication-TileColor" content="#2d89ef">
   <meta name="theme-color" content="#ffffff">
 
-	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190822-10">
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190823-2">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -109,13 +109,13 @@ var netdataTheme = 'darkly'; // this is darker
 // This has to be done, after dashboard.js is loaded
 
 // destroy charts not shown (lowers memory on the browser)
-NETDATA.options.current.destroy_on_hide = true;
+NETDATA.options.current.destroy_on_hide = false;
 
 // set this to false, to always show all dimensions
 NETDATA.options.current.eliminate_zero_dimensions = false;
 
 // lower the pressure on this browser
-NETDATA.options.current.concurrent_refreshes = true;
+NETDATA.options.current.concurrent_refreshes = false;
 
 // if the tv browser is too slow (a pi?)
 // set this to false
@@ -720,7 +720,7 @@ setTimeout(function(){
     switch (order[0][0]) {
       case 1:
       case 2:
-        var diff = ''
+        var diff = 'Select a row..'
 
         if (order[0][1] == 'desc') {
           if (data) {
