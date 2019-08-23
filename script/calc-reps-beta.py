@@ -15,16 +15,26 @@ import re
 import logging
 
 """CUSTOM VARS"""
-#nodeUrl = 'http://[::1]:7076' #main
-nodeUrl = 'http://[::1]:55000' #beta
-logFile="repstat.log"
-statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
-monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
-activeCurrency = 'nano-beta' #nano, banano or nano-beta
+BETA = True #SET TO False FOR MAIN NET
+
+if BETA:
+    #nodeUrl = 'http://[::1]:7076' #main
+    nodeUrl = 'http://[::1]:55000' #beta
+    logFile="repstat.log"
+    statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
+    monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
+    activeCurrency = 'nano-beta' #nano, banano or nano-beta
+    ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
+
+else:
+    nodeUrl = 'http://[::1]:7076' #main
+    logFile="repstat.log"
+    statFile = '/var/www/monitor/stats.json' #placed in a web server for public access
+    monitorFile = '/var/www/monitor/monitors.json' #placed in a web server for public access
+    activeCurrency = 'nano' #nano, banano or nano-beta
+    ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
 
 """LESS CUSTOM VARS"""
-#ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #main
-ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
 minCount = 1 #initial required block count
 timeout = 5 #http request timeout for API
 runAPIEvery = 15 #run API check every X sec
@@ -57,7 +67,7 @@ repsInit = ['https://beta.api.nanocrawler.cc',
     ]
 
 #Excluded from any result
-blacklist = ['https://json.nanoticker.info']
+blacklist = []
 
 reps = repsInit
 latestOnlineWeight = 0 #used for calculating PR status
@@ -77,54 +87,39 @@ def median(lst):
         return (sortedLst[index] + sortedLst[index + 1])/2.0
 
 async def fetch(session, url):
-    try:
-        with async_timeout.timeout(timeout+2):
-            async with session.get(url) as response:
-                try:
-                    r = await response.text()
-                except:
-                    r = None
+    async with session.get(url) as response:
+        try:
+            if (response.status == 200):
+                r = await response.text()
                 return r
-
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout1: %r' %t))
-        pass
+        except:
+            pass
 
 async def getMonitor(url):
     try:
-        with async_timeout.timeout(timeout+1):
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-                r = await fetch(session, url)
-                try:
-                    r = json.loads(r)
-                    if r['currentBlock'] > 0:
-                        return r
-                    else:
-                        return None
-                except:
-                    return None
-
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout2: %r' %t))
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+            r = await fetch(session, url)
+            try:
+                rjson = json.loads(r)
+                if rjson['currentBlock'] > 0:
+                    return [rjson, True, url, r]
+            except:
+                return [{}, False, url, r]
+    except:
         pass
 
 async def verifyMonitor(url):
     try:
-        with async_timeout.timeout(timeout+1):
-            async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
-                r = await fetch(session, url)
-                try:
-                    r = json.loads(r)
-                    if r['currentBlock'] > 0:
-                        url = url.replace('/api.php','')
-                        return [r['nanoNodeAccount'], url]
-                    else:
-                        return None
-                except:
-                    return None
-
-    except asyncio.TimeoutError as t:
-        #log.info(timeLog('aiohttp timeout2: %r' %t))
+        async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=False)) as session:
+            r = await fetch(session, url)
+            try:
+                r = json.loads(r)
+                if r['currentBlock'] > 0:
+                    url = url.replace('/api.php','')
+                    return [r['nanoNodeAccount'], url]
+            except:
+                pass
+    except:
         pass
 
 SSL_PROTOCOLS = (asyncio.sslproto.SSLProtocol,)
@@ -227,13 +222,17 @@ async def getAPI():
 
             for i, task in enumerate(tasks):
                 try:
-                    if task.result()['currentBlock'] > 0:
-                        jsonData.append(task.result())
-                        log.info(timeLog('Valid: ' + task.result()['nanoNodeName']))
+                    if task.result() is not None and task.result():
+                        if (task.result()[1]):
+                            if task.result()[0]['currentBlock'] > 0:
+                                jsonData.append(task.result()[0])
+                                #log.info(timeLog('Valid: ' + task.result()[0]['nanoNodeName']))
+                        else:
+                            log.warning(timeLog('Could not read json from %s. Result: %s' %(task.result()[2], task.result()[3])))
 
                 except Exception as e:
-                    pass
-                    log.warning(timeLog('Could not read json. Error: %r' %e))
+                    log.warning(timeLog('Could not read response. Error: %r' %e))
+
 
         countData = []
         cementedData = []
@@ -248,9 +247,22 @@ async def getAPI():
         memoryData = []
         procTimeData = []
 
+        #PR ONLY
+        countData_pr = []
+        cementedData_pr = []
+        uncheckedData_pr = []
+        peersData_pr = []
+        syncData_pr = []
+        conf50Data_pr = []
+        conf75Data_pr = []
+        conf90Data_pr = []
+        conf99Data_pr = []
+        confAveData_pr = []
+        memoryData_pr = []
+        procTimeData_pr = []
+
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
-        limitedReps = [] #reps not supporting all parameters
         supportedReps = [] #reps supporting all parameters
 
         try:
@@ -269,10 +281,10 @@ async def getAPI():
 
                     #skip if the node is out of sync
                     if count < minCount:
-                        log.info(timeLog('mincount warning'))
+                        #log.info(timeLog('mincount warning'))
                         continue
                 except Exception as e:
-                    log.info(timeLog('currentBlock warning'))
+                    log.warning(timeLog('currentBlock warning'))
                     count = 0
                     continue
 
@@ -386,29 +398,63 @@ async def getAPI():
 
                 #read all monitor info
                 countData.append(count)
+                if (PRStatus):
+                    countData_pr.append(count)
 
                 if (cemented > 0):
                     cementedData.append(cemented)
+                    if (PRStatus):
+                        cementedData_pr.append(cemented)
+
                 if (unchecked > 0):
                     uncheckedData.append(unchecked)
+                    if (PRStatus):
+                        uncheckedData_pr.append(unchecked)
+
                 if (peers > 0):
                     peersData.append(peers)
+                    if (PRStatus):
+                        peersData_pr.append(peers)
+
                 if (sync > 0):
                     syncData.append(sync)
+                    if (PRStatus):
+                        syncData_pr.append(sync)
+
                 if (conf50 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf50Data.append(conf50)
+                    if (PRStatus):
+                        conf50Data_pr.append(conf50)
+
                 if (conf75 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf75Data.append(conf75)
+                    if (PRStatus):
+                        conf75Data_pr.append(conf75)
+
                 if (conf90 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf90Data.append(conf90)
+                    if (PRStatus):
+                        conf90Data_pr.append(conf90)
+
                 if (conf99 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf99Data.append(conf99)
+                    if (PRStatus):
+                        conf99Data_pr.append(conf99)
+
                 if (confAve > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     confAveData.append(confAve)
+                    if (PRStatus):
+                        confAveData_pr.append(confAve)
+
                 if (memory > 0):
                     memoryData.append(memory)
+                    if (PRStatus):
+                        memoryData_pr.append(memory)
+
                 if (procTime > 0):
                     procTimeData.append(procTime)
+                    if (PRStatus):
+                        procTimeData_pr.append(procTime)
 
                 #If weight missing, try find matching weight from peer table
                 try:
@@ -432,7 +478,7 @@ async def getAPI():
         cementedMedian = 0
         uncheckedMedian = 0
         peersMedian = 0
-        syncMedian = 0
+        diffMedian = 0
         conf50Median = 0
         conf75Median = 0
         conf90Median = 0
@@ -445,7 +491,7 @@ async def getAPI():
         cementedMax = 0
         uncheckedMax = 0
         peersMax = 0
-        syncMax = 0
+        diffMax = 0
         memoryMax = 0
         procTimeMax = 0
 
@@ -453,10 +499,39 @@ async def getAPI():
         cementedMin = 0
         uncheckedMin = 0
         peersMin = 0
-        syncMin = 0
         confAveMin = 0
         memoryMin = 0
         procTimeMin = 0
+
+        #PR ONLY
+        blockCountMedian_pr = 0
+        cementedMedian_pr = 0
+        uncheckedMedian_pr = 0
+        peersMedian_pr = 0
+        diffMedian_pr = 0
+        conf50Median_pr = 0
+        conf75Median_pr = 0
+        conf90Median_pr = 0
+        conf99Median_pr = 0
+        confAveMedian_pr = 0
+        memoryMedian_pr = 0
+        procTimeMedian_pr = 0
+
+        blockCountMax_pr = 0
+        cementedMax_pr = 0
+        uncheckedMax_pr = 0
+        peersMax_pr = 0
+        diffMax_pr = 0
+        memoryMax_pr = 0
+        procTimeMax_pr = 0
+
+        blockCountMin_pr = 0
+        cementedMin_pr = 0
+        uncheckedMin_pr = 0
+        peersMin_pr = 0
+        confAveMin_pr = 0
+        memoryMin_pr = 0
+        procTimeMin_pr = 0
 
         try:
             if len(countData) > 0:
@@ -465,6 +540,11 @@ async def getAPI():
                 blockCountMin = int(min(countData))
                 #Update the min allowed block count
                 minCount = int(blockCountMax/2)
+
+                #Calculate diff
+                if (blockCountMax > 0):
+                    diffMedian = blockCountMax - blockCountMedian
+                    diffMax = blockCountMax - blockCountMin
 
             if len(cementedData) > 0:
                 cementedMedian = int(median(cementedData))
@@ -478,10 +558,6 @@ async def getAPI():
                 peersMedian = int(median(peersData))
                 peersMax = int(max(peersData))
                 peersMin = int(min(peersData))
-            if len(syncData) > 0:
-                syncMedian = float(median(syncData))
-                syncMax = float(max(syncData))
-                syncMin = float(min(syncData))
             if len(conf50Data) > 0:
                 conf50Median = int(median(conf50Data))
             if len(conf75Data) > 0:
@@ -502,6 +578,49 @@ async def getAPI():
                 procTimeMax = int(max(procTimeData))
                 procTimeMin = int(min(procTimeData))
 
+            #PR ONLY
+            if len(countData_pr) > 0:
+                blockCountMedian_pr = int(median(countData_pr))
+                blockCountMax_pr = int(max(countData_pr))
+                blockCountMin_pr = int(min(countData_pr))
+
+                #Calculate diff
+                if (blockCountMax_pr > 0):
+                    diffMedian_pr = blockCountMax_pr - blockCountMedian_pr
+                    diffMax_pr = blockCountMax_pr - blockCountMin_pr
+
+            if len(cementedData_pr) > 0:
+                cementedMedian_pr = int(median(cementedData_pr))
+                cementedMax_pr = int(max(cementedData_pr))
+                cementedMin_pr = int(min(cementedData_pr))
+            if len(uncheckedData_pr) > 0:
+                uncheckedMedian_pr = int(median(uncheckedData_pr))
+                uncheckedMax_pr = int(max(uncheckedData_pr))
+                uncheckedMin_pr = int(min(uncheckedData_pr))
+            if len(peersData_pr) > 0:
+                peersMedian_pr = int(median(peersData_pr))
+                peersMax_pr = int(max(peersData_pr))
+                peersMin_pr = int(min(peersData_pr))
+            if len(conf50Data_pr) > 0:
+                conf50Median_pr = int(median(conf50Data_pr))
+            if len(conf75Data_pr) > 0:
+                conf75Median_pr = int(median(conf75Data_pr))
+            if len(conf90Data_pr) > 0:
+                conf90Median_pr = int(median(conf90Data_pr))
+            if len(conf99Data_pr) > 0:
+                conf99Median_pr = int(median(conf99Data_pr))
+            if len(confAveData_pr) > 0:
+                confAveMedian_pr = int(median(confAveData_pr))
+                confAveMin_pr = int(min(confAveData_pr))
+            if len(memoryData_pr) > 0:
+                memoryMedian_pr = int(median(memoryData_pr))
+                memoryMax_pr = int(max(memoryData_pr))
+                memoryMin_pr = int(min(memoryData_pr))
+            if len(procTimeData_pr) > 0:
+                procTimeMedian_pr = int(median(procTimeData_pr))
+                procTimeMax_pr = int(max(procTimeData_pr))
+                procTimeMin_pr = int(min(procTimeData_pr))
+
             #Write output file
             statData = {\
                 "blockCountMedian":int(blockCountMedian),\
@@ -516,9 +635,8 @@ async def getAPI():
                 "peersMedian":str(peersMedian),\
                 "peersMax":int(peersMax),\
                 "peersMin":int(peersMin),\
-                "syncMedian":float(syncMedian),\
-                "syncMax":float(syncMax),\
-                "syncMin":float(syncMin),\
+                "diffMedian":float(diffMedian),\
+                "diffMax":float(diffMax),\
                 "memoryMedian":int(memoryMedian),\
                 "memoryMax":int(memoryMax),\
                 "memoryMin":int(memoryMin),\
@@ -538,6 +656,41 @@ async def getAPI():
                 "lenConf50":int(len(conf50Data)),\
                 "lenMemory":int(len(memoryData)),\
                 "lenProcTime":int(len(procTimeData)),\
+                #PR ONLY START
+                "blockCountMedian_pr":int(blockCountMedian_pr),\
+                "blockCountMax_pr":int(blockCountMax_pr),\
+                "blockCountMin_pr":int(blockCountMin_pr),\
+                "cementedMedian_pr":int(cementedMedian_pr),\
+                "cementedMax_pr":int(cementedMax_pr),\
+                "cementedMin_pr":int(cementedMin_pr),\
+                "uncheckedMedian_pr":int(uncheckedMedian_pr),\
+                "uncheckedMax_pr":int(uncheckedMax_pr),\
+                "uncheckedMin_pr":int(uncheckedMin_pr),\
+                "peersMedian_pr":str(peersMedian_pr),\
+                "peersMax_pr":int(peersMax_pr),\
+                "peersMin_pr":int(peersMin_pr),\
+                "diffMedian_pr":float(diffMedian_pr),\
+                "diffMax_pr":float(diffMax_pr),\
+                "memoryMedian_pr":int(memoryMedian_pr),\
+                "memoryMax_pr":int(memoryMax_pr),\
+                "memoryMin_pr":int(memoryMin_pr),\
+                "procTimeMedian_pr":int(procTimeMedian_pr),\
+                "procTimeMax_pr":int(procTimeMax_pr),\
+                "procTimeMin_pr":int(procTimeMin_pr),\
+                "conf50Median_pr":int(conf50Median_pr),\
+                "conf75Median_pr":int(conf75Median_pr),\
+                "conf90Median_pr":int(conf90Median_pr),\
+                "conf99Median_pr":int(conf99Median_pr),\
+                "confAveMedian_pr":int(confAveMedian_pr),\
+                "confAveMin_pr":int(confAveMin_pr),\
+                "lenBlockCount_pr":int(len(countData_pr)),\
+                "lenCemented_pr":int(len(cementedData_pr)),\
+                "lenUnchecked_pr":int(len(uncheckedData_pr)),\
+                "lenPeers_pr":int(len(peersData_pr)),\
+                "lenConf50_pr":int(len(conf50Data_pr)),\
+                "lenMemory_pr":int(len(memoryData_pr)),\
+                "lenProcTime_pr":int(len(procTimeData_pr)),\
+                #PR ONLY END
                 "pLatestVersionStat":pLatestVersionStat,\
                 "pTypesStat":pTypesStat,\
                 "pStakeTotalStat":pStakeTotalStat,\
@@ -613,40 +766,40 @@ async def getPeers():
                     ip = '[' + re.search('\[(.*)\]:', ipv6).group(1) +']'
 
                 if ip is not "":
-                    """
-                    #Combine with previous list and ignore duplicates
-                    exists = False
-                    for url in monitorPaths:
-                        if 'http://'+ip == url:
-                            exists = True
-                            break
-                    if not exists:
-                        monitorPaths.append('http://'+ip)
+                    #Only try to find more monitors from peer IP in main network
+                    if not BETA:
+                        #Combine with previous list and ignore duplicates
+                        exists = False
+                        for url in monitorPaths:
+                            if 'http://'+ip == url:
+                                exists = True
+                                break
+                        if not exists:
+                            monitorPaths.append('http://'+ip)
 
-                    exists = False
-                    for url in monitorPaths:
-                        if 'http://'+ip+'/nano' == url:
-                            exists = True
-                            break
-                    if not exists:
-                        monitorPaths.append('http://'+ip+'/nano')
+                        exists = False
+                        for url in monitorPaths:
+                            if 'http://'+ip+'/nano' == url:
+                                exists = True
+                                break
+                        if not exists:
+                            monitorPaths.append('http://'+ip+'/nano')
 
-                    exists = False
-                    for url in monitorPaths:
-                        if 'http://'+ip+'/nanoNodeMonitor' == url:
-                            exists = True
-                            break
-                    if not exists:
-                        monitorPaths.append('http://'+ip+'/nanoNodeMonitor')
+                        exists = False
+                        for url in monitorPaths:
+                            if 'http://'+ip+'/nanoNodeMonitor' == url:
+                                exists = True
+                                break
+                        if not exists:
+                            monitorPaths.append('http://'+ip+'/nanoNodeMonitor')
 
-                    exists = False
-                    for url in monitorPaths:
-                        if 'http://'+ip+'/monitor' == url:
-                            exists = True
-                            break
-                    if not exists:
-                        monitorPaths.append('http://'+ip+'/monitor')
-                    """
+                        exists = False
+                        for url in monitorPaths:
+                            if 'http://'+ip+'/monitor' == url:
+                                exists = True
+                                break
+                        if not exists:
+                            monitorPaths.append('http://'+ip+'/monitor')
 
                     #Read protocol version and type
                     pVersions.append(value['protocol_version'])
@@ -811,7 +964,6 @@ async def getPeers():
 
         #Update the final list
         reps = validPaths.copy()
-        log.info(reps)
 
         await peerSleep(startTime)
 
