@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <html lang="en">
 <head>
-	<title>NanoTicker Beta</title>
+	<title>NanoTicker - Beta</title>
 	<meta name="application-name" content="netdata">
 
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -15,7 +15,7 @@
 	<meta property="og:locale" content="en_US" />
 	<meta property="og:url" content="https://beta.nanoticker.info"/>
 	<meta property="og:type" content="website"/>
-	<meta property="og:site_name" content="NanoTicker"/>
+	<meta property="og:site_name" content="NanoTicker - Beta"/>
 	<meta property="og:title" content="NanoTicker - Realtime Performance"/>
 	<meta property="og:description" content="Displays combined statistics from public Nano monitors along with individual node stats." />
 
@@ -27,12 +27,13 @@
   <meta name="msapplication-TileColor" content="#2d89ef">
   <meta name="theme-color" content="#ffffff">
 
-	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190816-4">
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190822-10">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
   <!-- MDBootstrap Datatables  -->
   <link href="css/addons/datatables.min.css" rel="stylesheet">
+  <!--<link href="css/addons/datatables-select.min.css" rel="stylesheet">-->
 
   <!-- JQuery -->
   <script type="text/javascript" src="js/jquery-3.4.1.min.js"></script>
@@ -43,7 +44,34 @@
   <!--<script type="text/javascript" src="js/popper.min.js"></script>-->
   <!-- MDBootstrap Datatables  -->
   <script type="text/javascript" src="js/addons/datatables.min.js"></script>
+  <script type="text/javascript" src="js/addons/datatables-select.min.js"></script>
+  <!-- Cookie plugin -->
+  <script type="text/javascript" src="js/js.cookie.js"></script>
 
+  <!-- INIT -->
+  <script>
+    //CUSTOM VARS
+    var monitorsUpdateInterval = 15000; //Interval for client side update
+    //var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
+    //var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
+    var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
+    var statFile = 'https://json.nanoticker.info/stats-beta.json'
+    var explorerBaseUrl = 'https://beta.nanocrawler.cc/explorer/account/'
+    //var prColor = '#4a90e2'
+    var GAPageName = 'beta-net'
+    var GATableName = 'Table-beta'
+  </script>
+  <!-- Google Analytics -->
+  <script>
+    (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+    (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+    m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+    })(window,document,'script','https://www.google-analytics.com/analytics.js','ga');
+
+    ga('create', 'UA-113887773-1', 'auto');
+    ga('send', 'pageview', GAPageName);
+  </script>
+  <!-- End Google Analytics -->
 </head>
 <script>
 // this section has to appear before loading dashboard.js
@@ -113,21 +141,49 @@ setTimeout(function(){
 <div class="div-main">
   <div class="title-text">
     <h1>NanoTicker - Network Performance</h1>
-    <h5>Combined measurements accross public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover titles to show info.</h5>
+    <h5>Combined measurements across public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover/touch titles for info.</h5>
+    <div>
+      <span class="title" title="Hide all charts for better performance.<br/>
+      Can help on mobile to refresh charts.">Charts</span>
+      <label class="switch">
+        <input type="checkbox" id="chart-switch" name="chart-switch" checked>
+        <span class="slider round"></span>
+      </label>
+      <span class="title" id="filter-span" title="Show only stats from Principal Representatives.<br/>
+      A PR node has more than 0.1% of online weight and those are the only ones that votes in
+      the network and thus the most important for the overall performance.">PR Only</span>
+      <label class="switch">
+        <input type="checkbox" id="pr-switch" name="pr-switch" checked>
+        <span class="slider round"></span>
+      </label>
+    </div>
   </div>
   <div class="section"></div>
-	<div class="div-float left">
+	<div class="div-float left show-charts">
     <div class="div-graph">
 			<div class="div-header">
 				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
         Value from the top node.">Checked and Confirmed [MAX]</span>
 			</div>
-			<div class="div-graph-data">
+			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.block_count_max"
 					data-title="Checked Blocks Max"
 				  data-decimal-digits="0"
 					data-common-max="repstats-b_local.block_count_max"
 					data-common-min="repstats-b_local.block_count_max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+      <div class="div-graph-data chart-pr">
+				<div data-netdata="repstats-b_local.block_count_max_pr"
+					data-title="PR: Checked Blocks Max"
+				  data-decimal-digits="0"
+					data-common-max="repstats-b_local.block_count_max_pr"
+					data-common-min="repstats-b_local.block_count_max_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -141,12 +197,26 @@ setTimeout(function(){
         <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
         Value from the top node.">BPS and CPS over 10min [MAX]</span>
 			</div>
-			<div class="div-graph-data">
+			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.tps_max"
 					data-title="TPS Average Max"
 					data-decimal-digits="3"
 					data-common-max="repstats-b_local.tps_max"
 					data-common-min="repstats-b_local.tps_max"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+      <div class="div-graph-data chart-pr">
+				<div data-netdata="repstats-b_local.tps_max_pr"
+					data-title="PR: TPS Average Max"
+					data-decimal-digits="3"
+					data-common-max="repstats-b_local.tps_max_pr"
+					data-common-min="repstats-b_local.tps_max_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -161,12 +231,26 @@ setTimeout(function(){
         <span class="title" title="Unchecked blocks from block count.<br/>
         Maximum, Median and Minimum from all monitored nodes.">Unchecked Blocks</span>
       </div>
-      <div class="div-graph-data">
+      <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.unchecked"
           data-title="Unchecked"
           data-decimal-digits="0"
           data-common-max="repstats-b_local.unchecked"
           data-common-min="repstats-b_local.unchecked"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.unchecked_pr"
+          data-title="PR: Unchecked"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.unchecked_pr"
+          data-common-min="repstats-b_local.unchecked_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -181,12 +265,26 @@ setTimeout(function(){
         <span class="title" title="Connection count to other nodes.<br/>
         Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
 	    </div>
-	    <div class="div-graph-data">
+	    <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.peers"
           data-title="Peers"
           data-decimal-digits="0"
           data-common-max="repstats-b_local.peers"
           data-common-min="repstats-b_local.peers"
+          data-dygraph-valuerange="0, data-common-max"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.peers_pr"
+          data-title="PR: Peers"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.peers_pr"
+          data-common-min="repstats-b_local.peers_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -201,12 +299,25 @@ setTimeout(function(){
         <span class="title" title="Consumed machine RAM.<br/>
         Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
       </div>
-      <div class="div-graph-data">
+      <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.memory"
           data-title="RAM Use"
           data-decimal-digits="3"
           data-common-max="repstats-b_local.memory"
           data-common-min="repstats-b_local.memory"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+      </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.memory_pr"
+          data-title="PR: RAM Use"
+          data-decimal-digits="3"
+          data-common-max="repstats-b_local.memory_pr"
+          data-common-min="repstats-b_local.memory_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -221,7 +332,7 @@ setTimeout(function(){
         The top number represents the max amount of discovered monitors.<br/>
         Nodes with a block count below 50% of the maximum block count is not included.">Connected Monitors</span>
       </div>
-      <div class="div-graph-data">
+      <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.supported"
           data-title="Stat Support"
           data-decimal-digits="0"
@@ -234,21 +345,47 @@ setTimeout(function(){
           data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474 #e174e8"
         ></div>
       </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.supported_pr"
+          data-title="PR: Stat Support"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.supported_pr"
+          data-common-min="repstats-b_local.supported_pr"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474 #e174e8"
+        ></div>
+      </div>
     </div>
   </div>
 
-	<div class="div-float right">
+	<div class="div-float right show-charts">
 		<div class="div-graph">
 			<div class="div-header">
 				<span class="title" title="Block count (checked) and cemented blocks (confirmed).<br/>
         Median value from all monitored nodes.">Checked and Confirmed [MEDIAN]</span>
 			</div>
-			<div class="div-graph-data">
+			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.block_count_median"
 					data-title="Block Count Median"
 				  data-decimal-digits="0"
 					data-common-max="repstats-b_local.block_count_median"
 					data-common-min="repstats-b_local.block_count_median"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+      <div class="div-graph-data chart-pr">
+				<div data-netdata="repstats-b_local.block_count_median_pr"
+					data-title="PR: Block Count Median"
+				  data-decimal-digits="0"
+					data-common-max="repstats-b_local.block_count_median_pr"
+					data-common-min="repstats-b_local.block_count_median_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -262,12 +399,26 @@ setTimeout(function(){
 				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 10min.<br/>
         Median value from all monitored nodes.">BPS and CPS over 10min [MEDIAN]</span>
 			</div>
-			<div class="div-graph-data">
+			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.tps_median"
 					data-title="TPS Average Median"
 					data-decimal-digits="3"
 					data-common-max="repstats-b_local.tps_median"
 					data-common-min="repstats-b_local.tps_median"
+					data-dygraph-valuerange="0, data-common-max"
+					data-chart-library="dygraph"
+					data-width="90%"
+					data-height="100%"
+					data-after="-4500"
+					data-colors="#747de8 #7ad96e"
+				></div>
+			</div>
+      <div class="div-graph-data chart-pr">
+				<div data-netdata="repstats-b_local.tps_median_pr"
+					data-title="PR: TPS Average Median"
+					data-decimal-digits="3"
+					data-common-max="repstats-b_local.tps_median_pr"
+					data-common-min="repstats-b_local.tps_median_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -285,7 +436,7 @@ setTimeout(function(){
         <b>perc 99</b>: 99% of blocks were confirmed that fast<br/>
         <b>ave min</b>: The lowest average value, taken from one node">Block Confirmation Time [MEDIAN]</span>
       </div>
-      <div class="div-graph-data">
+      <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.confirmations"
           data-title="Percentiles over 10min or max 2048 blocks | P50=Median"
           data-decimal-digits="0"
@@ -299,19 +450,45 @@ setTimeout(function(){
           data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
         ></div>
       </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.confirmations_pr"
+          data-title="PR: Percentiles over 10min or max 2048 blocks | P50=Median"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.confirmations_pr"
+          data-common-min="repstats-b_local.confirmations_pr"
+          data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474"
+        ></div>
+      </div>
     </div>
     <div class="div-graph">
 	    <div class="div-header">
-        <span class="title" title="Percentage of maximum block count that nodes have saved/synced.<br/>
-        Maximum, Median and Minimum from all monitored nodes.">Block Sync Status</span>
+        <span class="title" title="Difference from maximum recorded blocks.<br/>
+        Median and Minimum from all monitored nodes.">Block Diff Status</span>
 	    </div>
-	    <div class="div-graph-data">
-        <div data-netdata="repstats-b_local.block_sync"
-          data-title="Block Sync"
-          data-decimal-digits="2"
-          data-common-max="100"
-          data-common-min="repstats-b_local.block_sync"
-          data-units="%"
+	    <div class="div-graph-data chart-normal">
+        <div data-netdata="repstats-b_local.block_diff"
+          data-title="Block Diff"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.block_diff"
+          data-common-min="repstats-b_local.block_diff"
+          data-chart-library="dygraph"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#e87474 #7ad96e #747de8"
+        ></div>
+	    </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats-b_local.block_diff_pr"
+          data-title="PR: Block Diff"
+          data-decimal-digits="0"
+          data-common-max="repstats-b_local.block_diff_pr"
+          data-common-min="repstats-b_local.block_diff_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -325,12 +502,25 @@ setTimeout(function(){
          <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).<br/>
          Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
        </div>
-       <div class="div-graph-data">
+       <div class="div-graph-data chart-normal">
          <div data-netdata="repstats-b_local.api_time"
            data-title="API Process"
            data-decimal-digits="0"
            data-common-max="repstats-b_local.api_time"
            data-common-min="repstats-b_local.api_time"
+           data-chart-library="dygraph"
+           data-width="90%"
+           data-height="100%"
+           data-after="-4500"
+           data-colors="#e87474 #7ad96e #747de8"
+         ></div>
+       </div>
+       <div class="div-graph-data chart-pr">
+         <div data-netdata="repstats-b_local.api_time_pr"
+           data-title="PR: API Process"
+           data-decimal-digits="0"
+           data-common-max="repstats-b_local.api_time_pr"
+           data-common-min="repstats-b_local.api_time_pr"
            data-chart-library="dygraph"
            data-width="90%"
            data-height="100%"
@@ -372,10 +562,12 @@ setTimeout(function(){
     <span class="title" id="monitorLastUpdated"></span>
   </div>
   <div class="monitors-wrapper">
+    <div id="order-info"></div>
     <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
       <thead>
         <tr>
           <th scope="col">Name</th>
+          <th scope="col">PR</th>
           <th scope="col">Checked</th>
           <th scope="col">Confirmed</th>
           <th scope="col">Unchecked</th>
@@ -391,6 +583,7 @@ setTimeout(function(){
       <tfoot>
         <tr>
           <th scope="col">Name</th>
+          <th scope="col">PR</th>
           <th scope="col">Checked</th>
           <th scope="col">Confirmed</th>
           <th scope="col">Unchecked</th>
@@ -414,11 +607,34 @@ setTimeout(function(){
 	</div>
 </div>
 <script>
-  var monitorsUpdateInterval = 15000; //Interval for client side update
-  var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
-  var statFile = 'https://json.nanoticker.info/stats-beta.json'
+  //INIT VARS
   $.ajaxSetup({ cache: false });
   var table = null
+  var filterPR = true //if only showing pr charts
+  var showCharts = true //if charts are visible
+
+  var maxChecked = 0
+  var maxConfirmed = 0
+  var maxUnchecked = 0
+  var maxWeight = 0
+  var maxPeers = 0
+  var maxConf = 0
+  var maxMemory = 0
+  var maxAPI = 0
+
+  var minChecked = Number.MAX_VALUE
+  var minConfirmed = Number.MAX_VALUE
+  var minUnchecked = Number.MAX_VALUE
+  var minWeight = Number.MAX_VALUE
+  var minPeers = Number.MAX_VALUE
+  var minConf = Number.MAX_VALUE
+  var minMemory = Number.MAX_VALUE
+  var minAPI = Number.MAX_VALUE
+
+  var firstTimeSort = true
+  var firstTimeSearch = true
+  var selected_rows = []
+  var latestOnlineWeight = 0 //updated from stat json
 
   function timeConverter(UNIX_timestamp){
       var a = new Date(UNIX_timestamp * 1000);
@@ -498,14 +714,201 @@ setTimeout(function(){
         x1 = x1.replace(rgx, '$1' + ',' + '$2');
     }
     return x1 + x2;
-}
+  }
+
+  //Update table info
+  function setTableInfo(data) {
+    var order = $('#dtMonitors').DataTable().order();
+    switch (order[0][0]) {
+      case 1:
+      case 2:
+        var diff = ''
+
+        if (order[0][1] == 'desc') {
+          if (data) {
+            if (data.currentBlock != null) {
+              diff = addCommas(maxChecked - parseInt(data.currentBlock.replace(/,/g, '')))
+            }
+          }
+          $('#order-info').html( 'Max Checked: ' + addCommas(maxChecked) + ' | Diff: ' + diff)
+        }
+        else {
+          if (data) {
+            if (data.currentBlock != null) {
+              diff = parseInt(data.currentBlock.replace(/,/g, '')) - minChecked
+            }
+          }
+          $('#order-info').html( 'Min Checked: ' + addCommas(minChecked) + ' | Diff: ' + diff)
+        }
+        break
+
+      case 3:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.cementedBlocks != null) {
+                diff = addCommas(maxConfirmed - parseInt(data.cementedBlocks.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Confirmed: ' + addCommas(maxConfirmed) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.cementedBlocks != null) {
+                diff = parseInt(data.cementedBlocks.replace(/,/g, '')) - minConfirmed
+              }
+            }
+            $('#order-info').html( 'Min Confirmed: ' + addCommas(minConfirmed) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 4:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.unchecked != null) {
+                diff = addCommas(maxUnchecked - parseInt(data.unchecked.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Unchecked: ' + addCommas(maxUnchecked) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.unchecked != null) {
+                diff = parseInt(data.unchecked.replace(/,/g, '')) - minUnchecked
+              }
+            }
+            $('#order-info').html( 'Min Unchecked: ' + addCommas(minUnchecked) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 5:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.weight != null) {
+                diff = addCommas(maxWeight - parseInt(data.weight.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Weight: ' + addCommas(maxWeight) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.weight != null) {
+                diff = parseInt(data.weight.replace(/,/g, '')) - minWeight
+              }
+            }
+            $('#order-info').html( 'Min Weight: ' + addCommas(minWeight) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 6:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.numPeers != null) {
+                diff = addCommas(maxPeers - parseInt(data.numPeers.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Peers: ' + addCommas(maxPeers) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.numPeers != null) {
+                diff = parseInt(data.numPeers.replace(/,/g, '')) - minPeers
+              }
+            }
+            $('#order-info').html( 'Min Peers: ' + addCommas(minPeers) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 7:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.confMedian != null) {
+                diff = addCommas(maxConf - parseInt(data.confMedian.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Conf Time: ' + addCommas(maxConf) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.confMedian != null) {
+                diff = parseInt(data.confMedian.replace(/,/g, '')) - minConf
+              }
+            }
+            $('#order-info').html( 'Min Conf Time: ' + addCommas(minConf) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 8:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.memory != null) {
+                diff = addCommas(maxMemory - parseInt(data.memory.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max Memory: ' + addCommas(maxMemory) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.memory != null) {
+                diff = parseInt(data.memory.replace(/,/g, '')) - minMemory
+              }
+            }
+            $('#order-info').html( 'Min Memory: ' + addCommas(minMemory) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 9:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.procTime != null) {
+                diff = addCommas(maxAPI - parseInt(data.procTime.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max API Time: ' + addCommas(maxAPI) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.procTime != null) {
+                diff = parseInt(data.procTime.replace(/,/g, '')) - minAPI
+              }
+            }
+            $('#order-info').html( 'Min API time: ' + addCommas(minAPI) + ' | Diff: ' + diff)
+          }
+          break
+
+      default:
+        $('#order-info').html( 'Sort any number column and select a row to compare')
+    }
+  }
+
+  function updateTableStats() {
+    //Update last updated time and monitor count
+    $.getJSON( statFile, function(data) {
+      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
+      var PRs = 0
+      if (filterPR) {
+        PRs = data.lenBlockCount_pr
+      }
+      else {
+        PRs = data.lenBlockCount
+      }
+      $('#monitorCount').text(PRs)
+      latestOnlineWeight =  data.pStakeOnline
+    })
+  }
 
   function initTable() {
+    $.fn.dataTable.ext.errMode = 'throw' //disable alert on ajax error
     table = $('#dtMonitors').DataTable({
       ajax: {
         url: monitorFile,
         type: 'GET',
-        serverSide: true, //allow cross domain
         dataFilter: function(data){
             var json = jQuery.parseJSON(data);
             json.recordsTotal = json.total;
@@ -524,10 +927,24 @@ setTimeout(function(){
               data[index]['name'] = entry['name'].slice(0, 24) + '..'
             }
 
+            if(entry['PR'] == '') {
+              data[index]['PR'] = null
+            }
+            else if (entry['PR']) {
+              data[index]['PR'] = 'X'
+            }
+
             if (entry['currentBlock'] < 0) {
               data[index]['currentBlock'] = null
             }
+
             else {
+              if (entry['currentBlock'] > maxChecked) {
+                maxChecked = entry['currentBlock']
+              }
+              if (entry['currentBlock'] < minChecked) {
+                minChecked = entry['currentBlock']
+              }
               data[index]['currentBlock'] = addCommas(entry['currentBlock'])
             }
 
@@ -535,6 +952,12 @@ setTimeout(function(){
               data[index]['cementedBlocks'] = null
             }
             else {
+              if (entry['cementedBlocks'] > maxConfirmed) {
+                maxConfirmed = entry['cementedBlocks']
+              }
+              if (entry['cementedBlocks'] < minConfirmed) {
+                minConfirmed = entry['cementedBlocks']
+              }
               data[index]['cementedBlocks'] = addCommas(entry['cementedBlocks'])
             }
 
@@ -542,6 +965,12 @@ setTimeout(function(){
               data[index]['unchecked'] = null
             }
             else {
+              if (entry['unchecked'] > maxUnchecked) {
+                maxUnchecked = entry['unchecked']
+              }
+              if (entry['unchecked'] < minUnchecked) {
+                minUnchecked = entry['unchecked']
+              }
               data[index]['unchecked'] = addCommas(entry['unchecked'])
             }
 
@@ -550,6 +979,12 @@ setTimeout(function(){
               data[index]['weight'] = null
             }
             else {
+              if (entry['weight'] > maxWeight) {
+                maxWeight = entry['weight']
+              }
+              if (entry['weight'] < minWeight) {
+                minWeight = entry['weight']
+              }
               data[index]['weight'] = addCommas(parseInt(entry['weight']))
             }
 
@@ -557,6 +992,12 @@ setTimeout(function(){
               data[index]['confMedian'] = null
             }
             else {
+              if (entry['confMedian'] > maxConf) {
+                maxConf = entry['confMedian']
+              }
+              if (entry['confMedian'] < minConf) {
+                minConf = entry['confMedian']
+              }
               data[index]['confMedian'] = addCommas(entry['confMedian'])
             }
 
@@ -564,6 +1005,12 @@ setTimeout(function(){
               data[index]['numPeers'] = null
             }
             else {
+              if (entry['numPeers'] > maxPeers) {
+                maxPeers = entry['numPeers']
+              }
+              if (entry['numPeers'] < minPeers) {
+                minPeers = entry['numPeers']
+              }
               data[index]['numPeers'] = addCommas(entry['numPeers'])
             }
 
@@ -571,6 +1018,12 @@ setTimeout(function(){
               data[index]['memory'] = null
             }
             else {
+              if (entry['memory'] > maxMemory) {
+                maxMemory = entry['memory']
+              }
+              if (entry['memory'] < minMemory) {
+                minMemory = entry['memory']
+              }
               data[index]['memory'] = addCommas(entry['memory'])
             }
 
@@ -578,34 +1031,41 @@ setTimeout(function(){
               data[index]['procTime'] = null
             }
             else {
+              if (entry['procTime'] > maxAPI) {
+                maxAPI = entry['procTime']
+              }
+              if (entry['procTime'] < minAPI) {
+                minAPI = entry['procTime']
+              }
               data[index]['procTime'] = addCommas(entry['procTime'])
             }
 
-            if (entry['protocolVersion'] < 0) {
-              data[index]['protocolVersion'] = 'N/A'
+            if (entry['version'] < 0) {
+              data[index]['version'] = 'N/A'
             }
           });
 
-          //Update monitor count
-          $('#monitorCount').text(data.length)
           return data;
         }
       },
       paging:         false, // false to disable pagination (or any other option)
       searching:      true, //search function
       scrollX:        true, //horizontal scrolling on small screens,
-      scrollY:        '450px',
+      scrollY:        '400px',
       scrollCollapse: true,
       info:           false, // hide info below table
-      aaSorting:      [1, 'desc'], //default sorting column
+      aaSorting:      [1, 'asc'], //default sorting column
       stateSave:      true,
       autoWidth:      true,
+      select:         true,
+      rowId:          'nanoNodeAccount',
       language: {
             "decimal": ".",
             "thousands": ","
       },
       columns : [
           { data : "name" },
+          { data : "PR" },
           { data : "currentBlock", type: "num-fmt" },
           { data : "cementedBlocks", type: "num-fmt" },
           { data : "unchecked", type: "num-fmt" },
@@ -614,25 +1074,213 @@ setTimeout(function(){
           { data : "confMedian", type: "num-fmt"},
           { data : "memory", type: "num-fmt" },
           { data : "procTime", type: "num-fmt" },
-          { data : "protocolVersion" },
+          { data : "version" },
           { data : "nanoNodeAccount" }
-      ]
-    });
-    $('.dataTables_length').addClass('bs-select');
+      ],
+      columnDefs: [{
+            targets: [0],
+            orderData: [0, 1]
+        },{
+            targets: [1],
+            orderData: [1, 2, 3, 5],
+            //Encode star logo for PR nodes
+            render: function ( data, type, row, meta ) {
+                if(type === 'display'){
+                  if (data == 'X') {
+                    data = '<img class="pr-logo" src="img/star.png" />'
+                  }
+                }
+                return data;
+            }
+        },{
+            targets: [2],
+            orderData: [2, 3, 5]
+        },{
+            targets: [3],
+            orderData: [3, 2, 5]
+        },{
+            targets: [4],
+            orderData: [4, 0]
+        },{
+            targets: [5],
+            orderData: [5, 2, 3]
+        },{
+            targets: [6],
+            orderData: [6, 2, 3]
+        },{
+            targets: [7],
+            orderData: [7, 8, 0]
+        },{
+            targets: [8],
+            orderData: [8, 0]
+        },{
+            targets: [9],
+            orderData: [9, 7, 0]
+        },{
+            targets: [10],
+            orderData: [10, 0]
+        },{
+            targets: [11],
+            orderData: [11, 0],
+            //Encode href from nano account
+            render: function ( data, type, row, meta ) {
+                if(type === 'display'){
+                  if (data.includes('nano_')) {
+                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '">' +
+                    data.slice(0, 10) + '..' + data.slice(-5) + '</a>'
+                  }
+                  else {
+                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '">' +
+                    data.slice(0, 9) + '..' + data.slice(-5) + '</a>'
+                  }
+                }
 
-    //Update last updated time
-    $.getJSON( statFile, function(data) {
-      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
-    });
+                return data;
+            }
+      }],
+      //Final row processing
+      rowCallback: function(row, data, index) {
+        if (filterPR) {
+          if (data.weight != undefined) {
+            if(parseInt(data.weight.replace(/,/g, '')) > latestOnlineWeight*0.001) {
+              //$(row).find('td').css('color', prColor); //Change weight color of PR nodes
+            }
+            else {
+              $(row).hide()
+            }
+          }
+        }
+      }
+    })
+    $('.dataTables_length').addClass('bs-select')
+
+    // Sort by saved state or default column 1
+    var order = table.order();
+    if (order[0][0]) {
+      table.order( [ order[0][0], order[0][1] ] ).draw()
+    }
+    else {
+      table.order( [ 1, 'desc' ] ).draw()
+    }
+
+    updateTableStats()
+
+    //Update info on sort action
+    table.on( 'order.dt', function () {
+      setTableInfo(null)
+      if (!firstTimeSort) {
+        var order = $('#dtMonitors').DataTable().order()
+        if (order) {
+          ga('send', 'event', GATableName, 'sort', 'Column:'+order[0][0].toString())
+        }
+      }
+      else {
+        firstTimeSort =  false
+      }
+    })
+
+    //Update info on row select
+    table.on( 'select', function ( e, dt, type, indexes ) {
+      if ( type !== 'row' ) {
+        return
+      }
+
+      //Re-highlight selected row (table theme bug)
+      $('#dtMonitors tr.odd.selected').addClass('highlight-odd').siblings().removeClass('highlight-odd','highlight-even')
+      $('#dtMonitors tr.even.selected').addClass('highlight-even').siblings().removeClass('highlight-odd','highlight-even')
+
+      //Don't allow multiselect
+      var selected = dt.rows({selected: true});
+      if ( selected.count() > 1 ) {
+        dt.rows(indexes).deselect();
+      }
+      else {
+          var idx = table.cell('.selected', 0).index()
+          if (idx != undefined) {
+            var data = table.row( idx.row ).data()
+            setTableInfo(data)
+            if (data) {
+              ga('send', 'event', GATableName, 'select', data.name)
+            }
+          }
+          else {
+            setTableInfo(null)
+          }
+      }
+    })
+
+    //Update info on row deselect
+    table.on( 'deselect', function ( e, dt, type, indexes ) {
+      if ( type !== 'row' ) {
+        return
+      }
+
+      //Remove selected row highlight (table theme bug)
+      $('#dtMonitors tr.highlight-odd').removeClass('highlight-odd')
+      $('#dtMonitors tr.highlight-even').removeClass('highlight-even')
+
+      //Reset table info
+      setTableInfo(null)
+    })
+
+    //Check search string
+    table.on( 'search.dt', function () {
+      if (!firstTimeSearch && table.search().length > 1) {
+        ga('send', 'event', GATableName, 'search', table.search())
+      }
+      else {
+        firstTimeSearch =  false
+      }
+    })
+  }
+
+  function updateSwitchStatus() {
+    if (showCharts) {
+      $('.show-charts').show()
+    }
+    else {
+      //Hide all charts
+      $('.show-charts').hide()
+    }
+
+    //Show PR charts
+    if (filterPR) {
+     $('.chart-normal').hide()
+     $('.chart-pr').show()
+    }
+    //Show normal charts
+    else {
+     $('.chart-normal').show()
+     $('.chart-pr').hide()
+    }
   }
 
   function refreshData() {
-    table.ajax.reload(null, false); // user paging is not reset on reload
+    //Prevent order and search from being called
+    firstTimeSort = true
+    firstTimeSearch = true
 
-    //Update last updated time
-    $.getJSON( statFile, function(data) {
-      $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
-    });
+    maxChecked = 0
+    maxConfirmed = 0
+    maxUnchecked = 0
+    maxWeight = 0
+    maxPeers = 0
+    maxConf = 0
+    maxMemory = 0
+    maxAPI = 0
+
+    minChecked = Number.MAX_VALUE
+    minConfirmed = Number.MAX_VALUE
+    minUnchecked = Number.MAX_VALUE
+    minWeight = Number.MAX_VALUE
+    minPeers = Number.MAX_VALUE
+    minConf = Number.MAX_VALUE
+    minMemory = Number.MAX_VALUE
+    minAPI = Number.MAX_VALUE
+
+    updateTableStats()
+
+    table.ajax.reload(null, false); // user paging is not reset on reload
   }
 
   $(document).ready(function () {
@@ -681,6 +1329,60 @@ setTimeout(function(){
           }
         });
       };
+
+      //Switches
+      $('#chart-switch').change(function() {
+       if($(this).is(":checked")) {
+          showCharts = true
+       }
+       else {
+         showCharts = false
+       }
+       updateSwitchStatus()
+      })
+
+      $('#pr-switch').change(function() {
+        if($(this).is(":checked")) {
+          filterPR = true
+        }
+        else {
+          filterPR = false
+        }
+        updateSwitchStatus()
+        refreshData()
+      });
+
+      //Handle automatic cookies for all checkboxes. Using js.cookie.js plugin
+      $('input[type=checkbox]').each(function() {
+        var mycookie = Cookies.get($(this).attr('name'));
+
+        if (mycookie == 'true') {
+          $(this).prop('checked', true)
+          if ($(this).attr('name') == 'chart-switch') {
+            showCharts = true
+          }
+          if ($(this).attr('name') == 'pr-switch') {
+            filterPR = true
+          }
+        }
+        else if (mycookie == 'false') {
+          $(this).prop('checked', false)
+          if ($(this).attr('name') == 'chart-switch') {
+            showCharts = false
+          }
+          if ($(this).attr('name') == 'pr-switch') {
+            filterPR = false
+          }
+        }
+      })
+      $('input[type=checkbox]').change(function() {
+        Cookies.set($(this).attr("name"), $(this).prop('checked'), {
+            path: '',
+            expires: 365
+        })
+      })
+
+      updateSwitchStatus()
     }, 100);
   });
   //Tooltip

@@ -13,6 +13,10 @@ a:hover, .a:focus {
   cursor: pointer !important;
 }
 
+h1 {
+  font-size: 37px !important;
+}
+
 h2 {
 	margin-top: 30px !important;
 }
@@ -26,6 +30,75 @@ h2 {
 	width: 95%;
 	margin: 0 auto;
 }
+
+/*----Slider-----*/
+#filter-span {
+  margin-left: 20px;
+}
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 21px;
+  margin-left: 5px;
+  margin-right: 0px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 15px;
+  width: 15px;
+  left: 4px;
+  bottom: 3px;
+  background-color: white;
+  -webkit-transition: .4s;
+  transition: .4s;
+}
+
+input:checked + .slider {
+  background-color: #2196F3;
+}
+
+input:focus + .slider {
+  box-shadow: 0 0 1px #2196F3;
+}
+
+input:checked + .slider:before {
+  -webkit-transform: translateX(17px);
+  -ms-transform: translateX(17px);
+  transform: translateX(17px);
+}
+
+/* Rounded sliders */
+.slider.round {
+  border-radius: 12px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
+}
+
+/* ----End Slider----*/
 
 .div-system {
 	width: 100%;
@@ -93,6 +166,11 @@ h2 {
   font-weight: bold;
 }
 
+.pr-logo {
+  width: 1.2em;
+  vertical-align: sub;
+}
+
 div.ui-tooltip {
   max-width: 500px !important;
   background: #DDD !important;
@@ -130,6 +208,13 @@ div.ui-tooltip {
   font-size: 1.25em;
 }
 
+table.dataTable tbody>tr.selected {
+    background-color: #1f2a35 !important;
+}
+
+.table-striped tbody tr.highlight-odd td { background-color: #1f2a35 !important; }
+.table-striped tbody tr.highlight-even td { background-color: #19222b !important; }
+
 .section {
     height: 1px;
     width: 100%;
@@ -140,6 +225,15 @@ div.ui-tooltip {
 .monitors-wrapper {
   margin: 0 auto;
   width: 95%;
+}
+
+#order-info {
+  text-align: left;
+  position: relative;
+  top: 19px;
+  line-height: 0;
+  font-weight: bold;
+  font-size: 1.1em;
 }
 
 .div-footer {
@@ -234,6 +328,16 @@ div.ui-tooltip {
 	.table-info span {
   		font-size: 0.8em;
 	}
+
+  #order-info {
+    text-align: center;
+    position: relative;
+    top: 0;
+    line-height: 0.8;
+    font-weight: bold;
+    font-size: 0.8em;
+    margin: 8px;
+  }
 }
 
 /********************************************************************************************************************************************
