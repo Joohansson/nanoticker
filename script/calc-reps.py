@@ -56,11 +56,10 @@ confSpanLimit = 60000 #lower limit for time span to include confirmation average
 
 if BETA:
     repsInit = repList.repsInitB
+    blacklist = repList.blacklistB
 else:
     repsInit = repList.repsInitM
-
-#Excluded from any result
-blacklist = []
+    blacklist = repList.blacklistM
 
 reps = repsInit
 latestOnlineWeight = 0 #used for calculating PR status

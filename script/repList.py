@@ -100,3 +100,7 @@ repsInitM = [
   'http://159.89.146.74',
   'https://www.nanoskynode.com',
 ]
+
+#Black lists (excluded from NanoTicker)
+blacklistB = []
+blacklistM = []
