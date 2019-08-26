@@ -1076,13 +1076,11 @@
       //Final row processing
       rowCallback: function(row, data, index) {
         if (filterPR) {
-          if (data.weight != undefined) {
-            if(parseInt(data.weight.replace(/,/g, '')) > latestOnlineWeight*0.001) {
+          if (data.PR == 'X') {
               //$(row).find('td').css('color', prColor); //Change weight color of PR nodes
-            }
-            else {
-              $(row).hide()
-            }
+          }
+          else {
+            $(row).hide()
           }
         }
       }
