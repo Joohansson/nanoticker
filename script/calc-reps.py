@@ -736,13 +736,6 @@ async def getPeers():
         #log.info(timeLog("Verifying peers"))
         monitorPaths = repsInit.copy()
 
-        #Apply blacklist
-        for i,node in enumerate(monitorPaths):
-            for exl in blacklist:
-                if node == exl:
-                    del monitorPaths[i]
-                    break
-
         #Grab connected peer IPs from the node
         params = {
             "action": "peers",
@@ -918,6 +911,13 @@ async def getPeers():
 
         except Exception as e:
             log.warning(timeLog("Could not read monitors from ninja. %r" %e))
+
+        #Apply blacklist
+        for i,node in enumerate(monitorPaths):
+            for exl in blacklist:
+                if node == exl:
+                    del monitorPaths[i]
+                    break
 
         #Verify all URLS
         validPaths = []
