@@ -103,4 +103,6 @@ repsInitM = [
 
 #Black lists (excluded from NanoTicker)
 blacklistB = []
-blacklistM = []
+blacklistM = [
+    'http://node.nanologin.com/',
+]

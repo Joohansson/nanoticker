@@ -192,7 +192,7 @@ async def getAPI():
     global peerInfo
     global activeCurrency
 
-    await asyncio.sleep(20) #Wait for some values to be calculated from getPeers
+    await asyncio.sleep(18) #Wait for some values to be calculated from getPeers
     while 1:
         #log.info(timeLog("Get API"))
         jsonData = []
