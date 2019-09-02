@@ -24,9 +24,9 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 # charts order (can be overridden if you want less charts, or different order)
 
 ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median',\
-'confirmations', 'block_diff', 'memory', 'api_time', 'supported', 'peerstat',\
+'confirmations', 'block_diff', 'multiplier', 'api_time', 'supported', 'peerstat',\
 'block_count_max_pr', 'block_count_median_pr', 'unchecked_pr', 'peers_pr', 'tps_max_pr', 'tps_median_pr',\
-'confirmations_pr', 'block_diff_pr', 'memory_pr', 'api_time_pr', 'supported_pr']
+'confirmations_pr', 'block_diff_pr', 'multiplier_pr', 'api_time_pr', 'supported_pr']
 
 CHARTS = {
     'block_count_max': {
@@ -93,12 +93,12 @@ CHARTS = {
 
         ]
     },
-    'memory': {
-        'options': [None, 'Memory', 'MB', 'Memory Usage','reps.memory', 'line'],
+    'multiplier': {
+        'options': [None, 'Difficulty', 'x', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
-            ["memory_max", "max", None, 'absolute', 1, 1000],
-            ["memory_median", "median", None, 'absolute', 1, 1000],
-            ["memory_min", "min", None, 'absolute', 1, 1000]
+            ["multi_max", None, 'absolute', 1, 1000],
+            ["multi_median", None, 'absolute', 1, 1000],
+            ["multi_min", None, 'absolute', 1, 1000]
         ]
     },
     'api_time': {
@@ -117,7 +117,7 @@ CHARTS = {
             ["supported_peers", "peers", None, 'absolute'],
             ["supported_conf", "conf times", None, 'absolute'],
             ["supported_proc", "proc time", None, 'absolute'],
-            ["supported_memory", "memory", None, 'absolute']
+            ["supported_multiplier", "multiplier", None, 'absolute']
         ]
     },
     'peerstat': {
@@ -195,12 +195,12 @@ CHARTS = {
 
         ]
     },
-    'memory_pr': {
-        'options': [None, 'Memory', 'MB', 'Memory Usage','reps.memory', 'line'],
+    'multiplier_pr': {
+        'options': [None, 'difficulty', 'x', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
-            ["memory_max_pr", "max", None, 'absolute', 1, 1000],
-            ["memory_median_pr", "median", None, 'absolute', 1, 1000],
-            ["memory_min_pr", "min", None, 'absolute', 1, 1000]
+            ["multi_max_pr", None, 'absolute', 1, 1000],
+            ["multi_median_pr", None, 'absolute', 1, 1000],
+            ["multi_min_pr", None, 'absolute', 1, 1000]
         ]
     },
     'api_time_pr': {
@@ -219,7 +219,7 @@ CHARTS = {
             ["supported_peers_pr", "peers", None, 'absolute'],
             ["supported_conf_pr", "conf times", None, 'absolute'],
             ["supported_proc_pr", "proc time", None, 'absolute'],
-            ["supported_memory_pr", "memory", None, 'absolute']
+            ["supported_multiplier_pr", "multiplier", None, 'absolute']
         ]
     },
 }
@@ -267,10 +267,10 @@ class Service(UrlService):
             ('unchecked_max','uncheckedMax',int,1),('unchecked_median','uncheckedMedian',int,1),('unchecked_min','uncheckedMin',int,1),('peers_max','peersMax',int,1),
             ('peers_median','peersMedian',int,1),('peers_min','peersMin',int,1),('average_median','confAveMedian',int,1),('average_min','confAveMin',int,1),('perc_50','conf50Median',int,1),
             ('perc_75','conf75Median',int,1),('perc_90','conf90Median',int,1),('perc_99','conf99Median',int,1),('diff_median','diffMedian',int,1),
-            ('diff_max','diffMax',int,1),('memory_max','memoryMax',int,1),('memory_median','memoryMedian',int,1),('memory_min','memoryMin',int,1),
+            ('diff_max','diffMax',int,1),('multi_max','multiplierMax',float,1000),('multi_median','multiplierMedian',float,1000),('multi_min','multiplierMin',float,1000),
             ('api_max','procTimeMax',int,1),('api_median','procTimeMedian',int,1),('api_min','procTimeMin',int,1),
             ('supported_blocks','lenBlockCount',int,1),('supported_cemented','lenCemented',int,1),('supported_peers','lenPeers',int,1),
-            ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_memory','lenMemory',int,1),
+            ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_multiplier','lenMultiplier',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
 
@@ -278,10 +278,10 @@ class Service(UrlService):
             ('unchecked_max_pr','uncheckedMax_pr',int,1),('unchecked_median_pr','uncheckedMedian_pr',int,1),('unchecked_min_pr','uncheckedMin_pr',int,1),('peers_max_pr','peersMax_pr',int,1),
             ('peers_median_pr','peersMedian_pr',int,1),('peers_min_pr','peersMin_pr',int,1),('average_median_pr','confAveMedian_pr',int,1),('average_min_pr','confAveMin_pr',int,1),('perc_50_pr','conf50Median_pr',int,1),
             ('perc_75_pr','conf75Median_pr',int,1),('perc_90_pr','conf90Median_pr',int,1),('perc_99_pr','conf99Median_pr',int,1),('diff_median_pr','diffMedian_pr',int,1),
-            ('diff_max_pr','diffMax_pr',int,1),('memory_max_pr','memoryMax_pr',int,1),('memory_median_pr','memoryMedian_pr',int,1),('memory_min_pr','memoryMin_pr',int,1),
+            ('diff_max_pr','diffMax_pr',int,1),('multi_max_pr','multiplierMax_pr',float,1000),('multi_median_pr','multiplierMedian_pr',float,1000),('multi_min_pr','multiplierMin_pr',float,1000),
             ('api_max_pr','procTimeMax_pr',int,1),('api_median_pr','procTimeMedian_pr',int,1),('api_min_pr','procTimeMin_pr',int,1),
             ('supported_blocks_pr','lenBlockCount_pr',int,1),('supported_cemented_pr','lenCemented_pr',int,1),('supported_peers_pr','lenPeers_pr',int,1),
-            ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_memory_pr','lenMemory_pr',int,1),
+            ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_multiplier_pr','lenMultiplier_pr',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
 

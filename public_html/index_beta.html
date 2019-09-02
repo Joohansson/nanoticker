@@ -298,15 +298,15 @@ setTimeout(function(){
     </div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Consumed machine RAM.<br/>
-        Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
+        <span class="title" title="Active difficulty multiplier.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Active Difficulty</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.memory"
+        <div data-netdata="repstats-b_local.multiplier"
           data-title="RAM Use"
           data-decimal-digits="3"
-          data-common-max="repstats-b_local.memory"
-          data-common-min="repstats-b_local.memory"
+          data-common-max="repstats-b_local.multiplier"
+          data-common-min="repstats-b_local.multiplier"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -315,11 +315,11 @@ setTimeout(function(){
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.memory_pr"
+        <div data-netdata="repstats-b_local.multiplier_pr"
           data-title="PR: RAM Use"
           data-decimal-digits="3"
-          data-common-max="repstats-b_local.memory_pr"
-          data-common-min="repstats-b_local.memory_pr"
+          data-common-max="repstats-b_local.multiplier_pr"
+          data-common-min="repstats-b_local.multiplier_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -576,7 +576,7 @@ setTimeout(function(){
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
-          <th scope="col">Memory [MB]</th>
+          <th scope="col">Difficulty</th>
 	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
@@ -592,7 +592,7 @@ setTimeout(function(){
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
-          <th scope="col">Memory</th>
+          <th scope="col">Difficulty</th>
 	        <th scope="col">API Time</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
@@ -621,7 +621,7 @@ setTimeout(function(){
   var maxWeight = 0
   var maxPeers = 0
   var maxConf = 0
-  var maxMemory = 0
+  var maxMultiplier = 0
   var maxAPI = 0
 
   var minChecked = Number.MAX_VALUE
@@ -630,7 +630,7 @@ setTimeout(function(){
   var minWeight = Number.MAX_VALUE
   var minPeers = Number.MAX_VALUE
   var minConf = Number.MAX_VALUE
-  var minMemory = Number.MAX_VALUE
+  var minMultiplier = Number.MAX_VALUE
   var minAPI = Number.MAX_VALUE
 
   var firstTimeSort = true
@@ -848,19 +848,19 @@ setTimeout(function(){
           var diff = ''
           if (order[0][1] == 'desc') {
             if (data) {
-              if (data.memory != null) {
-                diff = addCommas(maxMemory - parseInt(data.memory.replace(/,/g, '')))
+              if (data.multiplier != null) {
+                diff = addCommas(maxMultiplier - parseInt(data.multiplier.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max Memory: ' + addCommas(maxMemory) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max Multiplier: ' + addCommas(maxMultiplier) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
-              if (data.memory != null) {
-                diff = parseInt(data.memory.replace(/,/g, '')) - minMemory
+              if (data.multiplier != null) {
+                diff = parseInt(data.multiplier.replace(/,/g, '')) - minMultiplier
               }
             }
-            $('#order-info').html( 'Min Memory: ' + addCommas(minMemory) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min Multiplier: ' + addCommas(minMultiplier) + ' | Diff: ' + diff)
           }
           break
 
@@ -1016,17 +1016,17 @@ setTimeout(function(){
               data[index]['numPeers'] = addCommas(entry['numPeers'])
             }
 
-            if (entry['memory'] < 0) {
-              data[index]['memory'] = null
+            if (entry['multiplier'] < 0) {
+              data[index]['multiplier'] = null
             }
             else {
-              if (entry['memory'] > maxMemory) {
-                maxMemory = entry['memory']
+              if (entry['multiplier'] > maxMultiplier) {
+                maxMultiplier = entry['multiplier']
               }
-              if (entry['memory'] < minMemory) {
-                minMemory = entry['memory']
+              if (entry['multiplier'] < minMultiplier) {
+                minMultiplier = entry['multiplier']
               }
-              data[index]['memory'] = addCommas(entry['memory'])
+              data[index]['multiplier'] = addCommas(entry['multiplier'])
             }
 
             if (entry['procTime'] < 0) {
@@ -1074,7 +1074,7 @@ setTimeout(function(){
           { data : "weight", type: "num-fmt" },
           { data : "numPeers", type: "num-fmt" },
           { data : "confMedian", type: "num-fmt"},
-          { data : "memory", type: "num-fmt" },
+          { data : "multiplier", type: "num-fmt" },
           { data : "procTime", type: "num-fmt" },
           { data : "version" },
           { data : "nanoNodeAccount" }
@@ -1268,7 +1268,7 @@ setTimeout(function(){
     maxWeight = 0
     maxPeers = 0
     maxConf = 0
-    maxMemory = 0
+    maxMultiplier = 0
     maxAPI = 0
 
     minChecked = Number.MAX_VALUE
@@ -1277,7 +1277,7 @@ setTimeout(function(){
     minWeight = Number.MAX_VALUE
     minPeers = Number.MAX_VALUE
     minConf = Number.MAX_VALUE
-    minMemory = Number.MAX_VALUE
+    minMultiplier = Number.MAX_VALUE
     minAPI = Number.MAX_VALUE
 
     updateTableStats()
