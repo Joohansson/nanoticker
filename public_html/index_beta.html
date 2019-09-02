@@ -852,7 +852,7 @@ setTimeout(function(){
                 diff = addCommas(maxMultiplier - parseFloat(data.multiplier.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max Multiplier: ' + addCommas(maxMultiplier) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max Multiplier: ' + addCommas(parseInt(maxMultiplier*1000)/1000) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
@@ -860,7 +860,7 @@ setTimeout(function(){
                 diff = parseFloat(data.multiplier.replace(/,/g, '')) - minMultiplier
               }
             }
-            $('#order-info').html( 'Min Multiplier: ' + addCommas(minMultiplier) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min Multiplier: ' + addCommas(parseInt(minMultiplier*1000)/1000) + ' | Diff: ' + diff)
           }
           break
 
@@ -1026,7 +1026,7 @@ setTimeout(function(){
               if (entry['multiplier'] < minMultiplier) {
                 minMultiplier = entry['multiplier']
               }
-              data[index]['multiplier'] = addCommas(entry['multiplier'])
+              data[index]['multiplier'] = addCommas(parseInt(entry['multiplier']*1000)/1000)
             }
 
             if (entry['procTime'] < 0) {
