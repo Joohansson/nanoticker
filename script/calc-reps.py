@@ -239,6 +239,7 @@ async def getAPI():
         confAveData = []
         memoryData = []
         procTimeData = []
+        multiplierData = []
 
         #PR ONLY
         countData_pr = []
@@ -253,6 +254,7 @@ async def getAPI():
         confAveData_pr = []
         memoryData_pr = []
         procTimeData_pr = []
+        multiplierData_pr = []
 
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
@@ -388,6 +390,11 @@ async def getAPI():
                 except Exception as e:
                     procTime = -1
                     fail = True
+                try:
+                    multiplier = float(j['active_difficulty']['multiplier'])
+                except Exception as e:
+                    multiplier = -1
+                    fail = True
 
                 #read all monitor info
                 countData.append(count)
@@ -449,6 +456,11 @@ async def getAPI():
                     if (PRStatus):
                         procTimeData_pr.append(procTime)
 
+                if (multiplier > 0):
+                    multiplierData.append(multiplier)
+                    if (PRStatus):
+                        multiplierData_pr.append(multiplier)
+
                 #If weight missing, try find matching weight from peer table
                 try:
                     if weight < 0:
@@ -461,7 +473,7 @@ async def getAPI():
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
                 'version':version, 'protocolVersion':protocolVersion, 'currentBlock':count, 'cementedBlocks':cemented,
                 'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight,
-                'memory':memory, 'procTime':procTime, 'supported':not fail, 'PR':PRStatus})
+                'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus})
                 fail = False
 
             else:
@@ -479,6 +491,7 @@ async def getAPI():
         confAveMedian = 0
         memoryMedian = 0
         procTimeMedian = 0
+        multiplierMedian = 0
 
         blockCountMax = 0
         cementedMax = 0
@@ -487,6 +500,7 @@ async def getAPI():
         diffMax = 0
         memoryMax = 0
         procTimeMax = 0
+        multiplierMax = 0
 
         blockCountMin = 0
         cementedMin = 0
@@ -495,6 +509,7 @@ async def getAPI():
         confAveMin = 0
         memoryMin = 0
         procTimeMin = 0
+        multiplierMin = 0
 
         #PR ONLY
         blockCountMedian_pr = 0
@@ -509,6 +524,7 @@ async def getAPI():
         confAveMedian_pr = 0
         memoryMedian_pr = 0
         procTimeMedian_pr = 0
+        multiplierMedian_pr = 0
 
         blockCountMax_pr = 0
         cementedMax_pr = 0
@@ -517,6 +533,7 @@ async def getAPI():
         diffMax_pr = 0
         memoryMax_pr = 0
         procTimeMax_pr = 0
+        multiplierMax_pr = 0
 
         blockCountMin_pr = 0
         cementedMin_pr = 0
@@ -525,6 +542,7 @@ async def getAPI():
         confAveMin_pr = 0
         memoryMin_pr = 0
         procTimeMin_pr = 0
+        multiplierMin_pr = 0
 
         try:
             if len(countData) > 0:
@@ -570,6 +588,10 @@ async def getAPI():
                 procTimeMedian = int(median(procTimeData))
                 procTimeMax = int(max(procTimeData))
                 procTimeMin = int(min(procTimeData))
+            if len(multiplierData) > 0:
+                multiplierMedian = int(median(multiplierData))
+                multiplierMax = int(max(multiplierData))
+                multiplierMin = int(min(multiplierData))
 
             #PR ONLY
             if len(countData_pr) > 0:
@@ -613,6 +635,10 @@ async def getAPI():
                 procTimeMedian_pr = int(median(procTimeData_pr))
                 procTimeMax_pr = int(max(procTimeData_pr))
                 procTimeMin_pr = int(min(procTimeData_pr))
+            if len(multiplierData_pr) > 0:
+                multiplierMedian_pr = int(median(multiplierData_pr))
+                multiplierMax_pr = int(max(multiplierData_pr))
+                multiplierMin_pr = int(min(multiplierData_pr))
 
             #Write output file
             statData = {\
@@ -636,6 +662,9 @@ async def getAPI():
                 "procTimeMedian":int(procTimeMedian),\
                 "procTimeMax":int(procTimeMax),\
                 "procTimeMin":int(procTimeMin),\
+                "multiplierMedian":float(multiplierMedian),\
+                "multiplierMax":float(multiplierMax),\
+                "multiplierMin":float(multiplierMin),\
                 "conf50Median":int(conf50Median),\
                 "conf75Median":int(conf75Median),\
                 "conf90Median":int(conf90Median),\
@@ -649,6 +678,7 @@ async def getAPI():
                 "lenConf50":int(len(conf50Data)),\
                 "lenMemory":int(len(memoryData)),\
                 "lenProcTime":int(len(procTimeData)),\
+                "lenMultiplier":int(len(multiplierData)),\
                 #PR ONLY START
                 "blockCountMedian_pr":int(blockCountMedian_pr),\
                 "blockCountMax_pr":int(blockCountMax_pr),\
@@ -670,6 +700,9 @@ async def getAPI():
                 "procTimeMedian_pr":int(procTimeMedian_pr),\
                 "procTimeMax_pr":int(procTimeMax_pr),\
                 "procTimeMin_pr":int(procTimeMin_pr),\
+                "multiplierMedian_pr":float(multiplierMedian_pr),\
+                "multiplierMax_pr":float(multiplierMax_pr),\
+                "multiplierMin_pr":float(multiplierMin_pr),\
                 "conf50Median_pr":int(conf50Median_pr),\
                 "conf75Median_pr":int(conf75Median_pr),\
                 "conf90Median_pr":int(conf90Median_pr),\
@@ -683,6 +716,7 @@ async def getAPI():
                 "lenConf50_pr":int(len(conf50Data_pr)),\
                 "lenMemory_pr":int(len(memoryData_pr)),\
                 "lenProcTime_pr":int(len(procTimeData_pr)),\
+                "lenMultiplier_pr":int(len(multiplierData_pr)),\
                 #PR ONLY END
                 "pLatestVersionStat":pLatestVersionStat,\
                 "pTypesStat":pTypesStat,\
@@ -956,7 +990,7 @@ async def getPeers():
 
         #Update the final list
         reps = validPaths.copy()
-        log.info(reps)
+        #log.info(reps)
 
         await peerSleep(startTime)
 
