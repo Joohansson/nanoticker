@@ -589,9 +589,9 @@ async def getAPI():
                 procTimeMax = int(max(procTimeData))
                 procTimeMin = int(min(procTimeData))
             if len(multiplierData) > 0:
-                multiplierMedian = int(median(multiplierData))
-                multiplierMax = int(max(multiplierData))
-                multiplierMin = int(min(multiplierData))
+                multiplierMedian = float(median(multiplierData))
+                multiplierMax = float(max(multiplierData))
+                multiplierMin = float(min(multiplierData))
 
             #PR ONLY
             if len(countData_pr) > 0:
@@ -636,9 +636,9 @@ async def getAPI():
                 procTimeMax_pr = int(max(procTimeData_pr))
                 procTimeMin_pr = int(min(procTimeData_pr))
             if len(multiplierData_pr) > 0:
-                multiplierMedian_pr = int(median(multiplierData_pr))
-                multiplierMax_pr = int(max(multiplierData_pr))
-                multiplierMin_pr = int(min(multiplierData_pr))
+                multiplierMedian_pr = float(median(multiplierData_pr))
+                multiplierMax_pr = float(max(multiplierData_pr))
+                multiplierMin_pr = float(min(multiplierData_pr))
 
             #Write output file
             statData = {\
