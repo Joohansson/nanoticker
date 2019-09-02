@@ -11,7 +11,9 @@ repsInitB = [
   'https://json.nanoticker.info',
   'http://95.216.205.225',
   'http://kamikaze.awiki.org/betaNanoNodeMonitor',
-  'http://173.249.54.87:8080'
+  'http://173.249.54.87:8080',
+  'http://165.22.133.254',
+  'http://116.202.107.97'
 ]
 
 #Default starting node list. Main net
