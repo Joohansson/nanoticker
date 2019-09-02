@@ -94,11 +94,11 @@ CHARTS = {
         ]
     },
     'multiplier': {
-        'options': [None, 'Difficulty', 'x', 'Difficulty','reps.multiplier', 'line'],
+        'options': [None, 'Difficulty', 'multiplier', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
-            ["multi_max", None, 'absolute', 1, 1000],
-            ["multi_median", None, 'absolute', 1, 1000],
-            ["multi_min", None, 'absolute', 1, 1000]
+            ["multi_max", None, 'absolute',1,1000],
+            ["multi_median", None, 'absolute',1,1000],
+            ["multi_min", None, 'absolute',1,1000]
         ]
     },
     'api_time': {
@@ -196,11 +196,11 @@ CHARTS = {
         ]
     },
     'multiplier_pr': {
-        'options': [None, 'difficulty', 'x', 'Difficulty','reps.multiplier', 'line'],
+        'options': [None, 'difficulty', 'multiplier', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
-            ["multi_max_pr", None, 'absolute', 1, 1000],
-            ["multi_median_pr", None, 'absolute', 1, 1000],
-            ["multi_min_pr", None, 'absolute', 1, 1000]
+            ["multi_max_pr", None, 'absolute',1,1000],
+            ["multi_median_pr", None, 'absolute',1,1000],
+            ["multi_min_pr", None, 'absolute',1,1000]
         ]
     },
     'api_time_pr': {
@@ -227,7 +227,7 @@ CHARTS = {
 class Service(UrlService):
     def __init__(self, configuration=None, name=None):
         UrlService.__init__(self, configuration=configuration, name=name)
-        self.url = self.configuration.get('url', 'http://localhost/main/stats.json')
+        self.url = self.configuration.get('url', 'https://b-monitor.repnode.org/stats-beta.json')
         self.order = ORDER
         self.definitions = CHARTS
         self.blocks_max_old = 0 #block count previous poll

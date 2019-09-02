@@ -303,7 +303,7 @@ setTimeout(function(){
       </div>
       <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.multiplier"
-          data-title="RAM Use"
+          data-title="Difficulty"
           data-decimal-digits="3"
           data-common-max="repstats-b_local.multiplier"
           data-common-min="repstats-b_local.multiplier"
@@ -316,7 +316,7 @@ setTimeout(function(){
       </div>
       <div class="div-graph-data chart-pr">
         <div data-netdata="repstats-b_local.multiplier_pr"
-          data-title="PR: RAM Use"
+          data-title="PR: Difficulty"
           data-decimal-digits="3"
           data-common-max="repstats-b_local.multiplier_pr"
           data-common-min="repstats-b_local.multiplier_pr"
@@ -849,7 +849,7 @@ setTimeout(function(){
           if (order[0][1] == 'desc') {
             if (data) {
               if (data.multiplier != null) {
-                diff = addCommas(maxMultiplier - parseInt(data.multiplier.replace(/,/g, '')))
+                diff = addCommas(maxMultiplier - parseFloat(data.multiplier.replace(/,/g, '')))
               }
             }
             $('#order-info').html( 'Max Multiplier: ' + addCommas(maxMultiplier) + ' | Diff: ' + diff)
@@ -857,7 +857,7 @@ setTimeout(function(){
           else {
             if (data) {
               if (data.multiplier != null) {
-                diff = parseInt(data.multiplier.replace(/,/g, '')) - minMultiplier
+                diff = parseFloat(data.multiplier.replace(/,/g, '')) - minMultiplier
               }
             }
             $('#order-info').html( 'Min Multiplier: ' + addCommas(minMultiplier) + ' | Diff: ' + diff)
