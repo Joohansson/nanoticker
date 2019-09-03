@@ -8,7 +8,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-	<meta name="viewport" content="width=device-width, initial-scale=0.6, maximum-scale=2.0, minimum-scale=0.5, shrink-to-fit=no">
+	<meta name="viewport" content="width=device-width, initial-scale=0.5, maximum-scale=2.0, minimum-scale=0.5, shrink-to-fit=no">
 	<meta name="apple-mobile-web-app-capable" content="yes">
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
@@ -29,7 +29,7 @@
 
   <meta name="nano" content="xrb_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo"/>
 
-	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190823-2">
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190829-1">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -131,7 +131,7 @@
 		</div>
     <div class="div-graph">
 			<div class="div-header">
-        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5min.<br/>
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5 min.<br/>
         Value from the top node.">BPS and CPS 5 min average [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
@@ -233,15 +233,15 @@
     </div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Consumed machine RAM.<br/>
-        Maximum, Median and Minimum from all monitored nodes.">Memory Usage</span>
+        <span class="title" title="Active difficulty multiplier.<br/>
+        Maximum, Median and Minimum from all monitored nodes.">Active Difficulty</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.memory"
-          data-title="RAM Use"
+        <div data-netdata="repstats_local.multiplier"
+          data-title="Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats_local.memory"
-          data-common-min="repstats_local.memory"
+          data-common-max="repstats_local.multiplier"
+          data-common-min="repstats_local.multiplier"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -250,11 +250,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.memory_pr"
-          data-title="PR: RAM Use"
+        <div data-netdata="repstats_local.multiplier_pr"
+          data-title="PR: Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats_local.memory_pr"
-          data-common-min="repstats_local.memory_pr"
+          data-common-max="repstats_local.multiplier_pr"
+          data-common-min="repstats_local.multiplier_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -333,7 +333,7 @@
 		</div>
 		<div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5min.<br/>
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5 min.<br/>
         Median value from all monitored nodes.">BPS and CPS 5 min average [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
@@ -511,7 +511,7 @@
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
-          <th scope="col">Memory [MB]</th>
+          <th scope="col">Difficulty</th>
 	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
@@ -527,7 +527,7 @@
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
-          <th scope="col">Memory</th>
+          <th scope="col">Difficulty</th>
 	        <th scope="col">API Time</th>
           <th scope="col">Version</th>
           <th scope="col">Account</th>
@@ -556,7 +556,7 @@
   var maxWeight = 0
   var maxPeers = 0
   var maxConf = 0
-  var maxMemory = 0
+  var maxMultiplier = 0
   var maxAPI = 0
 
   var minChecked = Number.MAX_VALUE
@@ -565,7 +565,7 @@
   var minWeight = Number.MAX_VALUE
   var minPeers = Number.MAX_VALUE
   var minConf = Number.MAX_VALUE
-  var minMemory = Number.MAX_VALUE
+  var minMultiplier = Number.MAX_VALUE
   var minAPI = Number.MAX_VALUE
 
   var firstTimeSort = true
@@ -783,19 +783,19 @@
           var diff = ''
           if (order[0][1] == 'desc') {
             if (data) {
-              if (data.memory != null) {
-                diff = addCommas(maxMemory - parseInt(data.memory.replace(/,/g, '')))
+              if (data.multiplier != null) {
+                diff = addCommas(maxMultiplier - parseFloat(data.multiplier.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max Memory: ' + addCommas(maxMemory) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max Multiplier: ' + addCommas(parseInt(maxMultiplier*1000)/1000) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
-              if (data.memory != null) {
-                diff = parseInt(data.memory.replace(/,/g, '')) - minMemory
+              if (data.multiplier != null) {
+                diff = parseFloat(data.multiplier.replace(/,/g, '')) - minMultiplier
               }
             }
-            $('#order-info').html( 'Min Memory: ' + addCommas(minMemory) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min Multiplier: ' + addCommas(parseInt(minMultiplier*1000)/1000) + ' | Diff: ' + diff)
           }
           break
 
@@ -951,17 +951,17 @@
               data[index]['numPeers'] = addCommas(entry['numPeers'])
             }
 
-            if (entry['memory'] < 0) {
-              data[index]['memory'] = null
+            if (entry['multiplier'] < 0) {
+              data[index]['multiplier'] = null
             }
             else {
-              if (entry['memory'] > maxMemory) {
-                maxMemory = entry['memory']
+              if (entry['multiplier'] > maxMultiplier) {
+                maxMultiplier = entry['multiplier']
               }
-              if (entry['memory'] < minMemory) {
-                minMemory = entry['memory']
+              if (entry['multiplier'] < minMultiplier) {
+                minMultiplier = entry['multiplier']
               }
-              data[index]['memory'] = addCommas(entry['memory'])
+              data[index]['multiplier'] = addCommas(parseInt(entry['multiplier']*1000)/1000)
             }
 
             if (entry['procTime'] < 0) {
@@ -1009,7 +1009,7 @@
           { data : "weight", type: "num-fmt" },
           { data : "numPeers", type: "num-fmt" },
           { data : "confMedian", type: "num-fmt"},
-          { data : "memory", type: "num-fmt" },
+          { data : "multiplier", type: "num-fmt" },
           { data : "procTime", type: "num-fmt" },
           { data : "version" },
           { data : "nanoNodeAccount" }
@@ -1201,7 +1201,7 @@
     maxWeight = 0
     maxPeers = 0
     maxConf = 0
-    maxMemory = 0
+    maxMultiplier = 0
     maxAPI = 0
 
     minChecked = Number.MAX_VALUE
@@ -1210,7 +1210,7 @@
     minWeight = Number.MAX_VALUE
     minPeers = Number.MAX_VALUE
     minConf = Number.MAX_VALUE
-    minMemory = Number.MAX_VALUE
+    minMultiplier = Number.MAX_VALUE
     minAPI = Number.MAX_VALUE
 
     updateTableStats()
@@ -1318,7 +1318,7 @@
       })
 
       updateSwitchStatus()
-    }, 200);
+    }, 100);
   });
   //Tooltip
   $(document).tooltip({
@@ -1361,8 +1361,8 @@
   -->
   <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
   <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
-  <script type="text/javascript">var netdataServer = "https://node.nanolinks.info";</script>
-  <script type="text/javascript" src="https://node.nanolinks.info/dashboard_custom.js?v20190816-1"></script>
+  <script type="text/javascript">var netdataServer = "https://node.nanoticker.info";</script>
+  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?v20190816-1"></script>
 
   <script>
   // Set options for TV operation
