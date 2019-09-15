@@ -67,7 +67,37 @@ latestOnlineWeight = 0 #used for calculating PR status
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
-#Calculate median value of a list
+#Calculate the average value of the 50% middle percentile from a list
+def median(lst):
+    if lst == None or lst == []:
+        return 0
+    if len(lst) == 1:
+        return lst[0]
+        
+    sortedLst = sorted(lst)
+    lstLen = len(lst)
+    index = (lstLen - 1) // 2
+
+    # Do average of mid sub list
+    if lstLen > 6:
+        if (lstLen % 2):
+            startIndex = index - (lstLen // 4)
+
+        else:
+            startIndex = index - (lstLen // 4) + 1
+
+        endIndex = index + (lstLen // 4) + 1
+        range = sortedLst[startIndex:endIndex]
+        return sum(range) / len(range) #average of the sub list
+
+    # Do normal median
+    else:
+        if (lstLen % 2):
+            return sortedLst[index]
+        else:
+            return (sortedLst[index] + sortedLst[index + 1])/2.0
+
+"""
 def median(lst):
     sortedLst = sorted(lst)
     lstLen = len(lst)
@@ -77,6 +107,7 @@ def median(lst):
         return sortedLst[index]
     else:
         return (sortedLst[index] + sortedLst[index + 1])/2.0
+"""
 
 async def fetch(session, url):
     async with session.get(url) as response:
