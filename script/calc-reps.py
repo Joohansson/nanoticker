@@ -51,8 +51,8 @@ pStakeTotalStat = 0 #percentage connected online weight of maximum
 pStakeRequiredStat = 0 #percentage of connected online weight of maxium required for voting
 pStakeLatestVersionStat = 0 #percentage of connected online weight that is on latest version
 peerInfo = [] #connected peers with weight info
-confCountLimit = 1000 #lower limit for block count to include confirmation average
-confSpanLimit = 60000 #lower limit for time span to include confirmation average
+confCountLimit = 500 #lower limit for block count to include confirmation average
+confSpanLimit = 30000 #lower limit for time span to include confirmation average
 
 if BETA:
     repsInit = repList.repsInitB
@@ -73,7 +73,7 @@ def median(lst):
         return 0
     if len(lst) == 1:
         return lst[0]
-        
+
     sortedLst = sorted(lst)
     lstLen = len(lst)
     index = (lstLen - 1) // 2
@@ -452,27 +452,27 @@ async def getAPI():
                     if (PRStatus):
                         syncData_pr.append(sync)
 
-                if (conf50 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                if (conf50 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf50Data.append(conf50)
                     if (PRStatus):
                         conf50Data_pr.append(conf50)
 
-                if (conf75 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                if (conf75 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf75Data.append(conf75)
                     if (PRStatus):
                         conf75Data_pr.append(conf75)
 
-                if (conf90 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                if (conf90 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf90Data.append(conf90)
                     if (PRStatus):
                         conf90Data_pr.append(conf90)
 
-                if (conf99 > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                if (conf99 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     conf99Data.append(conf99)
                     if (PRStatus):
                         conf99Data_pr.append(conf99)
 
-                if (confAve > 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                if (confAve >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
                     confAveData.append(confAve)
                     if (PRStatus):
                         confAveData_pr.append(confAve)
