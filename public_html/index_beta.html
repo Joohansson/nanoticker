@@ -541,7 +541,7 @@
   </div>
 	<div class="div-footer">
 		<p class="footer-text">
-			<span class="link-span" onClick="showOwnerModal()">About Owner</span> | <a href="https://github.com/Joohansson/">Github Projects</a> | <a href="https://nano.org">Nano Home</a> | <a href="https://nanolinks.info">Nano Guide</a> | <span class="link-span" onClick="showDonateModal()">Send me a donation</span>
+			<strong>Theme:</strong> <a href="?theme=default">1</a>,<a href="?theme=darkly">2</a>,<a href="?theme=darkest">3</a> | <span class="link-span" onClick="showOwnerModal()">About Owner</span> | <a href="https://github.com/Joohansson/">Github Projects</a> | <a href="https://nano.org">Nano Home</a> | <a href="https://nanolinks.info">Nano Guide</a> | <span class="link-span" onClick="showDonateModal()">Send me a donation</span>
 		</p>
 	</div>
 </div>
@@ -1220,6 +1220,14 @@
     table.ajax.reload(null, false); // user paging is not reset on reload
   }
 
+  function urlParam(name) {
+  	var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href)
+    if (results != null) {
+      return results[1] || 0
+    }
+  	return 0
+  }
+
   $(document).ready(function () {
     setTimeout(function() { //Bug where table header is not correct size, small delay
       initTable()
@@ -1334,19 +1342,23 @@
   <script type="text/javascript" src="js/mdb.min.js"></script>
 
   <script>
-  // this section has to appear before loading dashboard.js
+    // this section has to appear before loading dashboard.js
 
-  // Select a theme.
-  // uncomment one of the two themes:
-  //var netdataTheme = 'default'; // this is white
-  //var netdataTheme = 'slate'; // this is dark
-  var netdataTheme = 'darkly'; // this is darker
+    // Select a theme.
+    // uncomment one of the two themes:
+    //var netdataTheme = 'default'; // this is white
+    //var netdataTheme = 'slate'; // this is dark
+    var netdataTheme = 'darkly'; // this is darker
 
-  // Set the default netdata server.
-  // on charts without a 'data-host', this one will be used.
-  // the default is the server that dashboard.js is downloaded from.
+    if (urlParam('theme') != 0) {
+      netdataTheme = urlParam('theme')
+    }
 
-  // var netdataServer = 'http://my.server:19999/';
+    // Set the default netdata server.
+    // on charts without a 'data-host', this one will be used.
+    // the default is the server that dashboard.js is downloaded from.
+
+    // var netdataServer = 'http://my.server:19999/';
   </script>
 
   <!--
@@ -1364,7 +1376,7 @@
   <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
   <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
   <script type="text/javascript">var netdataServer = "https://node.nanoticker.info";</script>
-  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?v20190816-1"></script>
+  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?v20191003-2"></script>
 
   <script>
   // Set options for TV operation

@@ -1811,6 +1811,43 @@ NETDATA.themes = {
             segment_stroke: "#20282b",
             gradient_color: '#000000'
         }
+    },
+    darkest: {
+        //bootstrap_css: NETDATA.serverStatic + 'css/bootstrap-slate-flat-3.3.7.css?v20161229-1',
+        bootstrap_css: NETDATA.serverStatic + 'css/bootstrap-darkest.css?v20191003-1',
+        dashboard_css: NETDATA.serverStatic + 'css/dashboard.darkest.css?v20191003-1',
+        background: '#272b30',
+        foreground: '#C8C8C8',
+        grid: '#20282b',
+        axis: '#20282b',
+        highlight: '#383838',
+        /*          colors: [   '#55bb33', '#ff2222',   '#0099C6', '#faa11b',   '#adbce0', '#DDDD00',
+                            '#4178ba', '#f58122',   '#a5cc39', '#f58667',   '#f5ef89', '#cf93c0',
+                            '#a5d18a', '#b8539d',   '#3954a3', '#c8a9cf',   '#c7de8a', '#fad20a',
+                            '#a6a479', '#a66da8' ],
+        */
+        colors: ['#66AA00', '#FE3912', '#3366CC', '#D66300', '#0099C6', '#DDDD00',
+            '#5054e6', '#EE9911', '#BB44CC', '#e45757', '#ef0aef', '#CC7700',
+            '#22AA99', '#109618', '#905bfd', '#f54882', '#4381bf', '#ff3737',
+            '#329262', '#3B3EFF'],
+        easypiechart_track: '#373b40',
+        easypiechart_scale: '#373b40',
+        gauge_pointer: '#474b50',
+        gauge_stroke: '#373b40',
+        gauge_gradient: false,
+        d3pie: {
+            title: '#C8C8C8',
+            subtitle: '#20282b',
+            footer: '#20282b',
+            other: '#20282b',
+            mainlabel: '#C8C8C8',
+            percentage: '#dddddd',
+            value: '#cccc44',
+            tooltip_bg: '#272b30',
+            tooltip_fg: '#C8C8C8',
+            segment_stroke: "#20282b",
+            gradient_color: '#000000'
+        }
     }
 };
 
