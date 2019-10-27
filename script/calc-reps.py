@@ -37,11 +37,20 @@ else:
     activeCurrency = 'nano' #nano, banano or nano-beta
     ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
 
+# For pushing stats to the blockchain
+source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
+rep_account = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar'
+priv_key = ''
+cph_account = 'nano_1cph1t1yp3nb9wq3zkh6q69yxq5ikwz4rt3jiy9kqxdmbyjz48shrmt9neyn'
+peers_account = 'nano_1peers1jrgie5gji5oasgi5zawc1bjb9r138e88g4ia9to56dih7sp5p19xy'
+difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuuq3f4frt'
+
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
 timeout = 10 #http request timeout for API
 runAPIEvery = 15 #run API check every X sec
 runPeersEvery = 120 #run peer check every X sec
+runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
 
 """CONSTANTS"""
@@ -61,8 +70,13 @@ else:
     repsInit = repList.repsInitM
     blacklist = repList.blacklistM
 
+"""VARIABLES"""
 reps = repsInit
 latestOnlineWeight = 0 #used for calculating PR status
+latestRunStatTime = 0 #fine tuning loop time for stats
+latestGlobalBlocks = []
+latestGlobalPeers = []
+latestGlobalDifficulty = []
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -213,6 +227,13 @@ async def peerSleep(startTime):
     sleep = runPeersEvery - (time.time() - startTime)
     await asyncio.sleep(sleep)
 
+async def statSleep(startTime,loop):
+    global latestRunStatTime
+
+    sleep = runStatEvery - (loop.time() - startTime) - (loop.time() - round(latestRunStatTime/10)*10 - runStatEvery)
+    latestRunStatTime = loop.time()
+    await asyncio.sleep(sleep)
+
 async def getAPI():
     global minCount
     global pLatestVersionStat
@@ -222,6 +243,9 @@ async def getAPI():
     global pStakeLatestVersionStat
     global peerInfo
     global activeCurrency
+    global latestGlobalBlocks
+    global latestGlobalPeers
+    global latestGlobalDifficulty
 
     await asyncio.sleep(18) #Wait for some values to be calculated from getPeers
     while 1:
@@ -682,7 +706,7 @@ async def getAPI():
                 "uncheckedMedian":int(uncheckedMedian),\
                 "uncheckedMax":int(uncheckedMax),\
                 "uncheckedMin":int(uncheckedMin),\
-                "peersMedian":str(peersMedian),\
+                "peersMedian":int(peersMedian),\
                 "peersMax":int(peersMax),\
                 "peersMin":int(peersMin),\
                 "diffMedian":float(diffMedian),\
@@ -720,7 +744,7 @@ async def getAPI():
                 "uncheckedMedian_pr":int(uncheckedMedian_pr),\
                 "uncheckedMax_pr":int(uncheckedMax_pr),\
                 "uncheckedMin_pr":int(uncheckedMin_pr),\
-                "peersMedian_pr":str(peersMedian_pr),\
+                "peersMedian_pr":int(peersMedian_pr),\
                 "peersMax_pr":int(peersMax_pr),\
                 "peersMin_pr":int(peersMin_pr),\
                 "diffMedian_pr":float(diffMedian_pr),\
@@ -758,6 +782,11 @@ async def getAPI():
                 "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
                 "lastUpdatedUnix":str(time.time()),\
                 }
+
+            #save to global vars used for pushing to blockchain later
+            latestGlobalBlocks.append({"time":time.time(), "data": statData['cementedMedian_pr']})
+            latestGlobalPeers.append({"time":time.time(), "data": statData['peersMedian_pr']})
+            latestGlobalDifficulty.append({"time":time.time(), "data": statData['multiplierMedian_pr']})
 
         except:
             pass
@@ -1025,11 +1054,181 @@ async def getPeers():
 
         await peerSleep(startTime)
 
+async def publishStatBlock(source_account, priv_key, dest_account, rep_account, stringVal):
+    # get info from sending account
+    params = {
+        'action': 'account_info',
+        'account': source_account,
+        'count': 1,
+        'pending': 'true'
+    }
+
+    try:
+        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        account_info = resp.json()
+
+        # calculate the state block balance after the send
+        adjustedbal = str(int(account_info['balance']) - stringVal)
+        # get previous hash
+        if 'frontier' in account_info:
+            prev = account_info["frontier"]
+        else:
+            log.warning(timeLog("Source account not opened yet"))
+            return False
+
+    except Exception as e:
+        log.warning(timeLog("Could not get block info. %r" %e))
+        return False
+
+    # create send block
+    params = {
+        'action': 'block_create',
+        'type': 'state',
+        'account': source_account,
+        'link': dest_account,
+        'balance': adjustedbal,
+        'representative': rep_account,
+        'previous': prev,
+        'key': priv_key
+    }
+
+    try:
+        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        block = resp.json()['block']
+        hash = resp.json()['hash']
+        if len(hash) != 64:
+            log.warning(timeLog("Could not create block. %r" %e))
+            return False
+
+    except Exception as e:
+        log.warning(timeLog("Could not create block. %r" %e))
+        await statSleep(startTime, loop)
+        return False
+
+    # send the transactions
+    params = {
+        'action': 'process',
+        'block': block,
+    }
+    try:
+        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        hash = resp.json()['hash']
+        if len(hash) != 64:
+            log.warning(timeLog("Could not send block. %r" %e))
+
+    except Exception as e:
+        log.warning(timeLog("Could not send block. %r" %e))
+        return False
+
+    return hash
+
+#Push hourly averages to the blockchain
+async def pushStats():
+    global latestRunStatTime
+    global latestGlobalBlocks
+    global latestGlobalPeers
+    global latestGlobalDifficulty
+
+    loop = asyncio.get_running_loop()
+    latestRunStatTime = loop.time() - runStatEvery # init
+    startTime = loop.time()
+
+    while 1:
+        await statSleep(startTime, loop)
+        loop = asyncio.get_running_loop()
+        startTime = loop.time() #to measure the loop speed
+        prev = None
+        adjustedbal = None
+        block = None
+        hash = None
+
+        try:
+            blocks = latestGlobalBlocks.copy()
+            peers = latestGlobalPeers.copy()
+            diff = latestGlobalDifficulty.copy()
+            # block stat
+            if (len(latestGlobalBlocks) > 1):
+                # remove data outside the time window used for average
+                for entry in latestGlobalBlocks:
+                    if (entry['time'] < time.time() - runStatEvery):
+                        blocks.remove(entry)
+                latestGlobalBlocks = blocks.copy()
+                # calculate average cph (confirms per hour) (if positive)
+                if (blocks[-1]['time'] - blocks[0]['time'] > 0):
+                    cphAve = (blocks[-1]['data'] - blocks[0]['data']) / (blocks[-1]['time'] - blocks[0]['time']) * 3600
+                else:
+                    continue
+            else:
+                continue
+
+            # peer stat
+            if (len(latestGlobalPeers) > 1):
+                # remove data outside the time window used for average
+                peersSum = 0
+                for entry in latestGlobalPeers:
+                    if (entry['time'] < time.time() - runStatEvery):
+                        peers.remove(entry)
+                    else:
+                        peersSum += entry['data']
+                latestGlobalPeers = peers.copy()
+                # calculate average peers (if positive)
+                if (peers[-1]['time'] - peers[0]['time'] > 0):
+                    peersAve = peersSum / len(peers)
+                else:
+                    continue
+            else:
+                continue
+
+            # difficulty stat
+            if (len(latestGlobalDifficulty) > 1):
+                # remove data outside the time window used for average
+                diffSum = 0
+                for entry in latestGlobalDifficulty:
+                    if (entry['time'] < time.time() - runStatEvery):
+                        diff.remove(entry)
+                    else:
+                        diffSum += entry['data']
+                latestGlobalDifficulty = diff.copy()
+                # calculate average difficulty (if positive)
+                if (diff[-1]['time'] - diff[0]['time'] > 0):
+                    diffAve = diffSum / len(diff)
+                else:
+                    continue
+            else:
+                continue
+
+            # encode stats into strings with format 2019-10-24 00 15:49 00 <stat without decimal point and max 3 decimals>
+            timeNow = str(time.time())[:10] + '00'
+            cphStringVal = int(timeNow + str(round(cphAve)))
+            peersStringVal = int(timeNow + str(round(peersAve)))
+            diffStringVal = int(timeNow + str(round(diffAve)))
+
+            print(cphStringVal)
+            print(peersStringVal)
+            print(diffStringVal)
+
+            hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal)
+            hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal)
+            hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal)
+            if (not hash):
+                continue
+            else:
+                log.info(timeLog(hashCph))
+                log.info(timeLog(hashPeers))
+                log.info(timeLog(hashDiff))
+
+        except Exception as e:
+            print(e)
+            continue
+
 loop = asyncio.get_event_loop()
 #PYTHON >3.7
 ignore_aiohttp_ssl_error(loop) #ignore python bug
 
-futures = [getPeers(), getAPI()]
+if (BETA):
+    futures = [getPeers(), getAPI()]
+else:
+    futures = [getPeers(), getAPI(), pushStats()]
 #futures = [getAPI()]
 #futures = [getPeers()]
 log.info(timeLog("Starting script"))
