@@ -227,11 +227,11 @@ async def peerSleep(startTime):
     sleep = runPeersEvery - (time.time() - startTime)
     await asyncio.sleep(sleep)
 
-async def statSleep(startTime,loop):
+async def statSleep(startTime):
     global latestRunStatTime
 
-    sleep = runStatEvery - (loop.time() - startTime) - (loop.time() - round(latestRunStatTime/10)*10 - runStatEvery)
-    latestRunStatTime = loop.time()
+    sleep = runStatEvery - (time.time() - startTime) - (time.time() - round(latestRunStatTime/10)*10 - runStatEvery)
+    latestRunStatTime = time.time()
     await asyncio.sleep(sleep)
 
 async def getAPI():
@@ -1064,7 +1064,8 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
     }
 
     try:
-        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        log.info(timeLog("Getting info"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=60)
         account_info = resp.json()
 
         # calculate the state block balance after the send
@@ -1093,7 +1094,8 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
     }
 
     try:
-        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        log.info(timeLog("Creating block"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=120)
         block = resp.json()['block']
         hash = resp.json()['hash']
         if len(hash) != 64:
@@ -1102,16 +1104,16 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
 
     except Exception as e:
         log.warning(timeLog("Could not create block. %r" %e))
-        await statSleep(startTime, loop)
         return False
 
     # send the transactions
     params = {
         'action': 'process',
-        'block': block,
+        'block': block
     }
     try:
-        resp = requests.post(url=nodeUrl, json=params, timeout=10)
+        log.info(timeLog("Publishing block"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=60)
         hash = resp.json()['hash']
         if len(hash) != 64:
             log.warning(timeLog("Could not send block. %r" %e))
@@ -1129,14 +1131,12 @@ async def pushStats():
     global latestGlobalPeers
     global latestGlobalDifficulty
 
-    loop = asyncio.get_running_loop()
-    latestRunStatTime = loop.time() - runStatEvery # init
-    startTime = loop.time()
+    latestRunStatTime = time.time() - runStatEvery # init
+    startTime = time.time()
 
     while 1:
-        await statSleep(startTime, loop)
-        loop = asyncio.get_running_loop()
-        startTime = loop.time() #to measure the loop speed
+        await statSleep(startTime)
+        startTime = time.time() #to measure the loop speed
         prev = None
         adjustedbal = None
         block = None
@@ -1146,6 +1146,7 @@ async def pushStats():
             blocks = latestGlobalBlocks.copy()
             peers = latestGlobalPeers.copy()
             diff = latestGlobalDifficulty.copy()
+
             # block stat
             if (len(latestGlobalBlocks) > 1):
                 # remove data outside the time window used for average
@@ -1160,7 +1161,11 @@ async def pushStats():
                     continue
             else:
                 continue
+        except Exception as e:
+            log.warning(timeLog("Failed to block stat. %r" %e))
+            continue
 
+        try:
             # peer stat
             if (len(latestGlobalPeers) > 1):
                 # remove data outside the time window used for average
@@ -1178,7 +1183,11 @@ async def pushStats():
                     continue
             else:
                 continue
+        except Exception as e:
+            log.warning(timeLog("Failed to peer stat. %r" %e))
+            continue
 
+        try:
             # difficulty stat
             if (len(latestGlobalDifficulty) > 1):
                 # remove data outside the time window used for average
@@ -1197,28 +1206,37 @@ async def pushStats():
             else:
                 continue
 
+        except Exception as e:
+            log.warning(timeLog("Failed to diff stat. %r" %e))
+            continue
+
+        try:
             # encode stats into strings with format 2019-10-24 00 15:49 00 <stat without decimal point and max 3 decimals>
             timeNow = str(time.time())[:10] + '00'
             cphStringVal = int(timeNow + str(round(cphAve)))
             peersStringVal = int(timeNow + str(round(peersAve)))
             diffStringVal = int(timeNow + str(round(diffAve)))
 
-            print(cphStringVal)
-            print(peersStringVal)
-            print(diffStringVal)
+        except Exception as e:
+            log.warning(timeLog("Failed to prepare stat push. %r" %e))
+            continue
 
+        try:
             hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal)
             hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal)
             hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal)
-            if (not hash):
-                continue
-            else:
+
+            if (hashCph):
                 log.info(timeLog(hashCph))
+
+            if (hashPeers):
                 log.info(timeLog(hashPeers))
+
+            if (hashDiff):
                 log.info(timeLog(hashDiff))
 
         except Exception as e:
-            print(e)
+            log.warning(timeLog("Failed to stat push. %r" %e))
             continue
 
 loop = asyncio.get_event_loop()
