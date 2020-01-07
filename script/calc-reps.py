@@ -18,7 +18,7 @@ import logging
 import repList
 
 """CUSTOM VARS"""
-BETA = True #SET TO False FOR MAIN NET
+BETA = False #SET TO False FOR MAIN NET
 
 if BETA:
     #nodeUrl = 'http://[::1]:7076' #main
@@ -39,11 +39,16 @@ else:
 
 # For pushing stats to the blockchain
 source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
+#source_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
 rep_account = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar'
-priv_key = ''
+priv_key = '31d30eda437f3a243212fd2aebfa0f855a230a1aa237344f0eb7d233c35974ea'
+#priv_key = '4FD52C089CE842CF60C0F97E053B066B3BC8C1650DC618E11C77D72ED2FB0992'
 cph_account = 'nano_1cph1t1yp3nb9wq3zkh6q69yxq5ikwz4rt3jiy9kqxdmbyjz48shrmt9neyn'
 peers_account = 'nano_1peers1jrgie5gji5oasgi5zawc1bjb9r138e88g4ia9to56dih7sp5p19xy'
 difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuuq3f4frt'
+#cph_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
+#peers_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
+#difficulty_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
@@ -1054,25 +1059,7 @@ async def getPeers():
 
         await peerSleep(startTime)
 
-# Generates work based on previous hash
-async def generateWork(hash):
-    params = {
-        'action': 'work_generate',
-        'hash': hash,
-        'use_peers': 'true'
-    }
-
-    log.info(timeLog("Generate work"))
-    resp = requests.post(url=nodeUrl, json=params, timeout=300)
-    work = resp.json()
-
-    if 'work' in work:
-        return work['work']
-    else:
-        log.warning(timeLog("Failed to generate work"))
-        return false
-
-async def publishStatBlock(source_account, priv_key, dest_account, rep_account, stringVal, work):
+async def publishStatBlock(source_account, priv_key, dest_account, rep_account, stringVal):
     # get info from sending account
     params = {
         'action': 'account_info',
@@ -1108,12 +1095,8 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
         'balance': adjustedbal,
         'representative': rep_account,
         'previous': prev,
-        'key': priv_key,
-        'work': work
+        'key': priv_key
     }
-    #work will be none in first round
-    if (work == None):
-        del params['work']
 
     try:
         log.info(timeLog("Creating block"))
@@ -1155,9 +1138,6 @@ async def pushStats():
 
     latestRunStatTime = time.time() - runStatEvery # init
     startTime = time.time()
-    nextCphWork = None
-    nextPeersWork = None
-    nextDiffWork = None
 
     while 1:
         await statSleep(startTime)
@@ -1247,20 +1227,17 @@ async def pushStats():
             continue
 
         try:
-            hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal, nextCphWork)
-            hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal, nextPeersWork)
-            hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal, nextDiffWork)
+            hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal)
+            hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal)
+            hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal)
 
             if (hashCph):
-                nextCphWork = await generateWork(hashCph)
                 log.info(timeLog(hashCph))
 
             if (hashPeers):
-                nextPeersWork = await generateWork(hashPeers)
                 log.info(timeLog(hashPeers))
 
             if (hashDiff):
-                nextDiffWork = await generateWork(hashDiff)
                 log.info(timeLog(hashDiff))
 
         except Exception as e:
