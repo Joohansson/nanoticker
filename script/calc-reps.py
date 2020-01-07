@@ -1054,7 +1054,25 @@ async def getPeers():
 
         await peerSleep(startTime)
 
-async def publishStatBlock(source_account, priv_key, dest_account, rep_account, stringVal):
+# Generates work based on previous hash
+async def generateWork(hash):
+    params = {
+        'action': 'work_generate',
+        'hash': hash,
+        'use_peers': 'true'
+    }
+
+    log.info(timeLog("Generate work"))
+    resp = requests.post(url=nodeUrl, json=params, timeout=300)
+    work = resp.json()
+
+    if 'work' in work:
+        return work['work']
+    else:
+        log.warning(timeLog("Failed to generate work"))
+        return false
+
+async def publishStatBlock(source_account, priv_key, dest_account, rep_account, stringVal, work):
     # get info from sending account
     params = {
         'action': 'account_info',
@@ -1090,8 +1108,12 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
         'balance': adjustedbal,
         'representative': rep_account,
         'previous': prev,
-        'key': priv_key
+        'key': priv_key,
+        'work': work
     }
+    #work will be none in first round
+    if (work == None):
+        del params['work']
 
     try:
         log.info(timeLog("Creating block"))
@@ -1133,6 +1155,9 @@ async def pushStats():
 
     latestRunStatTime = time.time() - runStatEvery # init
     startTime = time.time()
+    nextCphWork = None
+    nextPeersWork = None
+    nextDiffWork = None
 
     while 1:
         await statSleep(startTime)
@@ -1222,17 +1247,20 @@ async def pushStats():
             continue
 
         try:
-            hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal)
-            hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal)
-            hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal)
+            hashCph = await publishStatBlock(source_account, priv_key, cph_account, rep_account, cphStringVal, nextCphWork)
+            hashPeers = await publishStatBlock(source_account, priv_key, peers_account, rep_account, peersStringVal, nextPeersWork)
+            hashDiff = await publishStatBlock(source_account, priv_key, difficulty_account, rep_account, diffStringVal, nextDiffWork)
 
             if (hashCph):
+                nextCphWork = await generateWork(hashCph)
                 log.info(timeLog(hashCph))
 
             if (hashPeers):
+                nextPeersWork = await generateWork(hashPeers)
                 log.info(timeLog(hashPeers))
 
             if (hashDiff):
+                nextDiffWork = await generateWork(hashDiff)
                 log.info(timeLog(hashDiff))
 
         except Exception as e:
