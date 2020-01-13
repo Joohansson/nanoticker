@@ -985,7 +985,7 @@
               data[index]['version'] = 'N/A'
             }
 
-            if (entry['storeVendor'] < 0) {
+            if (entry['storeVendor'] < 0 || entry['storeVendor'] == "") {
               data[index]['storeVendor'] = 'N/A'
             }
           });
