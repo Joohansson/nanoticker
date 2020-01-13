@@ -537,7 +537,7 @@ async def getAPI():
                     pass
 
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
-                'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor 'currentBlock':count, 'cementedBlocks':cemented,
+                'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
                 'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight,
                 'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus})
                 fail = False
