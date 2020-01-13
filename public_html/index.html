@@ -514,7 +514,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
-          <th scope="col">Store</th>
+          <th scope="col">DB</th>
           <th scope="col">Account</th>
         </tr>
       </thead>
@@ -531,7 +531,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time</th>
           <th scope="col">Version</th>
-          <th scope="col">Store</th>
+          <th scope="col">DB</th>
           <th scope="col">Account</th>
         </tr>
       </tfoot>
@@ -1065,7 +1065,10 @@
             orderData: [10, 0]
         },{
             targets: [11],
-            orderData: [11, 0],
+            orderData: [11, 0]
+        },{
+            targets: [12],
+            orderData: [12, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
