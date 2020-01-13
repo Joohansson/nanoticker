@@ -516,6 +516,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
+          <th scope="col">Store</th>
           <th scope="col">Account</th>
         </tr>
       </thead>
@@ -532,6 +533,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time</th>
           <th scope="col">Version</th>
+          <th scope="col">Store</th>
           <th scope="col">Account</th>
         </tr>
       </tfoot>
@@ -982,6 +984,10 @@
             if (entry['version'] < 0) {
               data[index]['version'] = 'N/A'
             }
+
+            if (entry['storeVendor'] < 0) {
+              data[index]['storeVendor'] = 'N/A'
+            }
           });
 
           return data;
@@ -1014,6 +1020,7 @@
           { data : "multiplier", type: "num-fmt" },
           { data : "procTime", type: "num-fmt" },
           { data : "version" },
+          { data : "storeVendor" },
           { data : "nanoNodeAccount" }
       ],
       columnDefs: [{
