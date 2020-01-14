@@ -1,9 +1,5 @@
 
 #!/bin/bash
-echo "Set www rights"
-chown -R www-data:www-data /var/www/repstat/
-chown -R www-data:www-data /var/www/repstat-beta/
-
 # Copy source files to netdata directories
 echo "Copy plugin"
 cp netdata/repstats.chart.py /usr/libexec/netdata/python.d/
@@ -26,9 +22,17 @@ cp netdata/css/dashboard.darkly.css //usr/share/netdata/web/css/
 
 echo "Copy dashboard main page"
 cp -R public_html/ /var/www/repstat/public_html
+cp -R public_html/ /var/www/repstat-beta/public_html
+rm /var/www/repstat-beta/public_html/index.html
+mv /var/www/repstat-beta/public_html/index_beta.html /var/www/repstat-beta/public_html/index.html
 
 echo "Set netdata read access for dashboard and style"
 chown -R netdata:netdata /usr/share/netdata/web/
 
+echo "Set www rights"
+chown -R www-data:www-data /var/www/repstat/
+chown -R www-data:www-data /var/www/repstat-beta/
+
 echo "Set write permission for json files (to allow calc-reps.py to be run locally)"
 chmod -R o+w /var/www/repstat/public_html/json
+chmod -R o+w /var/www/repstat-beta/public_html/json
