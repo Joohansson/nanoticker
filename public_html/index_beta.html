@@ -29,7 +29,7 @@
 
   <meta name="nano" content="xrb_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo"/>
 
-	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20200114-1">
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20190829-1">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -516,6 +516,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time [ms]</th>
           <th scope="col">Version</th>
+          <th scope="col">DB</th>
           <th scope="col">Account</th>
         </tr>
       </thead>
@@ -532,6 +533,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">API Time</th>
           <th scope="col">Version</th>
+          <th scope="col">DB</th>
           <th scope="col">Account</th>
         </tr>
       </tfoot>
@@ -982,6 +984,10 @@
             if (entry['version'] < 0) {
               data[index]['version'] = 'N/A'
             }
+
+            if (entry['storeVendor'] < 0 || entry['storeVendor'] == "") {
+              data[index]['storeVendor'] = 'N/A'
+            }
           });
 
           return data;
@@ -1014,6 +1020,7 @@
           { data : "multiplier", type: "num-fmt" },
           { data : "procTime", type: "num-fmt" },
           { data : "version" },
+          { data : "storeVendor" },
           { data : "nanoNodeAccount" }
       ],
       columnDefs: [{
@@ -1060,7 +1067,10 @@
             orderData: [10, 0]
         },{
             targets: [11],
-            orderData: [11, 0],
+            orderData: [11, 0]
+        },{
+            targets: [12],
+            orderData: [12, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
@@ -1376,7 +1386,7 @@
   <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
   <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
   <script type="text/javascript">var netdataServer = "https://node.nanoticker.info";</script>
-  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?ver=20200114-1"></script>
+  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?v20191003-2"></script>
 
   <script>
   // Set options for TV operation
