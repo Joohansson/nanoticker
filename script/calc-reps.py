@@ -18,11 +18,11 @@ import logging
 import repList
 
 """CUSTOM VARS"""
-BETA = False #SET TO False FOR MAIN NET
+BETA = True #SET TO False FOR MAIN NET
 
 if BETA:
     #nodeUrl = 'http://[::1]:7076' #main
-    nodeUrl = 'http://[::1]:55000' #beta
+    nodeUrl = 'http://127.0.0.1:55000' #beta
     logFile="repstat.log"
     statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
     monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
