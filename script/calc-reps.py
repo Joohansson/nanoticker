@@ -262,7 +262,10 @@ async def getAPI():
             tasks = []
             for path in chunk:
                 if len(path) > 6:
-                    tasks.append(asyncio.ensure_future(getMonitor('%s/api.php' %path)))
+                    if path[-4:] != '.htm':
+                        tasks.append(asyncio.ensure_future(getMonitor('%s/api.php' %path)))
+                    else:
+                        tasks.append(asyncio.ensure_future(getMonitor(path)))
 
             try:
                 with async_timeout.timeout(timeout):
@@ -1032,7 +1035,10 @@ async def getPeers():
             tasks = []
             for path in chunk:
                 if len(path) > 6:
-                    tasks.append(asyncio.ensure_future(verifyMonitor('%s/api.php' %path)))
+                    if path[-4:] != '.htm':
+                        tasks.append(asyncio.ensure_future(verifyMonitor('%s/api.php' %path)))
+                    else:
+                        tasks.append(asyncio.ensure_future(verifyMonitor(path)))
 
             try:
                 with async_timeout.timeout(timeout):

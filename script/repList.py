@@ -15,7 +15,8 @@ repsInitB = [
   'http://165.22.133.254',
   'http://116.202.107.97',
   'http://dotcom-beta.duckdns.org',
-  'http://50.99.115.219:8081/',
+  'http://50.99.115.219:8081',
+  'http://95.216.157.85/testnetapi.htm',
 ]
 
 #Default starting node list. Main net
