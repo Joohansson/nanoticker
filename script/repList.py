@@ -2,7 +2,7 @@
 repsInitB = [
   'https://beta.api.nanocrawler.cc',
   'https://monitor-beta.mynano.ninja',
-  'http://beta.warai.me',
+  #'http://beta.warai.me',
   'http://benna.just-dmitry.ru',
   'https://beta.nanoskynode.com',
   'https://b.repnode.org',
@@ -14,7 +14,8 @@ repsInitB = [
   'http://173.249.54.87:8080',
   'http://165.22.133.254',
   'http://116.202.107.97',
-  'http://dotcom-beta.duckdns.org'
+  'http://dotcom-beta.duckdns.org',
+  'http://50.99.115.219:8081/',
 ]
 
 #Default starting node list. Main net
