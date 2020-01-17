@@ -2,7 +2,7 @@
 repsInitB = [
   'https://beta.api.nanocrawler.cc',
   'https://monitor-beta.mynano.ninja',
-  #'http://beta.warai.me',
+  'http://beta.warai.me',
   'http://benna.just-dmitry.ru',
   'https://beta.nanoskynode.com',
   'https://b.repnode.org',
