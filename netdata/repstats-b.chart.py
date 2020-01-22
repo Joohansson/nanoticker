@@ -232,22 +232,22 @@ class Service(UrlService):
         self.definitions = CHARTS
         self.blocks_max_old = 0 #block count previous poll
         self.blocks_median_old = 0 #block count previous poll
-        self.bps_max_old = deque([0]*4) #tps history last 4 polls, init with 4 zeroes
-        self.bps_median_old = deque([0]*4) #tps history last 4 polls, init with 4 zeroes
+        self.bps_max_old = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
+        self.bps_median_old = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
         self.cemented_max_old = 0 #cemented count previous poll
         self.cemented_median_old = 0 #cemented count previous poll
-        self.cps_max_old = deque([0]*4) #cps history last 4 polls, init with 4 zeroes
-        self.cps_median_old = deque([0]*4) #cps history last 4 polls, init with 4 zeroes
+        self.cps_max_old = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
+        self.cps_median_old = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
 
         #PR ONLY
         self.blocks_max_old_pr = 0 #block count previous poll
         self.blocks_median_old_pr = 0 #block count previous poll
-        self.bps_max_old_pr = deque([0]*4) #tps history last 4 polls, init with 4 zeroes
-        self.bps_median_old_pr = deque([0]*4) #tps history last 4 polls, init with 4 zeroes
+        self.bps_max_old_pr = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
+        self.bps_median_old_pr = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
         self.cemented_max_old_pr = 0 #cemented count previous poll
         self.cemented_median_old_pr = 0 #cemented count previous poll
-        self.cps_max_old_pr = deque([0]*4) #cps history last 4 polls, init with 4 zeroes
-        self.cps_median_old_pr = deque([0]*4) #cps history last 4 polls, init with 4 zeroes
+        self.cps_max_old_pr = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
+        self.cps_median_old_pr = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
 
     def _get_data(self):
         """
