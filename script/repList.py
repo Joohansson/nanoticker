@@ -20,6 +20,7 @@ repsInitB = [
   'http://beta.nanocean.org/monitor',
   'http://147.135.119.173',
   'http://192.241.152.85',
+  'https://beta.nanolock.ca',
 ]
 
 #Default starting node list. Main net
