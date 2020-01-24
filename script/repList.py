@@ -107,6 +107,7 @@ repsInitM = [
   'http://159.89.112.19',
   'http://159.89.146.74',
   'https://www.nanoskynode.com',
+  'http://rep.nanowallets.guide',
 ]
 
 #Black lists (excluded from NanoTicker)
