@@ -13,6 +13,7 @@ import sys
 import requests
 import re
 import logging
+from decimal import Decimal
 
 #Own references
 import repList
@@ -21,13 +22,15 @@ import repList
 BETA = True #SET TO False FOR MAIN NET
 
 if BETA:
-    #nodeUrl = 'http://[::1]:7076' #main
+    #nodeUrl = 'http://[::1]:55000' #beta
     nodeUrl = 'http://127.0.0.1:55000' #beta
     logFile="repstat.log"
     statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
     monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
+    #localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account
+    localTelemetryAccount = 'nano_1repnode4qpnebqobohfaxcgbrhtumfs6emijugpdkrcxb3jettdaw95xwio' #telemetry is retrived with another command for this account
 
 else:
     nodeUrl = 'http://[::1]:7076' #main
@@ -36,6 +39,7 @@ else:
     monitorFile = '/var/www/repstat/public_html/json/monitors.json' #placed in a web server for public access
     activeCurrency = 'nano' #nano, banano or nano-beta
     ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
+    localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
 
 # For pushing stats to the blockchain
 source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
@@ -64,7 +68,6 @@ pTypesStat = 0 #percentage running tcp
 pStakeTotalStat = 0 #percentage connected online weight of maximum
 pStakeRequiredStat = 0 #percentage of connected online weight of maxium required for voting
 pStakeLatestVersionStat = 0 #percentage of connected online weight that is on latest version
-peerInfo = [] #connected peers with weight info
 confCountLimit = 500 #lower limit for block count to include confirmation average
 confSpanLimit = 30000 #lower limit for time span to include confirmation average
 
@@ -144,9 +147,9 @@ async def getMonitor(url):
             try:
                 rjson = json.loads(r)
                 if int(rjson['currentBlock']) > 0:
-                    return [rjson, True, url, r]
+                    return [rjson, True, url, time.time(), r]
             except:
-                return [{}, False, url, r]
+                return [{}, False, url, time.time(), r]
     except:
         pass
 
@@ -161,6 +164,21 @@ async def verifyMonitor(url):
                     return [rjson['nanoNodeAccount'], url]
             except:
                 pass
+    except:
+        pass
+
+async def getTelemetryRPC(params, ipv6):
+    try:
+        async with aiohttp.ClientSession(json_serialize=json.dumps, connector=aiohttp.TCPConnector(ssl=False)) as session:
+            try:
+                callTime = time.time()
+                r = await session.post(nodeUrl, json=params)
+                j = await r.json()
+                timeDiff = round((time.time()-callTime)*1000) #request time
+                return [j, True, params['address'], ipv6, timeDiff, time.time(), r]
+            except:
+                log.warning(timeLog("Bad response from node"))
+                return [{}, False, params['address'], ipv6, 0, time.time(), r]
     except:
         pass
 
@@ -254,9 +272,165 @@ async def getAPI():
 
     await asyncio.sleep(18) #Wait for some values to be calculated from getPeers
     while 1:
+        startTime = time.time() #to measure the loop speed
+        # GET TELEMETRY DATA
+        #Grab connected peer IPs from the node
+        params = {
+            "action": "peers",
+            "peer_details": True,
+        }
+
+        try:
+            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            peers = resp.json()['peers']
+            tasks = []
+            telemetryPeers = []
+            for ipv6,value in peers.items():
+                ip = re.search('\[(.*)\]:', ipv6).group(1)
+                port = re.search('\]:(.*)', ipv6).group(1)
+
+                if ip is not "":
+                    #Read telemetry data
+                    params = {
+                        "action": "node_telemetry",
+                        "address": ip,
+                        "port": port,
+                    }
+                    tasks.append(asyncio.ensure_future(getTelemetryRPC(params,ipv6)))
+            try:
+                with async_timeout.timeout(timeout):
+                    await asyncio.gather(*tasks)
+
+            except asyncio.TimeoutError as t:
+                log.warning(timeLog('Telemetry request read timeout: %r' %t))
+                pass
+
+            for i, task in enumerate(tasks):
+                try:
+                    if task.result() is not None and task.result():
+                        if (task.result()[1]):
+                            telemetry = task.result()[0]
+                            block_count_tele = -1
+                            cemented_count_tele = -1
+                            unchecked_count_tele = -1
+                            account_count_tele = -1
+                            bandwidth_cap_tele = -1
+                            peer_count_tele = -1
+                            protocol_version_number_tele = -1
+                            vendor_version_tele = -1
+                            uptime_tele = -1
+
+                            if 'block_count' in telemetry:
+                                block_count_tele = telemetry['block_count']
+                            if 'cemented_count' in telemetry:
+                                cemented_count_tele = telemetry['cemented_count']
+                            if 'unchecked_count' in telemetry:
+                                unchecked_count_tele = telemetry['unchecked_count']
+                            if 'account_count' in telemetry:
+                                account_count_tele = telemetry['account_count']
+                            if 'bandwidth_cap' in telemetry:
+                                bandwidth_cap_tele = telemetry['bandwidth_cap']
+                            if 'peer_count' in telemetry:
+                                peer_count_tele = telemetry['peer_count']
+                            if 'protocol_version_number' in telemetry:
+                                protocol_version_number_tele = telemetry['protocol_version_number']
+                            if 'vendor_version' in telemetry:
+                                vendor_version_tele = telemetry['vendor_version']
+                            if 'uptime' in telemetry:
+                                uptime_tele = telemetry['uptime']
+
+                            teleTemp = {"ip":task.result()[3], "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
+                            "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
+                            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
+                            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "req_time":task.result()[4], "time_stamp":task.result()[5]}
+
+                            telemetryPeers.append(teleTemp)
+
+                        else:
+                            log.warning(timeLog('Could not read telemetry json from %s. Result: %s' %(task.result()[2], task.result()[6])))
+
+                except Exception as e:
+                    log.warning(timeLog('Could not read telemetry response. Error: %r' %e))
+                    pass
+
+        except Exception as e:
+            log.warning(timeLog("Could not read peers from node RPC. %r" %e))
+            pass
+
+        # GET WEIGHT FROM CONFIRMATION QUORUM
+        params = {
+            "action": "confirmation_quorum",
+            "peer_details": True,
+        }
+        try:
+            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+
+            #Find matching IP and include weight in original peer list
+            for peer in resp.json()['peers']:
+                for i,cPeer in enumerate(telemetryPeers):
+                    if peer['ip'] == cPeer['ip']:
+                        telemetryPeers[i] = dict(cPeer, **{"weight": peer['weight'], "account": peer['account']}) #update previous vaule
+                        continue
+
+        except Exception as e:
+            log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
+            pass
+
+        # GET TELEMETRY FOR LOCAL ACCOUNT
+        params = {
+            "action": "node_telemetry"
+        }
+        try:
+            callTime = time.time()
+            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            reqTime = round((time.time()-callTime)*1000)
+
+            #Find matching IP and include weight in original peer list
+            telemetry = resp.json()
+            block_count_tele = -1
+            cemented_count_tele = -1
+            unchecked_count_tele = -1
+            account_count_tele = -1
+            bandwidth_cap_tele = -1
+            peer_count_tele = -1
+            protocol_version_number_tele = -1
+            vendor_version_tele = -1
+            uptime_tele = -1
+
+            if 'block_count' in telemetry:
+                block_count_tele = telemetry['block_count']
+            if 'cemented_count' in telemetry:
+                cemented_count_tele = telemetry['cemented_count']
+            if 'unchecked_count' in telemetry:
+                unchecked_count_tele = telemetry['unchecked_count']
+            if 'account_count' in telemetry:
+                account_count_tele = telemetry['account_count']
+            if 'bandwidth_cap' in telemetry:
+                bandwidth_cap_tele = telemetry['bandwidth_cap']
+            if 'peer_count' in telemetry:
+                peer_count_tele = telemetry['peer_count']
+            if 'protocol_version_number' in telemetry:
+                protocol_version_number_tele = telemetry['protocol_version_number']
+            if 'vendor_version' in telemetry:
+                vendor_version_tele = telemetry['vendor_version']
+            if 'uptime' in telemetry:
+                uptime_tele = telemetry['uptime']
+
+            teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": localTelemetryAccount,
+            "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
+            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
+            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "req_time":reqTime, "time_stamp":time.time()}
+
+            telemetryPeers.append(teleTemp) # add local account rep
+
+
+        except Exception as e:
+            log.warning(timeLog("Could not read local telemetry from node RPC. %r" %e))
+            pass
+
+        # GET MONITOR DATA
         #log.info(timeLog("Get API"))
         jsonData = []
-        startTime = time.time() #to measure the loop speed
         """Split URLS in max X concurrent requests"""
         for chunk in chunks(reps, maxURLRequests):
             tasks = []
@@ -279,10 +453,10 @@ async def getAPI():
                 try:
                     if task.result() is not None and task.result():
                         if (task.result()[1]):
-                            jsonData.append(task.result()[0])
+                            jsonData.append([task.result()[0], task.result()[3]])
                             #log.info(timeLog('Valid: ' + task.result()[0]['nanoNodeName']))
                         else:
-                            log.warning(timeLog('Could not read json from %s. Result: %s' %(task.result()[2], task.result()[3])))
+                            log.warning(timeLog('Could not read json from %s. Result: %s' %(task.result()[2], task.result()[4])))
 
                 except Exception as e:
                     #for example when tasks timeout
@@ -322,9 +496,10 @@ async def getAPI():
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
         supportedReps = [] #reps supporting all parameters
+        telemetryReps = [] #reps collected with telemetry
 
         try:
-            if jsonData is None or type(jsonData[0]) == bool:
+            if jsonData is None or type(jsonData[0][0]) == bool:
                 #log.info(timeLog('type error'))
                 await apiSleep(startTime)
                 continue
@@ -332,8 +507,10 @@ async def getAPI():
             await apiSleep(startTime)
             continue
 
-        for j in jsonData:
+        for js in jsonData:
+            j = js[0]
             if len(j) > 0:
+                isTelemetryMatch = False
                 try:
                     count = int(j['currentBlock'])
 
@@ -465,6 +642,40 @@ async def getAPI():
                     multiplier = -1
                     fail = True
 
+                try:
+                    #Match IP and replace weight and telemetry data
+                    for p in telemetryPeers:
+                        if str(nanoNodeAccount) == str(p['account']):
+                            isTelemetryMatch = True
+                            name = name + ' (T)' #indicate telemetry status
+                            if int(p['weight']) != -1: #only update if it has been given
+                                weight = int(p['weight']) / int(1000000000000000000000000000000)
+                                if (weight >= latestOnlineWeight*0.001):
+                                    PRStatus = True
+                                else:
+                                    PRStatus = False
+
+                                weight = str(weight)
+
+                            #telemetry
+                            if p['vendor_version'] != -1:
+                                version = int(p['vendor_version'])
+                            if p['protocol_version'] != -1:
+                                protocolVersion = int(p['protocol_version'])
+                            if p['block_count'] != -1:
+                                count = int(p['block_count'])
+                            if p['cemented_count'] != -1:
+                                cemented = int(p['cemented_count'])
+                            if p['unchecked_count'] != -1:
+                                unchecked = int(p['unchecked_count'])
+                            if p['peer_count'] != -1:
+                                peers = int(p['peer_count'])
+                            if p['req_time'] > 0:
+                                procTime = int(p['req_time'])
+
+                except Exception as e:
+                    pass
+
                 #read all monitor info
                 countData.append(count)
                 if (PRStatus):
@@ -530,23 +741,43 @@ async def getAPI():
                     if (PRStatus):
                         multiplierData_pr.append(multiplier)
 
-                #If weight missing, try find matching weight from peer table
-                try:
-                    if weight < 0:
-                        for p in peerInfo:
-                            if str(nanoNodeAccount) == str(p['account']):
-                                weight = str(int(p['weight']) / int(1000000000000000000000000000000))
-                except:
-                    pass
-
+                # combined reps from monitors and telemetry data
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
                 'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
                 'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight,
-                'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus})
+                'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch})
                 fail = False
 
             else:
                 log.warning(timeLog("Empty json from API calls"))
+
+        # all telemetry peers that was not matched already
+        for teleRep in telemetryPeers:
+            found = False
+            for supRep in supportedReps:
+                if teleRep['account'] == supRep['nanoNodeAccount']: #do not include this
+                    found = True
+                    break
+            if not found:
+                weight = int(teleRep['weight']) / int(1000000000000000000000000000000)
+                PRStatus = False
+                if (weight >= latestOnlineWeight*0.001):
+                    PRStatus = True
+
+                weight = str(weight)
+
+                # extract ip
+                if '[::ffff:' in teleRep['ip']: #ipv4
+                    ip = re.search('ffff:(.*)\]:', teleRep['ip']).group(1)
+                    ip = ip.split('.')[0] + '.x.x.' + ip.split('.')[3]
+                else: #ipv6
+                    ip = '[' + re.search('\[(.*)\]:', teleRep['ip']).group(1) +']'
+
+                tempRep = {'name':ip+' (T)', 'nanoNodeAccount':teleRep['account'],
+                'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
+                'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':weight,
+                'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':PRStatus, 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
+                telemetryReps.append(tempRep)
 
         blockCountMedian = 0
         cementedMedian = 0
@@ -580,6 +811,8 @@ async def getAPI():
         procTimeMin = 0
         multiplierMin = 0
 
+        telemetryCount = 0
+
         #PR ONLY
         blockCountMedian_pr = 0
         cementedMedian_pr = 0
@@ -612,6 +845,19 @@ async def getAPI():
         memoryMin_pr = 0
         procTimeMin_pr = 0
         multiplierMin_pr = 0
+
+        telemetryCount_pr = 0
+
+        # calculate number of telemetry peers
+        for p in telemetryPeers:
+            weight = int(p['weight']) / int(1000000000000000000000000000000)
+            if (weight >= latestOnlineWeight*0.001):
+                telemetryCount_pr += 1
+            else:
+                telemetryCount += 1
+
+        # non pr is the total combined number
+        telemetryCount = telemetryCount + telemetryCount_pr
 
         try:
             if len(countData) > 0:
@@ -748,6 +994,7 @@ async def getAPI():
                 "lenMemory":int(len(memoryData)),\
                 "lenProcTime":int(len(procTimeData)),\
                 "lenMultiplier":int(len(multiplierData)),\
+                "telemetryCount":telemetryCount,\
                 #PR ONLY START
                 "blockCountMedian_pr":int(blockCountMedian_pr),\
                 "blockCountMax_pr":int(blockCountMax_pr),\
@@ -786,6 +1033,7 @@ async def getAPI():
                 "lenMemory_pr":int(len(memoryData_pr)),\
                 "lenProcTime_pr":int(len(procTimeData_pr)),\
                 "lenMultiplier_pr":int(len(multiplierData_pr)),\
+                "telemetryCount_pr":telemetryCount_pr,\
                 #PR ONLY END
                 "pLatestVersionStat":pLatestVersionStat,\
                 "pTypesStat":pTypesStat,\
@@ -813,12 +1061,13 @@ async def getAPI():
                 log.error(timeLog('Could not write stat data. Error: %r' %e))
 
             try:
+                #combine monitor list with telemetry list
+                combinedList = supportedReps + telemetryReps
                 with open(monitorFile, 'w') as outfile:
-                    outfile.write(simplejson.dumps(supportedReps, indent=2))
+                    outfile.write(simplejson.dumps(combinedList, indent=2))
             except Exception as e:
                 log.error(timeLog('Could not write monitor data. Error: %r' %e))
 
-        #print(time.time() - startTime)
         #calculate final sleep based on execution time
         await apiSleep(startTime)
 
@@ -907,7 +1156,7 @@ async def getPeers():
         #Grab voting weight stat
         params = {
             "action": "confirmation_quorum",
-            "peer_details": True,
+            "peer_details": False,
         }
         try:
             resp = requests.post(url=nodeUrl, json=params, timeout=10)
@@ -915,20 +1164,9 @@ async def getPeers():
             pStakeReq = resp.json()['peers_stake_required']
             latestOnlineWeight = int(resp.json()['online_stake_total']) / int(1000000000000000000000000000000) #used for calculating PR status
 
-            #Find matching IP and include weight in original peer list
-            for peer in resp.json()['peers']:
-                for i,cPeer in enumerate(pPeers):
-                    if peer['ip'] == cPeer['ip']:
-                        pPeers[i] = dict(cPeer, **{"weight": peer['weight'], "account": peer['account']}) #update previous vaule
-                        continue
-
         except Exception as e:
             log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
             pass
-
-        #Save as global list
-        if len(pPeers) > 0:
-            peerInfo = pPeers.copy()
 
         #Grab supply
         params = {
@@ -1018,7 +1256,8 @@ async def getPeers():
                             log.warning(timeLog("Invalid Ninja monitor"))
 
         except Exception as e:
-            log.warning(timeLog("Could not read monitors from ninja. %r" %e))
+            pass
+            #log.warning(timeLog("Could not read monitors from ninja. %r" %e))
 
         #Apply blacklist
         for i,node in enumerate(monitorPaths):
