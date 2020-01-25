@@ -9,7 +9,7 @@ import json
 from collections import deque #for array shifting
 
 # default module values (can be overridden per job in `config`)
-update_every = 15 #update chart every 15 second (changing this will change TPS Ave interval to interval*40 sec)
+update_every = 20 #update chart every x second (changing this will change TPS Ave interval to interval*x sec)
 priority = 1000 #where it will appear on the main stat page and menu (60000 will place it last)
 #retries = 60
 
@@ -20,6 +20,9 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 #             'priority': priority,
 #             'url': 'http://localhost/stats.json'
 #          }}
+
+# constants
+CPS_WINDOW = 1 # number of iterations to base the average measure on Total time =update_every * CPS_WINDOW
 
 # charts order (can be overridden if you want less charts, or different order)
 
@@ -232,22 +235,22 @@ class Service(UrlService):
         self.definitions = CHARTS
         self.blocks_max_old = 0 #block count previous poll
         self.blocks_median_old = 0 #block count previous poll
-        self.bps_max_old = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
-        self.bps_median_old = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
+        self.bps_max_old = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
+        self.bps_median_old = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
         self.cemented_max_old = 0 #cemented count previous poll
         self.cemented_median_old = 0 #cemented count previous poll
-        self.cps_max_old = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
-        self.cps_median_old = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
+        self.cps_max_old = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
+        self.cps_median_old = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
 
         #PR ONLY
         self.blocks_max_old_pr = 0 #block count previous poll
         self.blocks_median_old_pr = 0 #block count previous poll
-        self.bps_max_old_pr = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
-        self.bps_median_old_pr = deque([0]*8) #tps history last 8 polls, init with 8 zeroes
+        self.bps_max_old_pr = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
+        self.bps_median_old_pr = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
         self.cemented_max_old_pr = 0 #cemented count previous poll
         self.cemented_median_old_pr = 0 #cemented count previous poll
-        self.cps_max_old_pr = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
-        self.cps_median_old_pr = deque([0]*8) #cps history last 8 polls, init with 8 zeroes
+        self.cps_max_old_pr = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
+        self.cps_median_old_pr = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
 
     def _get_data(self):
         """
