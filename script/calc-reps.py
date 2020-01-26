@@ -857,13 +857,6 @@ async def getAPI():
                         found = True
                         break
                 if not found:
-                    weight = int(teleRep['weight']) / int(1000000000000000000000000000000)
-                    PRStatus = False
-                    if (weight >= latestOnlineWeight*0.001):
-                        PRStatus = True
-
-                    weight = str(weight)
-
                     # extract ip
                     if teleRep['ip'] != "":
                         if '[::ffff:' in teleRep['ip']: #ipv4
@@ -876,7 +869,7 @@ async def getAPI():
 
                     tempRep = {'name':ip, 'nanoNodeAccount':teleRep['account'],
                     'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
-                    'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':weight,
+                    'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':teleRep['weight'],
                     'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':teleRep['PR'], 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
                     telemetryReps.append(tempRep)
         except Exception as e:
