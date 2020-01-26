@@ -307,6 +307,7 @@ async def getAPI():
     while 1:
         startTime = time.time() #to measure the loop speed
         # GET TELEMETRY DATA
+        telemetryPeers = []
         #Grab connected peer IPs from the node
         params = {
             "action": "peers",
@@ -317,7 +318,6 @@ async def getAPI():
             resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             peers = resp.json()['peers']
             tasks = []
-            telemetryPeers = []
             for ipv6,value in peers.items():
                 if ipv6 is '':
                     continue
@@ -433,6 +433,25 @@ async def getAPI():
             protocol_version_number_tele = -1
             vendor_version_tele = -1
             uptime_tele = -1
+            weight = -1
+            PRStatus = False
+
+            #get weight
+            params = {
+                "action": "account_weight",
+                "account": localTelemetryAccount
+            }
+            try:
+                resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
+                if 'weight' in resp.json():
+                    weight = int(resp.json()['weight']) / int(1000000000000000000000000000000)
+                    if (weight >= latestOnlineWeight*0.001):
+                        PRStatus = True
+                    else:
+                        PRStatus = False
+            except Exception as e:
+                log.warning(timeLog("Could not read local weight from node RPC. %r" %e))
+                pass
 
             if 'block_count' in telemetry:
                 block_count_tele = telemetry['block_count']
@@ -453,13 +472,12 @@ async def getAPI():
             if 'uptime' in telemetry:
                 uptime_tele = telemetry['uptime']
 
-            teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": localTelemetryAccount,
+            teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
             "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
-            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":False, "req_time":reqTime, "time_stamp":time.time()}
+            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":time.time()}
 
             telemetryPeers.append(teleTemp) # add local account rep
-
 
         except Exception as e:
             log.warning(timeLog("Could not read local telemetry from node RPC. %r" %e))
@@ -476,7 +494,7 @@ async def getAPI():
             #Find matching IP and include weight in original peer list
             for peer in resp.json()['peers']:
                 for i,cPeer in enumerate(telemetryPeers):
-                    if peer['ip'] == cPeer['ip']:
+                    if peer['ip'] == cPeer['ip'] and peer['ip'] != '':
                         # append the relevant PR stats here as well
                         weight = peer['weight']
                         if weight != -1: #only update if it has been given
@@ -551,6 +569,7 @@ async def getAPI():
         memoryData = []
         procTimeData = []
         multiplierData = []
+        monitorCount = 0
 
         #PR ONLY
         #countData_pr = []
@@ -566,6 +585,7 @@ async def getAPI():
         memoryData_pr = []
         procTimeData_pr = []
         multiplierData_pr = []
+        monitorCount_pr = 0
 
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
@@ -585,6 +605,7 @@ async def getAPI():
             j = js[0]
             if len(j) > 0:
                 isTelemetryMatch = False
+                monitorCount += 1
                 try:
                     count = int(j['currentBlock'])
 
@@ -721,7 +742,6 @@ async def getAPI():
                     for p in telemetryPeers:
                         if str(nanoNodeAccount) == str(p['account']):
                             isTelemetryMatch = True
-                            name = name + ' (T)' #indicate telemetry status
                             if int(p['weight']) != -1: #only update if it has been given
                                 weight = int(p['weight'])
 
@@ -740,6 +760,12 @@ async def getAPI():
                                 peers = int(p['peer_count'])
                             if p['req_time'] > 0:
                                 procTime = int(p['req_time'])
+                            if p['PR'] == True:
+                                PRStatus = True
+                                monitorCount_pr += 1
+                            else:
+                                PRStatus = False
+                            break
 
                 except Exception as e:
                     log.warning(timeLog("Could not match ip and replace weight and telemetry data. %r" %e))
@@ -848,7 +874,7 @@ async def getAPI():
                     else:
                         ip = ""
 
-                    tempRep = {'name':ip+' (T)', 'nanoNodeAccount':teleRep['account'],
+                    tempRep = {'name':ip, 'nanoNodeAccount':teleRep['account'],
                     'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
                     'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':weight,
                     'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':teleRep['PR'], 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
@@ -1136,6 +1162,7 @@ async def getAPI():
                 "lenMemory":int(len(memoryData)),\
                 "lenProcTime":int(len(procTimeData)),\
                 "lenMultiplier":int(len(multiplierData)),\
+                "monitorCount":monitorCount,\
                 "telemetryCount":telemetryCount,\
                 "BPSMax":BPSMax,\
                 "BPSMedian":BPSMedian,\
@@ -1179,6 +1206,7 @@ async def getAPI():
                 "lenMemory_pr":int(len(memoryData_pr)),\
                 "lenProcTime_pr":int(len(procTimeData_pr)),\
                 "lenMultiplier_pr":int(len(multiplierData_pr)),\
+                "monitorCount_pr":monitorCount_pr,\
                 "telemetryCount_pr":telemetryCount_pr,\
                 "BPSMax_pr":BPSMax_pr,\
                 "BPSMedian_pr":BPSMedian_pr,\
