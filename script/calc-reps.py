@@ -56,8 +56,10 @@ difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuu
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
-timeout = 10 #http request timeout for API
-runAPIEvery = 15 #run API check every X sec
+monitorTimeout = 7 #http request timeout for monitor API
+rpcTimeout = 7 #node rpc timeout
+
+runAPIEvery = 20 #run API check every X sec
 runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
@@ -86,38 +88,53 @@ latestGlobalBlocks = []
 latestGlobalPeers = []
 latestGlobalDifficulty = []
 
+# For BPS/CPS calculations
+previousMaxBlockCount = 0
+previousMaxConfirmed = 0
+previousMedianBlockCount = 0
+previousMedianConfirmed = 0
+previousMedianTimeStamp = 0
+previousMaxBlockCount_pr = 0
+previousMaxConfirmed_pr = 0
+previousMedianBlockCount_pr = 0
+previousMedianConfirmed_pr = 0
+previousMedianTimeStamp_pr = 0
+
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
 #Calculate the average value of the 50% middle percentile from a list
 def median(lst):
-    if lst == None or lst == []:
-        return 0
-    if len(lst) == 1:
-        return lst[0]
+    try:
+        if lst == None or lst == []:
+            return 0
+        if len(lst) == 1:
+            return lst[0]
 
-    sortedLst = sorted(lst)
-    lstLen = len(lst)
-    index = (lstLen - 1) // 2
+        sortedLst = sorted(lst)
+        lstLen = len(lst)
+        index = (lstLen - 1) // 2
 
-    # Do average of mid sub list
-    if lstLen > 6:
-        if (lstLen % 2):
-            startIndex = index - (lstLen // 4)
+        # Do average of mid sub list
+        if lstLen > 6:
+            if (lstLen % 2):
+                startIndex = index - (lstLen // 4)
 
+            else:
+                startIndex = index - (lstLen // 4) + 1
+
+            endIndex = index + (lstLen // 4) + 1
+            range = sortedLst[startIndex:endIndex]
+            return sum(range) / len(range) #average of the sub list
+
+        # Do normal median
         else:
-            startIndex = index - (lstLen // 4) + 1
-
-        endIndex = index + (lstLen // 4) + 1
-        range = sortedLst[startIndex:endIndex]
-        return sum(range) / len(range) #average of the sub list
-
-    # Do normal median
-    else:
-        if (lstLen % 2):
-            return sortedLst[index]
-        else:
-            return (sortedLst[index] + sortedLst[index + 1])/2.0
+            if (lstLen % 2):
+                return sortedLst[index]
+            else:
+                return (sortedLst[index] + sortedLst[index + 1])/2.0
+    except Exception as e:
+        log.warning(timeLog("Could not calculate median value. %r" %e))
 
 """
 def median(lst):
@@ -179,7 +196,7 @@ async def getTelemetryRPC(params, ipv6):
             except:
                 log.warning(timeLog("Bad response from node"))
                 return [{}, False, params['address'], ipv6, 0, time.time(), r]
-    except:
+    except Exception as e:
         pass
 
 SSL_PROTOCOLS = (asyncio.sslproto.SSLProtocol,)
@@ -244,10 +261,14 @@ def timeLog(msg):
 
 async def apiSleep(startTime):
     sleep = runAPIEvery - (time.time() - startTime)
+    if sleep < 0:
+        sleep = 0
     await asyncio.sleep(sleep)
 
 async def peerSleep(startTime):
     sleep = runPeersEvery - (time.time() - startTime)
+    if sleep < 0:
+        sleep = 0
     await asyncio.sleep(sleep)
 
 async def statSleep(startTime):
@@ -255,6 +276,8 @@ async def statSleep(startTime):
 
     sleep = runStatEvery - (time.time() - startTime) - (time.time() - round(latestRunStatTime/10)*10 - runStatEvery)
     latestRunStatTime = time.time()
+    if sleep < 0:
+        sleep = 0
     await asyncio.sleep(sleep)
 
 async def getAPI():
@@ -269,6 +292,16 @@ async def getAPI():
     global latestGlobalBlocks
     global latestGlobalPeers
     global latestGlobalDifficulty
+    global previousMaxBlockCount
+    global previousMaxConfirmed
+    global previousMedianBlockCount
+    global previousMedianConfirmed
+    global previousMedianTimeStamp
+    global previousMaxBlockCount_pr
+    global previousMaxConfirmed_pr
+    global previousMedianBlockCount_pr
+    global previousMedianConfirmed_pr
+    global previousMedianTimeStamp_pr
 
     await asyncio.sleep(18) #Wait for some values to be calculated from getPeers
     while 1:
@@ -281,11 +314,13 @@ async def getAPI():
         }
 
         try:
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             peers = resp.json()['peers']
             tasks = []
             telemetryPeers = []
             for ipv6,value in peers.items():
+                if ipv6 is '':
+                    continue
                 ip = re.search('\[(.*)\]:', ipv6).group(1)
                 port = re.search('\]:(.*)', ipv6).group(1)
 
@@ -298,12 +333,26 @@ async def getAPI():
                     }
                     tasks.append(asyncio.ensure_future(getTelemetryRPC(params,ipv6)))
             try:
-                with async_timeout.timeout(timeout):
+                with async_timeout.timeout(rpcTimeout):
                     await asyncio.gather(*tasks)
 
             except asyncio.TimeoutError as t:
                 log.warning(timeLog('Telemetry request read timeout: %r' %t))
                 pass
+
+            # calculate max/min/medians using telemetry data. Init first
+            countData = []
+            cementedData = []
+            uncheckedData = []
+            peersData = []
+            timestamps = []
+
+            #PR ONLY
+            countData_pr = []
+            cementedData_pr = []
+            uncheckedData_pr = []
+            peersData_pr = []
+            timestamps_pr = []
 
             for i, task in enumerate(tasks):
                 try:
@@ -319,21 +368,28 @@ async def getAPI():
                             protocol_version_number_tele = -1
                             vendor_version_tele = -1
                             uptime_tele = -1
+                            timeStamp = -1
 
                             if 'block_count' in telemetry:
-                                block_count_tele = telemetry['block_count']
+                                block_count_tele = int(telemetry['block_count'])
+                                countData.append(block_count_tele)
+                                timeStamp = task.result()[5]
+                                timestamps.append(timeStamp) #only use timestamps when valid block count
                             if 'cemented_count' in telemetry:
-                                cemented_count_tele = telemetry['cemented_count']
+                                cemented_count_tele = int(telemetry['cemented_count'])
+                                cementedData.append(cemented_count_tele)
                             if 'unchecked_count' in telemetry:
-                                unchecked_count_tele = telemetry['unchecked_count']
+                                unchecked_count_tele = int(telemetry['unchecked_count'])
+                                uncheckedData.append(unchecked_count_tele)
                             if 'account_count' in telemetry:
-                                account_count_tele = telemetry['account_count']
+                                account_count_tele = int(telemetry['account_count'])
                             if 'bandwidth_cap' in telemetry:
                                 bandwidth_cap_tele = telemetry['bandwidth_cap']
                             if 'peer_count' in telemetry:
-                                peer_count_tele = telemetry['peer_count']
+                                peer_count_tele = int(telemetry['peer_count'])
+                                peersData.append(peer_count_tele)
                             if 'protocol_version_number' in telemetry:
-                                protocol_version_number_tele = telemetry['protocol_version_number']
+                                protocol_version_number_tele = int(telemetry['protocol_version_number'])
                             if 'vendor_version' in telemetry:
                                 vendor_version_tele = telemetry['vendor_version']
                             if 'uptime' in telemetry:
@@ -342,7 +398,7 @@ async def getAPI():
                             teleTemp = {"ip":task.result()[3], "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
                             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
                             "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
-                            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "req_time":task.result()[4], "time_stamp":task.result()[5]}
+                            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":False, "req_time":task.result()[4], "time_stamp":timeStamp}
 
                             telemetryPeers.append(teleTemp)
 
@@ -357,32 +413,13 @@ async def getAPI():
             log.warning(timeLog("Could not read peers from node RPC. %r" %e))
             pass
 
-        # GET WEIGHT FROM CONFIRMATION QUORUM
-        params = {
-            "action": "confirmation_quorum",
-            "peer_details": True,
-        }
-        try:
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
-
-            #Find matching IP and include weight in original peer list
-            for peer in resp.json()['peers']:
-                for i,cPeer in enumerate(telemetryPeers):
-                    if peer['ip'] == cPeer['ip']:
-                        telemetryPeers[i] = dict(cPeer, **{"weight": peer['weight'], "account": peer['account']}) #update previous vaule
-                        continue
-
-        except Exception as e:
-            log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
-            pass
-
         # GET TELEMETRY FOR LOCAL ACCOUNT
         params = {
             "action": "node_telemetry"
         }
         try:
             callTime = time.time()
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             reqTime = round((time.time()-callTime)*1000)
 
             #Find matching IP and include weight in original peer list
@@ -419,13 +456,51 @@ async def getAPI():
             teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": localTelemetryAccount,
             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
             "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
-            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "req_time":reqTime, "time_stamp":time.time()}
+            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":False, "req_time":reqTime, "time_stamp":time.time()}
 
             telemetryPeers.append(teleTemp) # add local account rep
 
 
         except Exception as e:
             log.warning(timeLog("Could not read local telemetry from node RPC. %r" %e))
+            pass
+
+        # GET WEIGHT FROM CONFIRMATION QUORUM
+        params = {
+            "action": "confirmation_quorum",
+            "peer_details": True,
+        }
+        try:
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
+
+            #Find matching IP and include weight in original peer list
+            for peer in resp.json()['peers']:
+                for i,cPeer in enumerate(telemetryPeers):
+                    if peer['ip'] == cPeer['ip']:
+                        # append the relevant PR stats here as well
+                        weight = peer['weight']
+                        if weight != -1: #only update if it has been given
+                            weight = int(weight) / int(1000000000000000000000000000000)
+                            if (weight >= latestOnlineWeight*0.001):
+                                PRStatus = True
+                                if cPeer['block_count'] != -1:
+                                    countData_pr.append(int(cPeer['block_count']))
+                                if cPeer['cemented_count'] != -1:
+                                    cementedData_pr.append(int(cPeer['cemented_count']))
+                                if cPeer['unchecked_count'] != -1:
+                                    uncheckedData_pr.append(int(cPeer['unchecked_count']))
+                                if cPeer['peer_count'] != -1:
+                                    peersData_pr.append(int(cPeer['peer_count']))
+                                if cPeer['time_stamp'] != -1:
+                                    timestamps_pr.append(cPeer['time_stamp'])
+                            else:
+                                PRStatus = False
+
+                        telemetryPeers[i] = dict(cPeer, **{"weight": weight, "account": peer['account'], "PR":PRStatus}) #update previous vaule
+                        continue
+
+        except Exception as e:
+            log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
             pass
 
         # GET MONITOR DATA
@@ -442,12 +517,12 @@ async def getAPI():
                         tasks.append(asyncio.ensure_future(getMonitor(path)))
 
             try:
-                with async_timeout.timeout(timeout):
+                with async_timeout.timeout(monitorTimeout):
                     await asyncio.gather(*tasks)
 
             except asyncio.TimeoutError as t:
-                pass
                 #log.warning(timeLog('Monitor API read timeout: %r' %t))
+                pass
 
             for i, task in enumerate(tasks):
                 try:
@@ -460,14 +535,13 @@ async def getAPI():
 
                 except Exception as e:
                     #for example when tasks timeout
+                    log.warning(timeLog('Could not read response. Error: %r' %e))
                     pass
-                    #log.warning(timeLog('Could not read response. Error: %r' %e))
 
-
-        countData = []
-        cementedData = []
-        uncheckedData = []
-        peersData = []
+        #countData = []
+        #cementedData = []
+        #uncheckedData = []
+        #peersData = []
         syncData = []
         conf50Data = []
         conf75Data = []
@@ -479,10 +553,10 @@ async def getAPI():
         multiplierData = []
 
         #PR ONLY
-        countData_pr = []
-        cementedData_pr = []
-        uncheckedData_pr = []
-        peersData_pr = []
+        #countData_pr = []
+        #cementedData_pr = []
+        #uncheckedData_pr = []
+        #peersData_pr = []
         syncData_pr = []
         conf50Data_pr = []
         conf75Data_pr = []
@@ -649,13 +723,7 @@ async def getAPI():
                             isTelemetryMatch = True
                             name = name + ' (T)' #indicate telemetry status
                             if int(p['weight']) != -1: #only update if it has been given
-                                weight = int(p['weight']) / int(1000000000000000000000000000000)
-                                if (weight >= latestOnlineWeight*0.001):
-                                    PRStatus = True
-                                else:
-                                    PRStatus = False
-
-                                weight = str(weight)
+                                weight = int(p['weight'])
 
                             #telemetry
                             if p['vendor_version'] != -1:
@@ -674,9 +742,11 @@ async def getAPI():
                                 procTime = int(p['req_time'])
 
                 except Exception as e:
+                    log.warning(timeLog("Could not match ip and replace weight and telemetry data. %r" %e))
                     pass
 
                 #read all monitor info
+                '''
                 countData.append(count)
                 if (PRStatus):
                     countData_pr.append(count)
@@ -695,6 +765,7 @@ async def getAPI():
                     peersData.append(peers)
                     if (PRStatus):
                         peersData_pr.append(peers)
+                '''
 
                 if (sync > 0):
                     syncData.append(sync)
@@ -752,32 +823,38 @@ async def getAPI():
                 log.warning(timeLog("Empty json from API calls"))
 
         # all telemetry peers that was not matched already
-        for teleRep in telemetryPeers:
-            found = False
-            for supRep in supportedReps:
-                if teleRep['account'] == supRep['nanoNodeAccount']: #do not include this
-                    found = True
-                    break
-            if not found:
-                weight = int(teleRep['weight']) / int(1000000000000000000000000000000)
-                PRStatus = False
-                if (weight >= latestOnlineWeight*0.001):
-                    PRStatus = True
+        try:
+            for teleRep in telemetryPeers:
+                found = False
+                for supRep in supportedReps:
+                    if teleRep['account'] == supRep['nanoNodeAccount']: #do not include this
+                        found = True
+                        break
+                if not found:
+                    weight = int(teleRep['weight']) / int(1000000000000000000000000000000)
+                    PRStatus = False
+                    if (weight >= latestOnlineWeight*0.001):
+                        PRStatus = True
 
-                weight = str(weight)
+                    weight = str(weight)
 
-                # extract ip
-                if '[::ffff:' in teleRep['ip']: #ipv4
-                    ip = re.search('ffff:(.*)\]:', teleRep['ip']).group(1)
-                    ip = ip.split('.')[0] + '.x.x.' + ip.split('.')[3]
-                else: #ipv6
-                    ip = '[' + re.search('\[(.*)\]:', teleRep['ip']).group(1) +']'
+                    # extract ip
+                    if teleRep['ip'] != "":
+                        if '[::ffff:' in teleRep['ip']: #ipv4
+                            ip = re.search('ffff:(.*)\]:', teleRep['ip']).group(1)
+                            ip = ip.split('.')[0] + '.x.x.' + ip.split('.')[3]
+                        else: #ipv6
+                            ip = '[' + re.search('\[(.*)\]:', teleRep['ip']).group(1) +']'
+                    else:
+                        ip = ""
 
-                tempRep = {'name':ip+' (T)', 'nanoNodeAccount':teleRep['account'],
-                'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
-                'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':weight,
-                'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':PRStatus, 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
-                telemetryReps.append(tempRep)
+                    tempRep = {'name':ip+' (T)', 'nanoNodeAccount':teleRep['account'],
+                    'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
+                    'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':weight,
+                    'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':teleRep['PR'], 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
+                    telemetryReps.append(tempRep)
+        except Exception as e:
+            log.warning(timeLog("Could not extract non matched telemetry reps. %r" %e))
 
         blockCountMedian = 0
         cementedMedian = 0
@@ -812,6 +889,10 @@ async def getAPI():
         multiplierMin = 0
 
         telemetryCount = 0
+        BPSMax = 0
+        BPSMedian = 0
+        CPSMax = 0
+        CPSMedian = 0
 
         #PR ONLY
         blockCountMedian_pr = 0
@@ -847,14 +928,22 @@ async def getAPI():
         multiplierMin_pr = 0
 
         telemetryCount_pr = 0
+        BPSMax_pr = 0
+        BPSMedian_pr = 0
+        CPSMax_pr = 0
+        CPSMedian_pr = 0
+
+        statData = None
 
         # calculate number of telemetry peers
-        for p in telemetryPeers:
-            weight = int(p['weight']) / int(1000000000000000000000000000000)
-            if (weight >= latestOnlineWeight*0.001):
-                telemetryCount_pr += 1
-            else:
-                telemetryCount += 1
+        try:
+            for p in telemetryPeers:
+                if (p['PR']):
+                    telemetryCount_pr += 1
+                else:
+                    telemetryCount += 1
+        except Exception as e:
+            log.warning(timeLog("Could not calculate number of telemetry peers. %r" %e))
 
         # non pr is the total combined number
         telemetryCount = telemetryCount + telemetryCount_pr
@@ -955,6 +1044,59 @@ async def getAPI():
                 multiplierMax_pr = float(max(multiplierData_pr))
                 multiplierMin_pr = float(min(multiplierData_pr))
 
+            # Calculate median timestamp
+            medianTimestamp = 0
+            medianTimestamp_pr = 0
+            if len(timestamps) > 0:
+                medianTimestamp = median(timestamps)
+            if len(timestamps_pr) > 0:
+                medianTimestamp_pr = median(timestamps_pr)
+
+            # Calculate BPS max
+            if blockCountMax > 0 and previousMaxBlockCount > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
+                BPSMax = (blockCountMax - previousMaxBlockCount) / (medianTimestamp - previousMedianTimeStamp)
+            if blockCountMax_pr > 0 and previousMaxBlockCount_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
+                BPSMax_pr = (blockCountMax_pr - previousMaxBlockCount_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+
+            # Calculate BPS median
+            if blockCountMedian > 0 and previousMedianBlockCount > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
+                BPSMedian = (blockCountMedian - previousMedianBlockCount) / (medianTimestamp - previousMedianTimeStamp)
+            if blockCountMedian_pr > 0 and previousMedianBlockCount_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
+                BPSMedian_pr = (blockCountMedian_pr - previousMedianBlockCount_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+
+            # Calculate CPS max
+            if cementedMax > 0 and previousMaxConfirmed > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
+                CPSMax = (cementedMax - previousMaxConfirmed) / (medianTimestamp - previousMedianTimeStamp)
+            if cementedMax_pr > 0 and previousMaxConfirmed_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
+                CPSMax_pr = (cementedMax_pr - previousMaxConfirmed_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+
+            # Calculate CPS median
+            if cementedMedian > 0 and previousMedianConfirmed > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
+                CPSMedian = (cementedMedian - previousMedianConfirmed) / (medianTimestamp - previousMedianTimeStamp)
+            if cementedMedian_pr > 0 and previousMedianConfirmed_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
+                CPSMedian_pr = (cementedMedian_pr - previousMedianConfirmed_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+
+            if medianTimestamp > 0:
+                previousMedianTimeStamp = medianTimestamp
+            if medianTimestamp_pr > 0:
+                previousMedianTimeStamp_pr = medianTimestamp_pr
+            if blockCountMax > 0:
+                previousMaxBlockCount = blockCountMax
+            if blockCountMax_pr > 0:
+                previousMaxBlockCount_pr = blockCountMax_pr
+            if blockCountMedian > 0:
+                previousMedianBlockCount = blockCountMedian
+            if blockCountMedian_pr > 0:
+                previousMedianBlockCount_pr = blockCountMedian_pr
+            if cementedMax > 0:
+                previousMaxConfirmed = cementedMax
+            if cementedMax_pr > 0:
+                previousMaxConfirmed_pr = cementedMax_pr
+            if cementedMedian > 0:
+                previousMedianConfirmed = cementedMedian
+            if cementedMedian_pr > 0:
+                previousMedianConfirmed_pr = cementedMedian_pr
+
             #Write output file
             statData = {\
                 "blockCountMedian":int(blockCountMedian),\
@@ -995,6 +1137,10 @@ async def getAPI():
                 "lenProcTime":int(len(procTimeData)),\
                 "lenMultiplier":int(len(multiplierData)),\
                 "telemetryCount":telemetryCount,\
+                "BPSMax":BPSMax,\
+                "BPSMedian":BPSMedian,\
+                "CPSMax":CPSMax,\
+                "CPSMedian":CPSMedian,\
                 #PR ONLY START
                 "blockCountMedian_pr":int(blockCountMedian_pr),\
                 "blockCountMax_pr":int(blockCountMax_pr),\
@@ -1034,6 +1180,10 @@ async def getAPI():
                 "lenProcTime_pr":int(len(procTimeData_pr)),\
                 "lenMultiplier_pr":int(len(multiplierData_pr)),\
                 "telemetryCount_pr":telemetryCount_pr,\
+                "BPSMax_pr":BPSMax_pr,\
+                "BPSMedian_pr":BPSMedian_pr,\
+                "CPSMax_pr":CPSMax_pr,\
+                "CPSMedian_pr":CPSMedian_pr,\
                 #PR ONLY END
                 "pLatestVersionStat":pLatestVersionStat,\
                 "pTypesStat":pTypesStat,\
@@ -1050,23 +1200,29 @@ async def getAPI():
             latestGlobalPeers.append({"time":time.time(), "data": statData['peersMedian_pr']})
             latestGlobalDifficulty.append({"time":time.time(), "data": statData['multiplierMedian_pr']})
 
-        except:
+        except Exception as e:
+            log.error(timeLog('Could not create stat data. Error: %r' %e))
             pass
 
-        if blockCountMedian > 0 and blockCountMax > 0:
-            try:
-                with open(statFile, 'w') as outfile:
-                    outfile.write(simplejson.dumps(statData, indent=2))
-            except Exception as e:
-                log.error(timeLog('Could not write stat data. Error: %r' %e))
+        try:
+            if blockCountMedian > 0 and blockCountMax > 0 and statData is not None and supportedReps is not None and telemetryReps is not None:
+                try:
+                    with open(statFile, 'w') as outfile:
+                        outfile.write(simplejson.dumps(statData, indent=2))
+                except Exception as e:
+                    log.error(timeLog('Could not write stat data. Error: %r' %e))
 
-            try:
-                #combine monitor list with telemetry list
-                combinedList = supportedReps + telemetryReps
-                with open(monitorFile, 'w') as outfile:
-                    outfile.write(simplejson.dumps(combinedList, indent=2))
-            except Exception as e:
-                log.error(timeLog('Could not write monitor data. Error: %r' %e))
+                try:
+                    #combine monitor list with telemetry list
+                    combinedList = supportedReps + telemetryReps
+                    with open(monitorFile, 'w') as outfile:
+                        outfile.write(simplejson.dumps(combinedList, indent=2))
+                except Exception as e:
+                    log.error(timeLog('Could not write monitor data. Error: %r' %e))
+
+        except Exception as e:
+            log.error(timeLog('Could not write output data. Error: %r' %e))
+            pass
 
         #calculate final sleep based on execution time
         await apiSleep(startTime)
@@ -1100,9 +1256,11 @@ async def getPeers():
         }
 
         try:
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             peers = resp.json()['peers']
             for ipv6,value in peers.items():
+                if ipv6 is '':
+                    continue
                 if '[::ffff:' in ipv6: #ipv4
                     ip = re.search('ffff:(.*)\]:', ipv6).group(1)
                 else: #ipv6
@@ -1159,7 +1317,7 @@ async def getPeers():
             "peer_details": False,
         }
         try:
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             pStakeTot = resp.json()['peers_stake_total']
             pStakeReq = resp.json()['peers_stake_required']
             latestOnlineWeight = int(resp.json()['online_stake_total']) / int(1000000000000000000000000000000) #used for calculating PR status
@@ -1173,7 +1331,7 @@ async def getPeers():
             "action": "available_supply"
         }
         try:
-            resp = requests.post(url=nodeUrl, json=params, timeout=10)
+            resp = requests.post(url=nodeUrl, json=params, timeout=rpcTimeout)
             tempSupply = resp.json()['available']
             if int(tempSupply) > 0: #To ensure no devision by zero
                 supply = tempSupply
@@ -1280,7 +1438,7 @@ async def getPeers():
                         tasks.append(asyncio.ensure_future(verifyMonitor(path)))
 
             try:
-                with async_timeout.timeout(timeout):
+                with async_timeout.timeout(monitorTimeout):
                     await asyncio.gather(*tasks)
 
             except asyncio.TimeoutError as t:

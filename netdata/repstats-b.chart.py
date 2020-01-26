@@ -233,24 +233,6 @@ class Service(UrlService):
         self.url = self.configuration.get('url', 'https://b-monitor.repnode.org/stats-beta.json')
         self.order = ORDER
         self.definitions = CHARTS
-        self.blocks_max_old = 0 #block count previous poll
-        self.blocks_median_old = 0 #block count previous poll
-        self.bps_max_old = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
-        self.bps_median_old = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
-        self.cemented_max_old = 0 #cemented count previous poll
-        self.cemented_median_old = 0 #cemented count previous poll
-        self.cps_max_old = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
-        self.cps_median_old = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
-
-        #PR ONLY
-        self.blocks_max_old_pr = 0 #block count previous poll
-        self.blocks_median_old_pr = 0 #block count previous poll
-        self.bps_max_old_pr = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
-        self.bps_median_old_pr = deque([0]*CPS_WINDOW) #tps history last x polls, init with x zeroes
-        self.cemented_max_old_pr = 0 #cemented count previous poll
-        self.cemented_median_old_pr = 0 #cemented count previous poll
-        self.cps_max_old_pr = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
-        self.cps_median_old_pr = deque([0]*CPS_WINDOW) #cps history last x polls, init with x zeroes
 
     def _get_data(self):
         """
@@ -275,7 +257,8 @@ class Service(UrlService):
             ('supported_blocks','lenBlockCount',int,1),('supported_cemented','lenCemented',int,1),('supported_peers','lenPeers',int,1),
             ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_multiplier','lenMultiplier',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
-            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
+            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
+            ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000)]
 
         apiKeys_pr = [('saved_blocks_max_pr','blockCountMax_pr',int,1), ('saved_blocks_median_pr','blockCountMedian_pr',int,1), ('confirmed_max_pr','cementedMax_pr',int,1), ('confirmed_median_pr','cementedMedian_pr',int,1),
             ('unchecked_max_pr','uncheckedMax_pr',int,1),('unchecked_median_pr','uncheckedMedian_pr',int,1),('unchecked_min_pr','uncheckedMin_pr',int,1),('peers_max_pr','peersMax_pr',int,1),
@@ -286,7 +269,8 @@ class Service(UrlService):
             ('supported_blocks_pr','lenBlockCount_pr',int,1),('supported_cemented_pr','lenCemented_pr',int,1),('supported_peers_pr','lenPeers_pr',int,1),
             ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_multiplier_pr','lenMultiplier_pr',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
-            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000)]
+            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
+            ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000)]
 
         r = dict()
 
@@ -305,117 +289,5 @@ class Service(UrlService):
             except Exception:
                 r[new_key] = 0 #replace with 0 if value missing from API
                 continue
-
-        if (self.blocks_max_old == 0):
-            self.blocks_max_old = r['saved_blocks_max'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_max'] = 1000 * (r['saved_blocks_max']-self.blocks_max_old) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_max_old = r['saved_blocks_max'] #update for next iteration
-        self.bps_max_old.append(r['bps_max'])
-        self.bps_max_old.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_max_old:
-            sum = sum + bps
-        r['bps_max_10'] = sum / len(self.bps_max_old)
-
-        #Calculate bps median based on previous block read
-        if (self.blocks_median_old == 0):
-            self.blocks_median_old = r['saved_blocks_median'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_median'] = 1000 * (r['saved_blocks_median']-self.blocks_median_old) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_median_old = r['saved_blocks_median'] #update for next iteration
-        self.bps_median_old.append(r['bps_median'])
-        self.bps_median_old.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_median_old:
-            sum = sum + bps
-        r['bps_median_10'] = sum / len(self.bps_median_old)
-
-        #Calculate cps max based on previous block read
-        if (self.cemented_max_old == 0):
-            self.cemented_max_old = r['confirmed_max'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_max'] = 1000 * (r['confirmed_max']-self.cemented_max_old) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_max_old = r['confirmed_max'] #update for next iteration
-        self.cps_max_old.append(r['cps_max'])
-        self.cps_max_old.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_max_old:
-            sum = sum + cps
-        r['cps_max_10'] = sum / len(self.cps_max_old)
-
-        #Calculate cps median based on previous block read
-        if (self.cemented_median_old == 0):
-            self.cemented_median_old = r['confirmed_median'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_median'] = 1000 * (r['confirmed_median']-self.cemented_median_old) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_median_old = r['confirmed_median'] #update for next iteration
-        self.cps_median_old.append(r['cps_median'])
-        self.cps_median_old.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_median_old:
-            sum = sum + cps
-        r['cps_median_10'] = sum / len(self.cps_median_old)
-
-        #----------PR ONLY--------
-        #Calculate bps max based on previous block read
-        if (self.blocks_max_old_pr == 0):
-            self.blocks_max_old_pr = r['saved_blocks_max_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_max_pr'] = 1000 * (r['saved_blocks_max_pr']-self.blocks_max_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_max_old_pr = r['saved_blocks_max_pr'] #update for next iteration
-        self.bps_max_old_pr.append(r['bps_max_pr'])
-        self.bps_max_old_pr.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_max_old_pr:
-            sum = sum + bps
-        r['bps_max_10_pr'] = sum / len(self.bps_max_old_pr)
-
-        #Calculate bps median based on previous block read
-        if (self.blocks_median_old_pr == 0):
-            self.blocks_median_old_pr = r['saved_blocks_median_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['bps_median_pr'] = 1000 * (r['saved_blocks_median_pr']-self.blocks_median_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.blocks_median_old_pr = r['saved_blocks_median_pr'] #update for next iteration
-        self.bps_median_old_pr.append(r['bps_median_pr'])
-        self.bps_median_old_pr.popleft()
-
-        #Calculate bps past X iterations based on average bps
-        sum = 0
-        for bps in self.bps_median_old_pr:
-            sum = sum + bps
-        r['bps_median_10_pr'] = sum / len(self.bps_median_old_pr)
-
-        #Calculate cps max based on previous block read
-        if (self.cemented_max_old_pr == 0):
-            self.cemented_max_old_pr = r['confirmed_max_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_max_pr'] = 1000 * (r['confirmed_max_pr']-self.cemented_max_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_max_old_pr = r['confirmed_max_pr'] #update for next iteration
-        self.cps_max_old_pr.append(r['cps_max_pr'])
-        self.cps_max_old_pr.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_max_old_pr:
-            sum = sum + cps
-        r['cps_max_10_pr'] = sum / len(self.cps_max_old_pr)
-
-        #Calculate cps median based on previous block read
-        if (self.cemented_median_old_pr == 0):
-            self.cemented_median_old_pr = r['confirmed_median_pr'] #Initialize with block count first time to not get large tps before running one iteration
-        r['cps_median_pr'] = 1000 * (r['confirmed_median_pr']-self.cemented_median_old_pr) / update_every #use previous iteration (multiply 1000 and divide with 1000 in chart to get decimals)
-        self.cemented_median_old_pr = r['confirmed_median_pr'] #update for next iteration
-        self.cps_median_old_pr.append(r['cps_median_pr'])
-        self.cps_median_old_pr.popleft()
-
-        #Calculate cps past X iterations based on average bps
-        sum = 0
-        for cps in self.cps_median_old_pr:
-            sum = sum + cps
-        r['cps_median_10_pr'] = sum / len(self.cps_median_old_pr)
 
         return r or None
