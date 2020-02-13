@@ -14,6 +14,7 @@ import requests
 import re
 import logging
 from decimal import Decimal
+from collections import deque #for array shifting
 
 #Own references
 import repList
@@ -56,10 +57,10 @@ difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuu
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
-monitorTimeout = 7 #http request timeout for monitor API
-rpcTimeout = 7 #node rpc timeout
+monitorTimeout = 10 #http request timeout for monitor API
+rpcTimeout = 10 #node rpc timeout
 
-runAPIEvery = 20 #run API check every X sec
+runAPIEvery = 16 #run API check every X sec
 runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
@@ -70,15 +71,17 @@ pTypesStat = 0 #percentage running tcp
 pStakeTotalStat = 0 #percentage connected online weight of maximum
 pStakeRequiredStat = 0 #percentage of connected online weight of maxium required for voting
 pStakeLatestVersionStat = 0 #percentage of connected online weight that is on latest version
-confCountLimit = 500 #lower limit for block count to include confirmation average
-confSpanLimit = 30000 #lower limit for time span to include confirmation average
+confCountLimit = 100 #lower limit for block count to include confirmation average
+confSpanLimit = 10000 #lower limit for time span to include confirmation average
 
 if BETA:
     repsInit = repList.repsInitB
     blacklist = repList.blacklistB
+    checkCPSEvery = 2 #inverval for calculating BPS/CPS from telemetry. Total time is runAPIEvery * checkCPSEvery
 else:
     repsInit = repList.repsInitM
     blacklist = repList.blacklistM
+    checkCPSEvery = 7 #inverval for calculating BPS/CPS from telemetry. Total time is runAPIEvery * checkCPSEvery
 
 """VARIABLES"""
 reps = repsInit
@@ -88,17 +91,17 @@ latestGlobalBlocks = []
 latestGlobalPeers = []
 latestGlobalDifficulty = []
 
-# For BPS/CPS calculations
-previousMaxBlockCount = 0
-previousMaxConfirmed = 0
-previousMedianBlockCount = 0
-previousMedianConfirmed = 0
-previousMedianTimeStamp = 0
-previousMaxBlockCount_pr = 0
-previousMaxConfirmed_pr = 0
-previousMedianBlockCount_pr = 0
-previousMedianConfirmed_pr = 0
-previousMedianTimeStamp_pr = 0
+# For BPS/CPS calculations (array with previous values to get a rolling window)
+previousMaxBlockCount = deque([0]*checkCPSEvery)
+previousMaxConfirmed = deque([0]*checkCPSEvery)
+previousMedianBlockCount = deque([0]*checkCPSEvery)
+previousMedianConfirmed = deque([0]*checkCPSEvery)
+previousMedianTimeStamp = deque([0]*checkCPSEvery)
+previousMaxBlockCount_pr = deque([0]*checkCPSEvery)
+previousMaxConfirmed_pr = deque([0]*checkCPSEvery)
+previousMedianBlockCount_pr = deque([0]*checkCPSEvery)
+previousMedianConfirmed_pr = deque([0]*checkCPSEvery)
+previousMedianTimeStamp_pr = deque([0]*checkCPSEvery)
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -136,8 +139,7 @@ def median(lst):
     except Exception as e:
         log.warning(timeLog("Could not calculate median value. %r" %e))
 
-"""
-def median(lst):
+def medianNormal(lst):
     sortedLst = sorted(lst)
     lstLen = len(lst)
     index = (lstLen - 1) // 2
@@ -146,7 +148,6 @@ def median(lst):
         return sortedLst[index]
     else:
         return (sortedLst[index] + sortedLst[index + 1])/2.0
-"""
 
 async def fetch(session, url):
     async with session.get(url) as response:
@@ -348,10 +349,14 @@ async def getAPI():
             bandwidth_cap_tele = -1
             peer_count_tele = -1
             protocol_version_number_tele = -1
-            vendor_version_tele = -1
+            major_version_tele = -1
+            minor_version_tele = -1
+            patch_version_tele = -1
+            pre_release_version_tele = -1
             uptime_tele = -1
             weight = -1
             PRStatus = False
+            timeStamp_tele = time.time()
 
             #get weight
             params = {
@@ -382,17 +387,25 @@ async def getAPI():
                 bandwidth_cap_tele = telemetry['bandwidth_cap']
             if 'peer_count' in telemetry:
                 peer_count_tele = telemetry['peer_count']
-            if 'protocol_version_number' in telemetry:
-                protocol_version_number_tele = telemetry['protocol_version_number']
-            if 'vendor_version' in telemetry:
-                vendor_version_tele = telemetry['vendor_version']
+            if 'protocol_version' in telemetry:
+                protocol_version_number_tele = int(telemetry['protocol_version'])
+            if 'major_version' in telemetry:
+                major_version_tele = telemetry['major_version']
+            if 'minor_version' in telemetry:
+                minor_version_tele = telemetry['minor_version']
+            if 'patch_version' in telemetry:
+                patch_version_tele = telemetry['patch_version']
+            if 'pre_release_version' in telemetry:
+                pre_release_version_tele = telemetry['pre_release_version']
             if 'uptime' in telemetry:
                 uptime_tele = telemetry['uptime']
+            if 'timestamp' in telemetry:
+                timeStamp_tele = int(telemetry['timestamp'])
 
             teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
             "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
-            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":time.time()}
+            "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":timeStamp_tele}
 
             telemetryPeers.append(teleTemp) # add local account rep
 
@@ -401,110 +414,94 @@ async def getAPI():
             pass
 
         # GET TELEMETRY DATA FROM PEERS
-        #Grab connected peer IPs from the node
-        params = {
-            "action": "peers",
-            "peer_details": True,
-        }
+        # calculate max/min/medians using telemetry data. Init first
+        countData = []
+        cementedData = []
+        uncheckedData = []
+        peersData = []
+        timestamps = []
+
+        #PR ONLY
+        countData_pr = []
+        cementedData_pr = []
+        uncheckedData_pr = []
+        peersData_pr = []
+        timestamps_pr = []
 
         try:
+            params = {
+                "action": "node_telemetry",
+                "raw": "true",
+            }
             resp = await getRegularRPC(params)
-            tasks = []
-            if 'peers' in resp[0]:
-                peers = resp[0]['peers']
-                for ipv6,value in peers.items():
-                    if ipv6 is '':
-                        continue
-                    ip = re.search('\[(.*)\]:', ipv6).group(1)
-                    port = re.search('\]:(.*)', ipv6).group(1)
+            telemetry = resp[0]
 
-                    if ip is not "":
-                        #Read telemetry data
-                        params = {
-                            "action": "node_telemetry",
-                            "address": ip,
-                            "port": port,
-                        }
-                        tasks.append(asyncio.ensure_future(getTelemetryRPC(params,ipv6)))
-                try:
-                    with async_timeout.timeout(rpcTimeout):
-                        await asyncio.gather(*tasks)
+            if 'metrics' in telemetry:
+                for i, metric in enumerate(telemetry['metrics']):
+                    block_count_tele = -1
+                    cemented_count_tele = -1
+                    unchecked_count_tele = -1
+                    account_count_tele = -1
+                    bandwidth_cap_tele = -1
+                    peer_count_tele = -1
+                    protocol_version_number_tele = -1
+                    major_version_tele = -1
+                    minor_version_tele = -1
+                    patch_version_tele = -1
+                    pre_release_version_tele = -1
+                    uptime_tele = -1
+                    timeStamp_tele = time.time()
+                    address = ''
+                    port = ''
 
-                except asyncio.TimeoutError as t:
-                    log.warning(timeLog('Telemetry request read timeout: %r' %t))
-                    pass
+                    if 'block_count' in metric:
+                        block_count_tele = int(metric['block_count'])
+                        countData.append(block_count_tele)
+                    if 'timestamp' in metric:
+                        timeStamp_tele = int(metric['timestamp'])
+                        timestamps.append(timeStamp_tele)
+                    if 'cemented_count' in metric:
+                        cemented_count_tele = int(metric['cemented_count'])
+                        cementedData.append(cemented_count_tele)
+                    if 'unchecked_count' in metric:
+                        unchecked_count_tele = int(metric['unchecked_count'])
+                        uncheckedData.append(unchecked_count_tele)
+                    if 'account_count' in metric:
+                        account_count_tele = int(metric['account_count'])
+                    if 'bandwidth_cap' in metric:
+                        bandwidth_cap_tele = metric['bandwidth_cap']
+                    if 'peer_count' in metric:
+                        peer_count_tele = int(metric['peer_count'])
+                        peersData.append(peer_count_tele)
+                    if 'protocol_version' in metric:
+                        protocol_version_number_tele = int(metric['protocol_version'])
+                    if 'major_version' in metric:
+                        major_version_tele = metric['major_version']
+                    if 'minor_version' in metric:
+                        minor_version_tele = metric['minor_version']
+                    if 'patch_version' in metric:
+                        patch_version_tele = metric['patch_version']
+                    if 'pre_release_version' in metric:
+                        pre_release_version_tele = metric['pre_release_version']
+                    if 'uptime' in metric:
+                        uptime_tele = metric['uptime']
+                    if 'address' in metric:
+                        address_tele = metric['address']
+                    if 'port' in metric:
+                        port_tele = metric['port']
 
-            # calculate max/min/medians using telemetry data. Init first
-            countData = []
-            cementedData = []
-            uncheckedData = []
-            peersData = []
-            timestamps = []
+                    teleTemp = {"ip":'['+address_tele+']:'+port_tele, "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
+                    "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
+                    "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
+                    "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":False, "req_time":'0', "time_stamp":timeStamp_tele}
 
-            #PR ONLY
-            countData_pr = []
-            cementedData_pr = []
-            uncheckedData_pr = []
-            peersData_pr = []
-            timestamps_pr = []
+                    telemetryPeers.append(teleTemp)
 
-            for i, task in enumerate(tasks):
-                try:
-                    if task.result() is not None and task.result():
-                        if (task.result()[1] == True):
-                            telemetry = task.result()[0]
-                            block_count_tele = -1
-                            cemented_count_tele = -1
-                            unchecked_count_tele = -1
-                            account_count_tele = -1
-                            bandwidth_cap_tele = -1
-                            peer_count_tele = -1
-                            protocol_version_number_tele = -1
-                            vendor_version_tele = -1
-                            uptime_tele = -1
-                            timeStamp = -1
-
-                            if 'block_count' in telemetry:
-                                block_count_tele = int(telemetry['block_count'])
-                                countData.append(block_count_tele)
-                                timeStamp = task.result()[5]
-                                timestamps.append(timeStamp) #only use timestamps when valid block count
-                            if 'cemented_count' in telemetry:
-                                cemented_count_tele = int(telemetry['cemented_count'])
-                                cementedData.append(cemented_count_tele)
-                            if 'unchecked_count' in telemetry:
-                                unchecked_count_tele = int(telemetry['unchecked_count'])
-                                uncheckedData.append(unchecked_count_tele)
-                            if 'account_count' in telemetry:
-                                account_count_tele = int(telemetry['account_count'])
-                            if 'bandwidth_cap' in telemetry:
-                                bandwidth_cap_tele = telemetry['bandwidth_cap']
-                            if 'peer_count' in telemetry:
-                                peer_count_tele = int(telemetry['peer_count'])
-                                peersData.append(peer_count_tele)
-                            if 'protocol_version_number' in telemetry:
-                                protocol_version_number_tele = int(telemetry['protocol_version_number'])
-                            if 'vendor_version' in telemetry:
-                                vendor_version_tele = telemetry['vendor_version']
-                            if 'uptime' in telemetry:
-                                uptime_tele = telemetry['uptime']
-
-                            teleTemp = {"ip":task.result()[3], "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
-                            "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
-                            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
-                            "vendor_version":vendor_version_tele, "uptime":uptime_tele, "PR":False, "req_time":task.result()[4], "time_stamp":timeStamp}
-
-                            telemetryPeers.append(teleTemp)
-
-                        else:
-                            log.warning(timeLog('Could not read telemetry json from %s. Result: %s' %(task.result()[2], task.result()[6])))
-
-                except Exception as e:
-                    log.warning(timeLog('Could not read telemetry response. Error: %r' %e))
-                    pass
+            else:
+                log.warning(timeLog("Metrics not found in telemetry raw data"))
 
         except Exception as e:
-            log.warning(timeLog("Could not read peers from node RPC. %r" %e))
+            log.warning(timeLog("Could not read raw telemetry from node RPC. %r" %e))
             pass
 
         # GET WEIGHT FROM CONFIRMATION QUORUM
@@ -770,8 +767,8 @@ async def getAPI():
                                 weight = int(p['weight'])
 
                             #telemetry
-                            #if p['vendor_version'] != -1:
-                                #version = int(p['vendor_version'])
+                            if p['vendor_version'] != -1:
+                                version = p['vendor_version']
                             if p['protocol_version'] != -1:
                                 protocolVersion = int(p['protocol_version'])
                             if p['block_count'] != -1:
@@ -783,7 +780,7 @@ async def getAPI():
                                 unchecked = int(p['unchecked_count'])
                             if p['peer_count'] != -1:
                                 peers = int(p['peer_count'])
-                            if p['req_time'] > 0:
+                            if int(p['req_time']) >= 0:
                                 procTime = int(p['req_time'])
                             if p['PR'] == True:
                                 PRStatus = True
@@ -1091,55 +1088,66 @@ async def getAPI():
             # Calculate median timestamp
             medianTimestamp = 0
             medianTimestamp_pr = 0
+
             if len(timestamps) > 0:
-                medianTimestamp = median(timestamps)
+                medianTimestamp = medianNormal(timestamps)
             if len(timestamps_pr) > 0:
-                medianTimestamp_pr = median(timestamps_pr)
+                medianTimestamp_pr = medianNormal(timestamps_pr)
 
             # Calculate BPS max
-            if blockCountMax > 0 and previousMaxBlockCount > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
-                BPSMax = (blockCountMax - previousMaxBlockCount) / (medianTimestamp - previousMedianTimeStamp)
-            if blockCountMax_pr > 0 and previousMaxBlockCount_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
-                BPSMax_pr = (blockCountMax_pr - previousMaxBlockCount_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+            if blockCountMax > 0 and previousMaxBlockCount[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
+                BPSMax = (blockCountMax - previousMaxBlockCount[0]) / (medianTimestamp - previousMedianTimeStamp[0])
+            if blockCountMax_pr > 0 and previousMaxBlockCount_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
+                BPSMax_pr = (blockCountMax_pr - previousMaxBlockCount_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
 
             # Calculate BPS median
-            if blockCountMedian > 0 and previousMedianBlockCount > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
-                BPSMedian = (blockCountMedian - previousMedianBlockCount) / (medianTimestamp - previousMedianTimeStamp)
-            if blockCountMedian_pr > 0 and previousMedianBlockCount_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
-                BPSMedian_pr = (blockCountMedian_pr - previousMedianBlockCount_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+            if blockCountMedian > 0 and previousMedianBlockCount[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
+                BPSMedian = (blockCountMedian - previousMedianBlockCount[0]) / (medianTimestamp - previousMedianTimeStamp[0])
+            if blockCountMedian_pr > 0 and previousMedianBlockCount_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
+                BPSMedian_pr = (blockCountMedian_pr - previousMedianBlockCount_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
 
             # Calculate CPS max
-            if cementedMax > 0 and previousMaxConfirmed > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
-                CPSMax = (cementedMax - previousMaxConfirmed) / (medianTimestamp - previousMedianTimeStamp)
-            if cementedMax_pr > 0 and previousMaxConfirmed_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
-                CPSMax_pr = (cementedMax_pr - previousMaxConfirmed_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+            if cementedMax > 0 and previousMaxConfirmed[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
+                CPSMax = (cementedMax - previousMaxConfirmed[0]) / (medianTimestamp - previousMedianTimeStamp[0])
+            if cementedMax_pr > 0 and previousMaxConfirmed_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
+                CPSMax_pr = (cementedMax_pr - previousMaxConfirmed_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
 
             # Calculate CPS median
-            if cementedMedian > 0 and previousMedianConfirmed > 0 and (medianTimestamp - previousMedianTimeStamp) > 0 and previousMedianTimeStamp > 0:
-                CPSMedian = (cementedMedian - previousMedianConfirmed) / (medianTimestamp - previousMedianTimeStamp)
-            if cementedMedian_pr > 0 and previousMedianConfirmed_pr > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr) > 0 and previousMedianTimeStamp_pr > 0:
-                CPSMedian_pr = (cementedMedian_pr - previousMedianConfirmed_pr) / (medianTimestamp_pr - previousMedianTimeStamp_pr)
+            if cementedMedian > 0 and previousMedianConfirmed[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
+                CPSMedian = (cementedMedian - previousMedianConfirmed[0]) / (medianTimestamp - previousMedianTimeStamp[0])
+            if cementedMedian_pr > 0 and previousMedianConfirmed_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
+                CPSMedian_pr = (cementedMedian_pr - previousMedianConfirmed_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
 
             if medianTimestamp > 0:
-                previousMedianTimeStamp = medianTimestamp
+                previousMedianTimeStamp.append(medianTimestamp)
+                previousMedianTimeStamp.popleft()
             if medianTimestamp_pr > 0:
-                previousMedianTimeStamp_pr = medianTimestamp_pr
+                previousMedianTimeStamp_pr.append(medianTimestamp_pr)
+                previousMedianTimeStamp_pr.popleft()
             if blockCountMax > 0:
-                previousMaxBlockCount = blockCountMax
+                previousMaxBlockCount.append(blockCountMax)
+                previousMaxBlockCount.popleft()
             if blockCountMax_pr > 0:
-                previousMaxBlockCount_pr = blockCountMax_pr
+                previousMaxBlockCount_pr.append(blockCountMax_pr)
+                previousMaxBlockCount_pr.popleft()
             if blockCountMedian > 0:
-                previousMedianBlockCount = blockCountMedian
+                previousMedianBlockCount.append(blockCountMedian)
+                previousMedianBlockCount.popleft()
             if blockCountMedian_pr > 0:
-                previousMedianBlockCount_pr = blockCountMedian_pr
+                previousMedianBlockCount_pr.append(blockCountMedian_pr)
+                previousMedianBlockCount_pr.popleft()
             if cementedMax > 0:
-                previousMaxConfirmed = cementedMax
+                previousMaxConfirmed.append(cementedMax)
+                previousMaxConfirmed.popleft()
             if cementedMax_pr > 0:
-                previousMaxConfirmed_pr = cementedMax_pr
+                previousMaxConfirmed_pr.append(cementedMax_pr)
+                previousMaxConfirmed_pr.popleft()
             if cementedMedian > 0:
-                previousMedianConfirmed = cementedMedian
+                previousMedianConfirmed.append(cementedMedian)
+                previousMedianConfirmed.popleft()
             if cementedMedian_pr > 0:
-                previousMedianConfirmed_pr = cementedMedian_pr
+                previousMedianConfirmed_pr.append(cementedMedian_pr)
+                previousMedianConfirmed_pr.popleft()
 
             #Write output file
             statData = {\
