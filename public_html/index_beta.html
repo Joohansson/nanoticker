@@ -53,7 +53,7 @@
   <!-- INIT -->
   <script>
     //CUSTOM VARS
-    var monitorsUpdateInterval = 15000; //Interval for client side update
+    var monitorsUpdateInterval = 16000; //Interval for client side update
     var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
     var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
     //var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
@@ -134,8 +134,8 @@
 		</div>
     <div class="div-graph">
 			<div class="div-header">
-        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 2 min.<br/>
-        Value from the top node.">BPS and CPS 2 min average [MAX]</span>
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 30 sec.<br/>
+        Value from the top node.">BPS and CPS 30 sec average [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.tps_max"
@@ -336,8 +336,8 @@
 		</div>
 		<div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 2 min.<br/>
-        Median value from all monitored nodes.">BPS and CPS 2 min average [MEDIAN]</span>
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 30 sec.<br/>
+        Median value from all monitored nodes.">BPS and CPS 30 sec average [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.tps_median"
@@ -497,8 +497,8 @@
   <div class="section"></div>
   <div class="table-info">
     <span class="title" title="Discovered monitors with a block count above 50% of max block count.<br/>
-    Emty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Connected Monitors (</span>
-    <span class="title" id="monitorCount"></span><span class="title"> ) - </span>
+    Emty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Data from </span>
+    <span class="title" id="monitorCount"></span><span class="title"> Monitors and </span><span class="title" id="telemetryCount"></span><span class="title"> Telemetries - </span>
     <span class="title" id="monitorLastUpdated"></span>
   </div>
   <div class="monitors-wrapper">
@@ -515,7 +515,7 @@
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">API Time [ms]</th>
+	        <th scope="col">REQ Time [ms]</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -532,7 +532,7 @@
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">API Time</th>
+	        <th scope="col">REQ Time</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -833,14 +833,17 @@
     //Update last updated time and monitor count
     $.getJSON( statFile, function(data) {
       $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
-      var PRs = 0
+      var monitors = 0
       if (filterPR) {
-        PRs = data.lenBlockCount_pr
+        monitors = data.monitorCount_pr
+        telemetries = data.telemetryCount_pr
       }
       else {
-        PRs = data.lenBlockCount
+        monitors = data.monitorCount
+        telemetries = data.telemetryCount
       }
-      $('#monitorCount').text(PRs)
+      $('#monitorCount').text(monitors)
+      $('#telemetryCount').text(telemetries)
       latestOnlineWeight =  data.pStakeOnline
     })
   }
@@ -862,6 +865,9 @@
         dataSrc: function(data) {
           //Correct the data
           $.each(data, function (index, entry) {
+            if (entry['isTelemetry'] == true) {
+              data[index]['name'] = 'T-'+data[index]['name']
+            }
             if(entry['name'] == '') {
               data[index]['name'] = 'N/A'
             }

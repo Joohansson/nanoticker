@@ -25,6 +25,8 @@ BETA = True #SET TO False FOR MAIN NET
 if BETA:
     #nodeUrl = 'http://[::1]:55000' #beta
     nodeUrl = 'http://127.0.0.1:55000' #beta
+    telemetryAddress = '127.0.0.1'
+    telemetryPort = '54000'
     logFile="repstat.log"
     statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
     monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
@@ -35,6 +37,8 @@ if BETA:
 
 else:
     nodeUrl = 'http://[::1]:7076' #main
+    telemetryAddress = '127.0.0.1'
+    telemetryPort = '7075'
     logFile="/root/py/nano/repstat.log"
     statFile = '/var/www/repstat/public_html/json/stats.json' #placed in a web server for public access
     monitorFile = '/var/www/repstat/public_html/json/monitors.json' #placed in a web server for public access
@@ -327,21 +331,22 @@ async def getAPI():
     global previousMedianConfirmed_pr
     global previousMedianTimeStamp_pr
 
-    await asyncio.sleep(18) #Wait for some values to be calculated from getPeers
+    await asyncio.sleep(1) #Wait for some values to be calculated from getPeers
     while 1:
         startTime = time.time() #to measure the loop speed
         telemetryPeers = []
 
-        # GET TELEMETRY FOR LOCAL ACCOUNT
-        params = {
-            "action": "node_telemetry"
-        }
+        # GET TELEMETRY FOR LOCAL ACCOUNT (can't use normal telemetry)
         try:
+            # get block count
+            params = {
+                "action": "node_telemetry",
+                "address": telemetryAddress,
+                "port": telemetryPort
+            }
             resp = await getRegularRPC(params)
-            reqTime = resp[2]
-
-            #Find matching IP and include weight in original peer list
             telemetry = resp[0]
+
             block_count_tele = -1
             cemented_count_tele = -1
             unchecked_count_tele = -1
@@ -354,39 +359,36 @@ async def getAPI():
             patch_version_tele = -1
             pre_release_version_tele = -1
             uptime_tele = -1
+            timeStamp_tele = time.time()
             weight = -1
             PRStatus = False
-            timeStamp_tele = time.time()
 
-            #get weight
-            params = {
-                "action": "account_weight",
-                "account": localTelemetryAccount
-            }
-            try:
-                resp = await getRegularRPC(params)
-                if 'weight' in resp[0]:
-                    weight = int(resp[0]['weight']) / int(1000000000000000000000000000000)
-                    if (weight >= latestOnlineWeight*0.001):
-                        PRStatus = True
-                    else:
-                        PRStatus = False
-            except Exception as e:
-                log.warning(timeLog("Could not read local weight from node RPC. %r" %e))
-                pass
+            # calculate max/min/medians using telemetry data. Init first
+            countData = []
+            cementedData = []
+            uncheckedData = []
+            peersData = []
+            timestamps = []
 
             if 'block_count' in telemetry:
-                block_count_tele = telemetry['block_count']
+                block_count_tele = int(telemetry['block_count'])
+                countData.append(block_count_tele)
+            if 'timestamp' in telemetry:
+                timeStamp_tele = int(telemetry['timestamp'])
+                timestamps.append(timeStamp_tele)
             if 'cemented_count' in telemetry:
-                cemented_count_tele = telemetry['cemented_count']
+                cemented_count_tele = int(telemetry['cemented_count'])
+                cementedData.append(cemented_count_tele)
             if 'unchecked_count' in telemetry:
-                unchecked_count_tele = telemetry['unchecked_count']
+                unchecked_count_tele = int(telemetry['unchecked_count'])
+                uncheckedData.append(unchecked_count_tele)
             if 'account_count' in telemetry:
-                account_count_tele = telemetry['account_count']
+                account_count_tele = int(telemetry['account_count'])
             if 'bandwidth_cap' in telemetry:
                 bandwidth_cap_tele = telemetry['bandwidth_cap']
             if 'peer_count' in telemetry:
-                peer_count_tele = telemetry['peer_count']
+                peer_count_tele = int(telemetry['peer_count'])
+                peersData.append(peer_count_tele)
             if 'protocol_version' in telemetry:
                 protocol_version_number_tele = int(telemetry['protocol_version'])
             if 'major_version' in telemetry:
@@ -399,8 +401,25 @@ async def getAPI():
                 pre_release_version_tele = telemetry['pre_release_version']
             if 'uptime' in telemetry:
                 uptime_tele = telemetry['uptime']
-            if 'timestamp' in telemetry:
-                timeStamp_tele = int(telemetry['timestamp'])
+
+            #get weight
+            params = {
+                "action": "account_weight",
+                "account": localTelemetryAccount
+            }
+            reqTime = '0'
+            try:
+                resp_weight = await getRegularRPC(params)
+                reqTime = resp_weight[2]
+                if 'weight' in resp_weight[0]:
+                    weight = int(resp_weight[0]['weight']) / int(1000000000000000000000000000000)
+                    if (weight >= latestOnlineWeight*0.001):
+                        PRStatus = True
+                    else:
+                        PRStatus = False
+            except Exception as e:
+                log.warning(timeLog("Could not read local weight from node RPC. %r" %e))
+                pass
 
             teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
@@ -414,12 +433,6 @@ async def getAPI():
             pass
 
         # GET TELEMETRY DATA FROM PEERS
-        # calculate max/min/medians using telemetry data. Init first
-        countData = []
-        cementedData = []
-        uncheckedData = []
-        peersData = []
-        timestamps = []
 
         #PR ONLY
         countData_pr = []

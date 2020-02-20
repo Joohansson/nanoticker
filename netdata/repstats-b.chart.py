@@ -21,9 +21,6 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 #             'url': 'http://localhost/stats.json'
 #          }}
 
-# constants
-CPS_WINDOW = 1 # number of iterations to base the average measure on Total time =update_every * CPS_WINDOW
-
 # charts order (can be overridden if you want less charts, or different order)
 
 ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median',\
@@ -119,8 +116,8 @@ CHARTS = {
             ["supported_cemented", "cemented", None, 'absolute'],
             ["supported_peers", "peers", None, 'absolute'],
             ["supported_conf", "conf times", None, 'absolute'],
-            ["supported_proc", "proc time", None, 'absolute'],
-            ["supported_multiplier", "multiplier", None, 'absolute']
+            #["supported_proc", "proc time", None, 'absolute'],
+            ["supported_multiplier", "difficulty", None, 'absolute']
         ]
     },
     'peerstat': {
@@ -221,8 +218,8 @@ CHARTS = {
             ["supported_cemented_pr", "cemented", None, 'absolute'],
             ["supported_peers_pr", "peers", None, 'absolute'],
             ["supported_conf_pr", "conf times", None, 'absolute'],
-            ["supported_proc_pr", "proc time", None, 'absolute'],
-            ["supported_multiplier_pr", "multiplier", None, 'absolute']
+            #["supported_proc_pr", "proc time", None, 'absolute'],
+            ["supported_multiplier_pr", "difficulty", None, 'absolute']
         ]
     },
 }
