@@ -107,6 +107,13 @@ previousMedianBlockCount_pr = deque([0]*checkCPSEvery)
 previousMedianConfirmed_pr = deque([0]*checkCPSEvery)
 previousMedianTimeStamp_pr = deque([0]*checkCPSEvery)
 
+previousLocalTimeStamp = deque([0]*checkCPSEvery)
+previousLocalMax = deque([0]*checkCPSEvery)
+previousLocalCemented = deque([0]*checkCPSEvery)
+
+# individual BPS CPS object
+indiPeersPrev = {'ip':{}}
+
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
@@ -330,6 +337,12 @@ async def getAPI():
     global previousMedianBlockCount_pr
     global previousMedianConfirmed_pr
     global previousMedianTimeStamp_pr
+    global previousLocalMax
+    global previousLocalCemented
+    global previousLocalTimeStamp
+    global indiPeersPrev
+
+    PRStatusLocal = False
 
     await asyncio.sleep(1) #Wait for some values to be calculated from getPeers
     while 1:
@@ -368,27 +381,25 @@ async def getAPI():
             cementedData = []
             uncheckedData = []
             peersData = []
-            timestamps = []
 
             if 'block_count' in telemetry:
                 block_count_tele = int(telemetry['block_count'])
-                countData.append(block_count_tele)
+                #countData.append(block_count_tele)
             if 'timestamp' in telemetry:
                 timeStamp_tele = int(telemetry['timestamp'])
-                timestamps.append(timeStamp_tele)
             if 'cemented_count' in telemetry:
                 cemented_count_tele = int(telemetry['cemented_count'])
-                cementedData.append(cemented_count_tele)
+                #cementedData.append(cemented_count_tele)
             if 'unchecked_count' in telemetry:
                 unchecked_count_tele = int(telemetry['unchecked_count'])
-                uncheckedData.append(unchecked_count_tele)
+                #uncheckedData.append(unchecked_count_tele)
             if 'account_count' in telemetry:
                 account_count_tele = int(telemetry['account_count'])
             if 'bandwidth_cap' in telemetry:
                 bandwidth_cap_tele = telemetry['bandwidth_cap']
             if 'peer_count' in telemetry:
                 peer_count_tele = int(telemetry['peer_count'])
-                peersData.append(peer_count_tele)
+                #peersData.append(peer_count_tele)
             if 'protocol_version' in telemetry:
                 protocol_version_number_tele = int(telemetry['protocol_version'])
             if 'major_version' in telemetry:
@@ -401,6 +412,27 @@ async def getAPI():
                 pre_release_version_tele = telemetry['pre_release_version']
             if 'uptime' in telemetry:
                 uptime_tele = telemetry['uptime']
+
+            BPSLocal = 0
+            if block_count_tele > 0 and previousLocalMax[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
+                BPSLocal = (block_count_tele - previousLocalMax[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
+            CPSLocal = 0
+            if cemented_count_tele > 0 and previousLocalCemented[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
+                CPSLocal = (cemented_count_tele - previousLocalCemented[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
+
+            # ms to sec
+            #BPSLocal = BPSLocal * 1000
+            #CPSLocal = CPSLocal * 1000
+
+            if timeStamp_tele > 0:
+                previousLocalTimeStamp.append(timeStamp_tele)
+                previousLocalTimeStamp.popleft()
+            if block_count_tele > 0:
+                previousLocalMax.append(block_count_tele)
+                previousLocalMax.popleft()
+            if cemented_count_tele > 0:
+                previousLocalCemented.append(cemented_count_tele)
+                previousLocalCemented.popleft()
 
             #get weight
             params = {
@@ -415,6 +447,7 @@ async def getAPI():
                     weight = int(resp_weight[0]['weight']) / int(1000000000000000000000000000000)
                     if (weight >= latestOnlineWeight*0.001):
                         PRStatus = True
+                        PRStatusLocal = True #used for comparing local BPS/CPS with the rest
                     else:
                         PRStatus = False
             except Exception as e:
@@ -423,7 +456,7 @@ async def getAPI():
 
             teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
             "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
-            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
+            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSLocal, "cps":CPSLocal,
             "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":timeStamp_tele}
 
             telemetryPeers.append(teleTemp) # add local account rep
@@ -439,7 +472,6 @@ async def getAPI():
         cementedData_pr = []
         uncheckedData_pr = []
         peersData_pr = []
-        timestamps_pr = []
 
         try:
             params = {
@@ -472,7 +504,6 @@ async def getAPI():
                         countData.append(block_count_tele)
                     if 'timestamp' in metric:
                         timeStamp_tele = int(metric['timestamp'])
-                        timestamps.append(timeStamp_tele)
                     if 'cemented_count' in metric:
                         cemented_count_tele = int(metric['cemented_count'])
                         cementedData.append(cemented_count_tele)
@@ -503,9 +534,65 @@ async def getAPI():
                     if 'port' in metric:
                         port_tele = metric['port']
 
+                    # calculate individual BPS and CPS
+                    BPSPeer = 0
+                    CPSPeer = 0
+                    if timeStamp_tele != -1 and block_count_tele != -1 and cemented_count_tele != -1 and address_tele != -1 and port_tele != -1:
+                        found = False
+                        for ip in indiPeersPrev:
+                            if ip == address_tele + ':' + port_tele:
+                                found = True
+                                break
+
+                        if not found:
+                            # prepare first history data
+                            log.info(timeLog("Preparing history for: " + address_tele + ':' + port_tele))
+
+                            timeD = deque([0]*checkCPSEvery)
+                            blockD = deque([0]*checkCPSEvery)
+                            cementD = deque([0]*checkCPSEvery)
+
+                            timeD.append(timeStamp_tele)
+                            timeD.popleft()
+                            blockD.append(block_count_tele)
+                            blockD.popleft()
+                            cementD.append(cemented_count_tele)
+                            cementD.popleft()
+                            indiPeersPrev[address_tele + ':' + port_tele] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD}
+
+                        # peer exist in the history, now we can calculate BPS and CPS
+                        else:
+                            previousMax = indiPeersPrev[address_tele + ':' + port_tele]['blockCount']
+                            previousCemented = indiPeersPrev[address_tele + ':' + port_tele]['cementCount']
+                            previousTimeStamp = indiPeersPrev[address_tele + ':' + port_tele]['timestamp']
+
+                            if block_count_tele > 0 and previousMax[0] > 0 and (timeStamp_tele - previousTimeStamp[0]) > 0 and previousTimeStamp[0] > 0:
+                                BPSPeer = (block_count_tele - previousMax[0]) / (timeStamp_tele - previousTimeStamp[0])
+
+                            if cemented_count_tele > 0 and previousCemented[0] > 0 and (timeStamp_tele - previousTimeStamp[0]) > 0 and previousTimeStamp[0] > 0:
+                                CPSPeer = (cemented_count_tele - previousCemented[0]) / (timeStamp_tele - previousTimeStamp[0])
+
+                            timeD = indiPeersPrev[ip]['timestamp']
+                            timeD.append(timeStamp_tele)
+                            timeD.popleft()
+
+                            blockD = indiPeersPrev[ip]['blockCount']
+                            blockD.append(block_count_tele)
+                            blockD.popleft()
+
+                            cementD = indiPeersPrev[ip]['cementCount']
+                            cementD.append(cemented_count_tele)
+                            cementD.popleft()
+
+                            indiPeersPrev[ip] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD}
+
+                    # ms to sec
+                    #BPSPeer = BPSPeer * 1000
+                    #CPSPeer = CPSPeer * 1000
+
                     teleTemp = {"ip":'['+address_tele+']:'+port_tele, "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
                     "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
-                    "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele,
+                    "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSPeer, "cps":CPSPeer,
                     "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":False, "req_time":'0', "time_stamp":timeStamp_tele}
 
                     telemetryPeers.append(teleTemp)
@@ -544,8 +631,6 @@ async def getAPI():
                                         uncheckedData_pr.append(int(cPeer['unchecked_count']))
                                     if cPeer['peer_count'] != -1:
                                         peersData_pr.append(int(cPeer['peer_count']))
-                                    if cPeer['time_stamp'] != -1:
-                                        timestamps_pr.append(cPeer['time_stamp'])
                                 else:
                                     PRStatus = False
 
@@ -605,6 +690,8 @@ async def getAPI():
         procTimeData = []
         multiplierData = []
         monitorCount = 0
+        bpsData = []
+        cpsData = []
 
         #PR ONLY
         #countData_pr = []
@@ -621,6 +708,8 @@ async def getAPI():
         procTimeData_pr = []
         multiplierData_pr = []
         monitorCount_pr = 0
+        bpsData_pr = []
+        cpsData_pr = []
 
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
@@ -772,6 +861,9 @@ async def getAPI():
                     multiplier = -1
                     fail = True
 
+                bps = -1
+                cps = -1
+
                 try:
                     #Match IP and replace weight and telemetry data
                     for p in telemetryPeers:
@@ -795,6 +887,10 @@ async def getAPI():
                                 peers = int(p['peer_count'])
                             if int(p['req_time']) >= 0:
                                 procTime = int(p['req_time'])
+                            if p['bps'] != -1:
+                                bps = float(p['bps'])
+                            if p['cps'] != -1:
+                                cps = float(p['cps'])
                             if p['PR'] == True:
                                 PRStatus = True
                                 monitorCount_pr += 1
@@ -873,10 +969,20 @@ async def getAPI():
                     if (PRStatus):
                         multiplierData_pr.append(multiplier)
 
+                if (bps > 0):
+                    bpsData.append(bps)
+                    if (PRStatus):
+                        bpsData_pr.append(bps)
+
+                if (cps > 0):
+                    cpsData.append(cps)
+                    if (PRStatus):
+                        cpsData_pr.append(cps)
+
                 # combined reps from monitors and telemetry data
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
                 'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
-                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight,
+                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'bps':bps, 'cps':cps,
                 'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch})
                 fail = False
 
@@ -904,7 +1010,7 @@ async def getAPI():
 
                     tempRep = {'name':ip, 'nanoNodeAccount':teleRep['account'],
                     'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
-                    'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':teleRep['weight'],
+                    'unchecked':teleRep['unchecked_count'], 'numPeers':teleRep['peer_count'], 'confAve':-1, 'confMedian':-1, 'weight':teleRep['weight'], 'bps':teleRep['bps'], 'cps':teleRep['cps'],
                     'memory':-1, 'procTime':teleRep['req_time'], 'multiplier':-1, 'supported':True, 'PR':teleRep['PR'], 'isTelemetry':True, 'bandwidthCap':teleRep['bandwidth_cap']}
                     telemetryReps.append(tempRep)
         except Exception as e:
@@ -1050,6 +1156,12 @@ async def getAPI():
                 multiplierMedian = float(median(multiplierData))
                 multiplierMax = float(max(multiplierData))
                 multiplierMin = float(min(multiplierData))
+            if len(bpsData) > 0:
+                BPSMedian = float(median(bpsData))
+                BPSMax = float(max(bpsData))
+            if len(cpsData) > 0:
+                CPSMedian = float(median(cpsData))
+                CPSMax = float(max(cpsData))
 
             #PR ONLY
             if len(countData_pr) > 0:
@@ -1097,70 +1209,12 @@ async def getAPI():
                 multiplierMedian_pr = float(median(multiplierData_pr))
                 multiplierMax_pr = float(max(multiplierData_pr))
                 multiplierMin_pr = float(min(multiplierData_pr))
-
-            # Calculate median timestamp
-            medianTimestamp = 0
-            medianTimestamp_pr = 0
-
-            if len(timestamps) > 0:
-                medianTimestamp = medianNormal(timestamps)
-            if len(timestamps_pr) > 0:
-                medianTimestamp_pr = medianNormal(timestamps_pr)
-
-            # Calculate BPS max
-            if blockCountMax > 0 and previousMaxBlockCount[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
-                BPSMax = (blockCountMax - previousMaxBlockCount[0]) / (medianTimestamp - previousMedianTimeStamp[0])
-            if blockCountMax_pr > 0 and previousMaxBlockCount_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
-                BPSMax_pr = (blockCountMax_pr - previousMaxBlockCount_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
-
-            # Calculate BPS median
-            if blockCountMedian > 0 and previousMedianBlockCount[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
-                BPSMedian = (blockCountMedian - previousMedianBlockCount[0]) / (medianTimestamp - previousMedianTimeStamp[0])
-            if blockCountMedian_pr > 0 and previousMedianBlockCount_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
-                BPSMedian_pr = (blockCountMedian_pr - previousMedianBlockCount_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
-
-            # Calculate CPS max
-            if cementedMax > 0 and previousMaxConfirmed[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
-                CPSMax = (cementedMax - previousMaxConfirmed[0]) / (medianTimestamp - previousMedianTimeStamp[0])
-            if cementedMax_pr > 0 and previousMaxConfirmed_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
-                CPSMax_pr = (cementedMax_pr - previousMaxConfirmed_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
-
-            # Calculate CPS median
-            if cementedMedian > 0 and previousMedianConfirmed[0] > 0 and (medianTimestamp - previousMedianTimeStamp[0]) > 0 and previousMedianTimeStamp[0] > 0:
-                CPSMedian = (cementedMedian - previousMedianConfirmed[0]) / (medianTimestamp - previousMedianTimeStamp[0])
-            if cementedMedian_pr > 0 and previousMedianConfirmed_pr[0] > 0 and (medianTimestamp_pr - previousMedianTimeStamp_pr[0]) > 0 and previousMedianTimeStamp_pr[0] > 0:
-                CPSMedian_pr = (cementedMedian_pr - previousMedianConfirmed_pr[0]) / (medianTimestamp_pr - previousMedianTimeStamp_pr[0])
-
-            if medianTimestamp > 0:
-                previousMedianTimeStamp.append(medianTimestamp)
-                previousMedianTimeStamp.popleft()
-            if medianTimestamp_pr > 0:
-                previousMedianTimeStamp_pr.append(medianTimestamp_pr)
-                previousMedianTimeStamp_pr.popleft()
-            if blockCountMax > 0:
-                previousMaxBlockCount.append(blockCountMax)
-                previousMaxBlockCount.popleft()
-            if blockCountMax_pr > 0:
-                previousMaxBlockCount_pr.append(blockCountMax_pr)
-                previousMaxBlockCount_pr.popleft()
-            if blockCountMedian > 0:
-                previousMedianBlockCount.append(blockCountMedian)
-                previousMedianBlockCount.popleft()
-            if blockCountMedian_pr > 0:
-                previousMedianBlockCount_pr.append(blockCountMedian_pr)
-                previousMedianBlockCount_pr.popleft()
-            if cementedMax > 0:
-                previousMaxConfirmed.append(cementedMax)
-                previousMaxConfirmed.popleft()
-            if cementedMax_pr > 0:
-                previousMaxConfirmed_pr.append(cementedMax_pr)
-                previousMaxConfirmed_pr.popleft()
-            if cementedMedian > 0:
-                previousMedianConfirmed.append(cementedMedian)
-                previousMedianConfirmed.popleft()
-            if cementedMedian_pr > 0:
-                previousMedianConfirmed_pr.append(cementedMedian_pr)
-                previousMedianConfirmed_pr.popleft()
+            if len(bpsData_pr) > 0:
+                BPSMedian_pr = float(median(bpsData_pr))
+                BPSMax_pr = float(max(bpsData_pr))
+            if len(cpsData_pr) > 0:
+                CPSMedian_pr = float(median(cpsData_pr))
+                CPSMax_pr = float(max(cpsData_pr))
 
             #Write output file
             statData = {\

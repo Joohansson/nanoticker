@@ -54,10 +54,10 @@
   <script>
     //CUSTOM VARS
     var monitorsUpdateInterval = 16000; //Interval for client side update
-    var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
-    var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
-    //var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
-    //var statFile = 'https://json.nanoticker.info/stats-beta.json'
+    //var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
+    //var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
+    var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
+    var statFile = 'https://json.nanoticker.info/stats-beta.json'
     //var explorerBaseUrl = 'https://beta.nanocrawler.cc/explorer/account/'
     var explorerBaseUrl = 'https://b.repnode.org/account/'
     //var prColor = '#4a90e2'
@@ -515,7 +515,8 @@
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">REQ Time [ms]</th>
+	        <th scope="col">BPS</th>
+          <th scope="col">CPS</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -532,7 +533,8 @@
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">REQ Time</th>
+	        <th scope="col">BPS</th>
+          <th scope="col">CPS</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -562,7 +564,8 @@
   var maxPeers = 0
   var maxConf = 0
   var maxMultiplier = 0
-  var maxAPI = 0
+  var maxBPS = 0
+  var maxCPS = 0
 
   var minChecked = Number.MAX_VALUE
   var minConfirmed = Number.MAX_VALUE
@@ -571,7 +574,8 @@
   var minPeers = Number.MAX_VALUE
   var minConf = Number.MAX_VALUE
   var minMultiplier = Number.MAX_VALUE
-  var minAPI = Number.MAX_VALUE
+  var minBPS = Number.MAX_VALUE
+  var minCPS = Number.MAX_VALUE
 
   var firstTimeSort = true
   var firstTimeSearch = true
@@ -797,7 +801,7 @@
           else {
             if (data) {
               if (data.multiplier != null) {
-                diff = parseFloat(data.multiplier.replace(/,/g, '')) - minMultiplier
+                diff = parseFloat(parseFloat(data.multiplier.replace(/,/g, ''))) - minMultiplier
               }
             }
             $('#order-info').html( 'Min Multiplier: ' + addCommas(parseInt(minMultiplier*1000)/1000) + ' | Diff: ' + diff)
@@ -808,19 +812,39 @@
           var diff = ''
           if (order[0][1] == 'desc') {
             if (data) {
-              if (data.procTime != null) {
-                diff = addCommas(maxAPI - parseInt(data.procTime.replace(/,/g, '')))
+              if (data.bps != null) {
+                diff = addCommas(maxBPS- parseFloat(data.bps.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max API Time: ' + addCommas(maxAPI) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max BPS: ' + addCommas(parseInt(maxBPS*10)/10) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
-              if (data.procTime != null) {
-                diff = parseInt(data.procTime.replace(/,/g, '')) - minAPI
+              if (data.bps != null) {
+                diff = parseFloat(parseFloat(data.bps.replace(/,/g, ''))) - minBPS
               }
             }
-            $('#order-info').html( 'Min API time: ' + addCommas(minAPI) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min BPS: ' + addCommas(parseInt(minBPS*10)/10) + ' | Diff: ' + diff)
+          }
+          break
+
+      case 10:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.cps != null) {
+                diff = addCommas(maxCPS- parseFloat(data.cps.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max CPS: ' + addCommas(parseInt(maxCPS*10)/10) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.cps != null) {
+                diff = parseFloat(parseFloat(data.cps.replace(/,/g, ''))) - minCPS
+              }
+            }
+            $('#order-info').html( 'Min CPS: ' + addCommas(parseInt(minCPS*10)/10) + ' | Diff: ' + diff)
           }
           break
 
@@ -975,17 +999,30 @@
               data[index]['multiplier'] = addCommas(parseInt(entry['multiplier']*1000)/1000)
             }
 
-            if (entry['procTime'] < 0) {
-              data[index]['procTime'] = null
+            if (entry['bps'] < 0) {
+              data[index]['bps'] = null
             }
             else {
-              if (entry['procTime'] > maxAPI) {
-                maxAPI = entry['procTime']
+              if (entry['bps'] > maxBPS) {
+                maxBPS = entry['bps']
               }
-              if (entry['procTime'] < minAPI) {
-                minAPI = entry['procTime']
+              if (entry['bps'] < minBPS) {
+                minBPS = entry['bps']
               }
-              data[index]['procTime'] = addCommas(entry['procTime'])
+              data[index]['bps'] = addCommas(parseInt(entry['bps']*10)/10)
+            }
+
+            if (entry['cps'] < 0) {
+              data[index]['cps'] = null
+            }
+            else {
+              if (entry['cps'] > maxCPS) {
+                maxCPS = entry['cps']
+              }
+              if (entry['cps'] < minCPS) {
+                minCPS = entry['cps']
+              }
+              data[index]['cps'] = addCommas(parseInt(entry['cps']*10)/10)
             }
 
             if (entry['version'] < 0) {
@@ -1025,7 +1062,8 @@
           { data : "numPeers", type: "num-fmt" },
           { data : "confMedian", type: "num-fmt"},
           { data : "multiplier", type: "num-fmt" },
-          { data : "procTime", type: "num-fmt" },
+          { data : "bps", type: "num-fmt" },
+          { data : "cps", type: "num-fmt" },
           { data : "version" },
           { data : "storeVendor" },
           { data : "nanoNodeAccount" }
@@ -1071,13 +1109,16 @@
             orderData: [9, 7, 0]
         },{
             targets: [10],
-            orderData: [10, 0]
+            orderData: [10, 7, 0]
         },{
             targets: [11],
             orderData: [11, 0]
         },{
             targets: [12],
-            orderData: [12, 0],
+            orderData: [12, 0]
+        },{
+            targets: [13],
+            orderData: [13, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
@@ -1221,7 +1262,7 @@
     maxPeers = 0
     maxConf = 0
     maxMultiplier = 0
-    maxAPI = 0
+    maxBPS = 0
 
     minChecked = Number.MAX_VALUE
     minConfirmed = Number.MAX_VALUE
@@ -1230,7 +1271,7 @@
     minPeers = Number.MAX_VALUE
     minConf = Number.MAX_VALUE
     minMultiplier = Number.MAX_VALUE
-    minAPI = Number.MAX_VALUE
+    minBPS = Number.MAX_VALUE
 
     updateTableStats()
 
