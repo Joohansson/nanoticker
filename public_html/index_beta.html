@@ -135,7 +135,7 @@
     <div class="div-graph">
 			<div class="div-header">
         <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 30 sec.<br/>
-        Value from the top node.">BPS and CPS 30 sec average [MAX]</span>
+        Value taken from the peer with the highest block / cemented count.">BPS and CPS 30 sec average [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
 				<div data-netdata="repstats-b_local.tps_max"
@@ -270,7 +270,7 @@
       <div class="div-header">
         <span class="title" title="Number of unique measurements used in this system.<br/>
         The top number represents the max amount of discovered monitors.<br/>
-        Nodes with a block count below 50% of the maximum block count is not included.">Connected Monitors</span>
+        Nodes with a block count below 50% of the maximum block count is not included.">Connected Data Points</span>
       </div>
       <div class="div-graph-data chart-normal">
         <div data-netdata="repstats-b_local.supported"
@@ -1263,6 +1263,7 @@
     maxConf = 0
     maxMultiplier = 0
     maxBPS = 0
+    maxCPS = 0
 
     minChecked = Number.MAX_VALUE
     minConfirmed = Number.MAX_VALUE
@@ -1272,6 +1273,7 @@
     minConf = Number.MAX_VALUE
     minMultiplier = Number.MAX_VALUE
     minBPS = Number.MAX_VALUE
+    minCPS = Number.MAX_VALUE
 
     updateTableStats()
 

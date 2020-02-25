@@ -413,10 +413,10 @@ async def getAPI():
             if 'uptime' in telemetry:
                 uptime_tele = telemetry['uptime']
 
-            BPSLocal = 0
+            BPSLocal = -1
             if block_count_tele > 0 and previousLocalMax[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
                 BPSLocal = (block_count_tele - previousLocalMax[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
-            CPSLocal = 0
+            CPSLocal = -1
             if cemented_count_tele > 0 and previousLocalCemented[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
                 CPSLocal = (cemented_count_tele - previousLocalCemented[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
 
@@ -535,8 +535,8 @@ async def getAPI():
                         port_tele = metric['port']
 
                     # calculate individual BPS and CPS
-                    BPSPeer = 0
-                    CPSPeer = 0
+                    BPSPeer = -1
+                    CPSPeer = -1
                     if timeStamp_tele != -1 and block_count_tele != -1 and cemented_count_tele != -1 and address_tele != -1 and port_tele != -1:
                         found = False
                         for ip in indiPeersPrev:
@@ -641,6 +641,34 @@ async def getAPI():
             log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
             pass
 
+        # Append the BPS CPS data
+        bpsData = []
+        cpsData = []
+        bpsData_pr = []
+        cpsData_pr = []
+        try:
+            # Also include block_count to determine correct max values later
+            for p in telemetryPeers:
+                if p['bps'] != -1 and p['block_count'] != -1:
+                    #skip if the node is out of sync
+                    if int(p['block_count']) < minCount:
+                        continue
+
+                    list = [float(p['bps']), int(p['block_count'])]
+                    bpsData.append(list)
+                    if (p['PR'] == True):
+                        bpsData_pr.append(list)
+
+                if p['cps'] != -1  and p['cemented_count'] != -1:
+                    list = [float(p['cps']), int(p['cemented_count'])]
+                    cpsData.append(list)
+                    if (p['PR'] == True):
+                        cpsData_pr.append(list)
+
+        except Exception as e:
+            log.warning(timeLog("Could not append BPS and CPS data. %r" %e))
+            pass
+
         # GET MONITOR DATA
         #log.info(timeLog("Get API"))
         jsonData = []
@@ -676,10 +704,6 @@ async def getAPI():
                     log.warning(timeLog('Could not read response. Error: %r' %e))
                     pass
 
-        #countData = []
-        #cementedData = []
-        #uncheckedData = []
-        #peersData = []
         syncData = []
         conf50Data = []
         conf75Data = []
@@ -690,14 +714,8 @@ async def getAPI():
         procTimeData = []
         multiplierData = []
         monitorCount = 0
-        bpsData = []
-        cpsData = []
 
         #PR ONLY
-        #countData_pr = []
-        #cementedData_pr = []
-        #uncheckedData_pr = []
-        #peersData_pr = []
         syncData_pr = []
         conf50Data_pr = []
         conf75Data_pr = []
@@ -708,8 +726,6 @@ async def getAPI():
         procTimeData_pr = []
         multiplierData_pr = []
         monitorCount_pr = 0
-        bpsData_pr = []
-        cpsData_pr = []
 
         #Convert all API json inputs
         fail = False #If a REP does not support one or more of the entries
@@ -735,10 +751,8 @@ async def getAPI():
 
                     #skip if the node is out of sync
                     if count < minCount:
-                        #log.info(timeLog('mincount warning'))
                         continue
                 except Exception as e:
-                    #log.warning(timeLog('currentBlock warning'))
                     count = 0
                     continue
 
@@ -866,6 +880,7 @@ async def getAPI():
 
                 try:
                     #Match IP and replace weight and telemetry data
+                    skipPeer = False
                     for p in telemetryPeers:
                         if str(nanoNodeAccount) == str(p['account']):
                             if int(p['weight']) != -1: #only update if it has been given
@@ -877,6 +892,10 @@ async def getAPI():
                             if p['protocol_version'] != -1:
                                 protocolVersion = int(p['protocol_version'])
                             if p['block_count'] != -1:
+                                #skip if the node is out of sync
+                                if int(p['block_count']) < minCount:
+                                    skipPeer = True
+
                                 isTelemetryMatch = True #only show as telemetry if there are actual data available
                                 count = int(p['block_count'])
                             if p['cemented_count'] != -1:
@@ -902,27 +921,9 @@ async def getAPI():
                     log.warning(timeLog("Could not match ip and replace weight and telemetry data. %r" %e))
                     pass
 
-                #read all monitor info
-                '''
-                countData.append(count)
-                if (PRStatus):
-                    countData_pr.append(count)
-
-                if (cemented > 0):
-                    cementedData.append(cemented)
-                    if (PRStatus):
-                        cementedData_pr.append(cemented)
-
-                if (unchecked > 0):
-                    uncheckedData.append(unchecked)
-                    if (PRStatus):
-                        uncheckedData_pr.append(unchecked)
-
-                if (peers > 0):
-                    peersData.append(peers)
-                    if (PRStatus):
-                        peersData_pr.append(peers)
-                '''
+                #skip if the node is out of sync
+                if skipPeer == True:
+                    continue
 
                 if (sync > 0):
                     syncData.append(sync)
@@ -969,16 +970,6 @@ async def getAPI():
                     if (PRStatus):
                         multiplierData_pr.append(multiplier)
 
-                if (bps > 0):
-                    bpsData.append(bps)
-                    if (PRStatus):
-                        bpsData_pr.append(bps)
-
-                if (cps > 0):
-                    cpsData.append(cps)
-                    if (PRStatus):
-                        cpsData_pr.append(cps)
-
                 # combined reps from monitors and telemetry data
                 supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
                 'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
@@ -998,6 +989,10 @@ async def getAPI():
                         found = True
                         break
                 if not found:
+                    #skip if the node is out of sync
+                    if int(teleRep['block_count']) < minCount:
+                        continue
+
                     # extract ip
                     if teleRep['ip'] != "":
                         if '[::ffff:' in teleRep['ip']: #ipv4
@@ -1156,12 +1151,27 @@ async def getAPI():
                 multiplierMedian = float(median(multiplierData))
                 multiplierMax = float(max(multiplierData))
                 multiplierMin = float(min(multiplierData))
+
+            # treat bps and cps a bit different. the max must only be taken from the peer with max block count
+            medianArray = []
             if len(bpsData) > 0:
-                BPSMedian = float(median(bpsData))
-                BPSMax = float(max(bpsData))
+                for data in bpsData:
+                    medianArray.append(data[0]) # add the bps
+                    # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
+                    if (data[1] >= blockCountMax):
+                        BPSMax = data[0]
+
+                BPSMedian = float(median(medianArray))
+
+            medianArray = []
             if len(cpsData) > 0:
-                CPSMedian = float(median(cpsData))
-                CPSMax = float(max(cpsData))
+                for data in cpsData:
+                    medianArray.append(data[0]) # add the bps
+                    # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
+                    if (data[1] >= cementedMax):
+                        CPSMax = data[0]
+
+                CPSMedian = float(median(medianArray))
 
             #PR ONLY
             if len(countData_pr) > 0:
@@ -1209,12 +1219,27 @@ async def getAPI():
                 multiplierMedian_pr = float(median(multiplierData_pr))
                 multiplierMax_pr = float(max(multiplierData_pr))
                 multiplierMin_pr = float(min(multiplierData_pr))
+
+            # treat bps and cps a bit different. the max must only be taken from the peer with max block count
+            medianArray = []
             if len(bpsData_pr) > 0:
-                BPSMedian_pr = float(median(bpsData_pr))
-                BPSMax_pr = float(max(bpsData_pr))
+                for data in bpsData_pr:
+                    medianArray.append(data[0]) # add the bps
+                    # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
+                    if (data[1] >= blockCountMax_pr):
+                        BPSMax_pr = data[0]
+
+                BPSMedian_pr = float(median(medianArray))
+
+            medianArray = []
             if len(cpsData_pr) > 0:
-                CPSMedian_pr = float(median(cpsData_pr))
-                CPSMax_pr = float(max(cpsData_pr))
+                for data in cpsData_pr:
+                    medianArray.append(data[0]) # add the bps
+                    # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
+                    if (data[1] >= cementedMax_pr):
+                        CPSMax_pr = data[0]
+
+                CPSMedian_pr = float(median(medianArray))
 
             #Write output file
             statData = {\
