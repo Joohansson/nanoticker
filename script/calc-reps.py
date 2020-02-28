@@ -538,6 +538,8 @@ async def getAPI():
                     # calculate individual BPS and CPS
                     BPSPeer = -1
                     CPSPeer = -1
+                    previousTimeStamp = deque([0]*checkCPSEvery)
+
                     if timeStamp_tele != -1 and block_count_tele != -1 and cemented_count_tele != -1 and address_tele != -1 and port_tele != -1:
                         found = False
                         for ip in indiPeersPrev:
