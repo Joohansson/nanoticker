@@ -420,9 +420,10 @@ async def getAPI():
             if cemented_count_tele > 0 and previousLocalCemented[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
                 CPSLocal = (cemented_count_tele - previousLocalCemented[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
 
-            # ms to sec
-            #BPSLocal = BPSLocal * 1000
-            #CPSLocal = CPSLocal * 1000
+            # ms to sec (if reported in ms)
+            if timeStamp_tele > 9999999999 and previousLocalTimeStamp[0] > 9999999999:
+                BPSLocal = BPSLocal * 1000
+                CPSLocal = CPSLocal * 1000
 
             if timeStamp_tele > 0:
                 previousLocalTimeStamp.append(timeStamp_tele)
@@ -586,9 +587,10 @@ async def getAPI():
 
                             indiPeersPrev[ip] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD}
 
-                    # ms to sec
-                    #BPSPeer = BPSPeer * 1000
-                    #CPSPeer = CPSPeer * 1000
+                    # ms to sec (if reported in ms)
+                    if timeStamp_tele > 9999999999 and previousTimeStamp[0] > 9999999999:
+                        BPSPeer = BPSPeer * 1000
+                        CPSPeer = CPSPeer * 1000
 
                     teleTemp = {"ip":'['+address_tele+']:'+port_tele, "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
                     "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
