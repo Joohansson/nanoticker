@@ -61,10 +61,10 @@ difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuu
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
-monitorTimeout = 10 #http request timeout for monitor API
-rpcTimeout = 10 #node rpc timeout
+monitorTimeout = 8 #http request timeout for monitor API
+rpcTimeout = 8 #node rpc timeout
 
-runAPIEvery = 16 #run API check every X sec
+runAPIEvery = 8 #run API check every X sec
 runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
@@ -81,7 +81,7 @@ confSpanLimit = 10000 #lower limit for time span to include confirmation average
 if BETA:
     repsInit = repList.repsInitB
     blacklist = repList.blacklistB
-    checkCPSEvery = 2 #inverval for calculating BPS/CPS from telemetry. Total time is runAPIEvery * checkCPSEvery
+    checkCPSEvery = 4 #inverval for calculating BPS/CPS from telemetry. Total time is runAPIEvery * checkCPSEvery
 else:
     repsInit = repList.repsInitM
     blacklist = repList.blacklistM
@@ -384,22 +384,22 @@ async def getAPI():
 
             if 'block_count' in telemetry:
                 block_count_tele = int(telemetry['block_count'])
-                #countData.append(block_count_tele)
+                countData.append(block_count_tele)
             if 'timestamp' in telemetry:
                 timeStamp_tele = int(telemetry['timestamp'])
             if 'cemented_count' in telemetry:
                 cemented_count_tele = int(telemetry['cemented_count'])
-                #cementedData.append(cemented_count_tele)
+                cementedData.append(cemented_count_tele)
             if 'unchecked_count' in telemetry:
                 unchecked_count_tele = int(telemetry['unchecked_count'])
-                #uncheckedData.append(unchecked_count_tele)
+                uncheckedData.append(unchecked_count_tele)
             if 'account_count' in telemetry:
                 account_count_tele = int(telemetry['account_count'])
             if 'bandwidth_cap' in telemetry:
                 bandwidth_cap_tele = telemetry['bandwidth_cap']
             if 'peer_count' in telemetry:
                 peer_count_tele = int(telemetry['peer_count'])
-                #peersData.append(peer_count_tele)
+                peersData.append(peer_count_tele)
             if 'protocol_version' in telemetry:
                 protocol_version_number_tele = int(telemetry['protocol_version'])
             if 'major_version' in telemetry:
@@ -1162,7 +1162,7 @@ async def getAPI():
                 for data in bpsData:
                     medianArray.append(data[0]) # add the bps
                     # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
-                    if (data[1] >= blockCountMax):
+                    if (data[1] == blockCountMax):
                         BPSMax = data[0]
 
                 BPSMedian = float(median(medianArray))
@@ -1172,7 +1172,7 @@ async def getAPI():
                 for data in cpsData:
                     medianArray.append(data[0]) # add the bps
                     # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
-                    if (data[1] >= cementedMax):
+                    if (data[1] == cementedMax):
                         CPSMax = data[0]
 
                 CPSMedian = float(median(medianArray))
@@ -1230,7 +1230,7 @@ async def getAPI():
                 for data in bpsData_pr:
                     medianArray.append(data[0]) # add the bps
                     # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
-                    if (data[1] >= blockCountMax_pr):
+                    if (data[1] == blockCountMax_pr):
                         BPSMax_pr = data[0]
 
                 BPSMedian_pr = float(median(medianArray))
@@ -1240,7 +1240,7 @@ async def getAPI():
                 for data in cpsData_pr:
                     medianArray.append(data[0]) # add the bps
                     # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
-                    if (data[1] >= cementedMax_pr):
+                    if (data[1] == cementedMax_pr):
                         CPSMax_pr = data[0]
 
                 CPSMedian_pr = float(median(medianArray))
