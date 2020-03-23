@@ -53,11 +53,11 @@
   <!-- INIT -->
   <script>
     //CUSTOM VARS
-    var monitorsUpdateInterval = 16000; //Interval for client side update
-    var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
-    var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
-    //var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
-    //var statFile = 'https://json.nanoticker.info/stats-beta.json'
+    var monitorsUpdateInterval = 10000; //Interval for client side update
+    //var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
+    //var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
+    var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
+    var statFile = 'https://json.nanoticker.info/stats-beta.json'
     //var explorerBaseUrl = 'https://beta.nanocrawler.cc/explorer/account/'
     var explorerBaseUrl = 'https://b.repnode.org/account/'
     //var prColor = '#4a90e2'
@@ -517,6 +517,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">BPS</th>
           <th scope="col">CPS</th>
+          <th scope="col">TSU</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -535,6 +536,7 @@
           <th scope="col">Difficulty</th>
 	        <th scope="col">BPS</th>
           <th scope="col">CPS</th>
+          <th scope="col">TSU</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -566,6 +568,7 @@
   var maxMultiplier = 0
   var maxBPS = 0
   var maxCPS = 0
+  var maxTSU = 0
 
   var minChecked = Number.MAX_VALUE
   var minConfirmed = Number.MAX_VALUE
@@ -576,6 +579,7 @@
   var minMultiplier = Number.MAX_VALUE
   var minBPS = Number.MAX_VALUE
   var minCPS = Number.MAX_VALUE
+  var minTSU = Number.MAX_VALUE
 
   var firstTimeSort = true
   var firstTimeSearch = true
@@ -848,6 +852,26 @@
           }
           break
 
+        case 11:
+            var diff = ''
+            if (order[0][1] == 'desc') {
+              if (data) {
+                if (data.tsu != null) {
+                  diff = addCommas(maxTSU- parseFloat(data.tsu.replace(/,/g, '')))
+                }
+              }
+              $('#order-info').html( 'Max TSU: ' + addCommas(parseInt(maxTSU*10)/10) + ' | Diff: ' + diff)
+            }
+            else {
+              if (data) {
+                if (data.tsu != null) {
+                  diff = parseFloat(parseFloat(data.tsu.replace(/,/g, ''))) - minTSU
+                }
+              }
+              $('#order-info').html( 'Min TSU: ' + addCommas(parseInt(minTSU*10)/10) + ' | Diff: ' + diff)
+            }
+            break
+
       default:
         $('#order-info').html( 'Sort any number column and select a row to compare')
     }
@@ -1025,6 +1049,19 @@
               data[index]['cps'] = addCommas(parseInt(entry['cps']*10)/10)
             }
 
+            if (entry['tsu'] < 0) {
+              data[index]['tsu'] = null
+            }
+            else {
+              if (entry['tsu'] > maxTSU) {
+                maxTSU = entry['tsu']
+              }
+              if (entry['tsu'] < minTSU) {
+                minTSU = entry['tsu']
+              }
+              data[index]['tsu'] = addCommas(parseInt(entry['tsu']*10)/10)
+            }
+
             if (entry['version'] < 0) {
               data[index]['version'] = 'N/A'
             }
@@ -1064,6 +1101,7 @@
           { data : "multiplier", type: "num-fmt" },
           { data : "bps", type: "num-fmt" },
           { data : "cps", type: "num-fmt" },
+          { data : "tsu", type: "num-fmt" },
           { data : "version" },
           { data : "storeVendor" },
           { data : "nanoNodeAccount" }
@@ -1112,13 +1150,16 @@
             orderData: [10, 7, 0]
         },{
             targets: [11],
-            orderData: [11, 0]
+            orderData: [11, 7, 0]
         },{
             targets: [12],
             orderData: [12, 0]
         },{
             targets: [13],
-            orderData: [13, 0],
+            orderData: [13, 0]
+        },{
+            targets: [14],
+            orderData: [14, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
@@ -1264,6 +1305,7 @@
     maxMultiplier = 0
     maxBPS = 0
     maxCPS = 0
+    maxTSU = 0
 
     minChecked = Number.MAX_VALUE
     minConfirmed = Number.MAX_VALUE
@@ -1274,6 +1316,7 @@
     minMultiplier = Number.MAX_VALUE
     minBPS = Number.MAX_VALUE
     minCPS = Number.MAX_VALUE
+    minTSU = Number.MAX_VALUE
 
     updateTableStats()
 
