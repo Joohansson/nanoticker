@@ -1850,8 +1850,18 @@ async def websocketLoop():
                                 apiShouldCall = True
                                 startTime = time.time()
 
+    except websockets.ConnectionClosed as e:
+        log.warning(timeLog("Websocket connection to %s was closed" %websocketAddress))
+        await asyncio.sleep(10)
+        log.info(timeLog("Reconnecting to %s" %websocketAddress))
+        # try reconnect
+        await websocketLoop()
+
     except Exception as e:
-        log.warning(timeLog("Failed to process websocket telemetry. %r" %e))
+        log.warning(timeLog("Failed to process websocket telemetry. %r. Websocket reconnection attempt in 60sec" %e))
+        await asyncio.sleep(10)
+        # try reconnect
+        await websocketLoop()
 
 #Push hourly averages to the blockchain
 async def pushStats():
