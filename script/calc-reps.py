@@ -1859,7 +1859,7 @@ async def websocketLoop():
 
     except Exception as e:
         log.warning(timeLog("Failed to process websocket telemetry. %r. Websocket reconnection attempt in 60sec" %e))
-        await asyncio.sleep(10)
+        await asyncio.sleep(60)
         # try reconnect
         await websocketLoop()
 
