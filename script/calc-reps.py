@@ -419,87 +419,91 @@ async def getAPI():
         cementedData = []
         uncheckedData = []
         peersData = []
+        peerHasEnoughBlocks = False
 
         if 'block_count' in telemetry:
             block_count_tele = int(telemetry['block_count'])
-            countData.append(block_count_tele)
-        if 'timestamp' in telemetry:
-            timeStamp_tele = int(telemetry['timestamp'])
-        if 'cemented_count' in telemetry:
-            cemented_count_tele = int(telemetry['cemented_count'])
-            cementedData.append(cemented_count_tele)
-        if 'unchecked_count' in telemetry:
-            unchecked_count_tele = int(telemetry['unchecked_count'])
-            uncheckedData.append(unchecked_count_tele)
-        if 'account_count' in telemetry:
-            account_count_tele = int(telemetry['account_count'])
-        if 'bandwidth_cap' in telemetry:
-            bandwidth_cap_tele = telemetry['bandwidth_cap']
-        if 'peer_count' in telemetry:
-            peer_count_tele = int(telemetry['peer_count'])
-            peersData.append(peer_count_tele)
-        if 'protocol_version' in telemetry:
-            protocol_version_number_tele = int(telemetry['protocol_version'])
-        if 'major_version' in telemetry:
-            major_version_tele = telemetry['major_version']
-        if 'minor_version' in telemetry:
-            minor_version_tele = telemetry['minor_version']
-        if 'patch_version' in telemetry:
-            patch_version_tele = telemetry['patch_version']
-        if 'pre_release_version' in telemetry:
-            pre_release_version_tele = telemetry['pre_release_version']
-        if 'uptime' in telemetry:
-            uptime_tele = telemetry['uptime']
+            if block_count_tele >= minCount: #only add to stats if above limit
+                peerHasEnoughBlocks = True
+                countData.append(block_count_tele)
+        if peerHasEnoughBlocks:
+            if 'timestamp' in telemetry:
+                timeStamp_tele = int(telemetry['timestamp'])
+            if 'cemented_count' in telemetry:
+                cemented_count_tele = int(telemetry['cemented_count'])
+                cementedData.append(cemented_count_tele)
+            if 'unchecked_count' in telemetry:
+                unchecked_count_tele = int(telemetry['unchecked_count'])
+                uncheckedData.append(unchecked_count_tele)
+            if 'account_count' in telemetry:
+                account_count_tele = int(telemetry['account_count'])
+            if 'bandwidth_cap' in telemetry:
+                bandwidth_cap_tele = telemetry['bandwidth_cap']
+            if 'peer_count' in telemetry:
+                peer_count_tele = int(telemetry['peer_count'])
+                peersData.append(peer_count_tele)
+            if 'protocol_version' in telemetry:
+                protocol_version_number_tele = int(telemetry['protocol_version'])
+            if 'major_version' in telemetry:
+                major_version_tele = telemetry['major_version']
+            if 'minor_version' in telemetry:
+                minor_version_tele = telemetry['minor_version']
+            if 'patch_version' in telemetry:
+                patch_version_tele = telemetry['patch_version']
+            if 'pre_release_version' in telemetry:
+                pre_release_version_tele = telemetry['pre_release_version']
+            if 'uptime' in telemetry:
+                uptime_tele = telemetry['uptime']
 
-        BPSLocal = -1
-        if block_count_tele > 0 and previousLocalMax[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
-            BPSLocal = (block_count_tele - previousLocalMax[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
-        CPSLocal = -1
-        if cemented_count_tele > 0 and previousLocalCemented[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
-            CPSLocal = (cemented_count_tele - previousLocalCemented[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
+            BPSLocal = -1
+            if block_count_tele > 0 and previousLocalMax[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
+                BPSLocal = (block_count_tele - previousLocalMax[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
+            CPSLocal = -1
+            if cemented_count_tele > 0 and previousLocalCemented[0] > 0 and (timeStamp_tele - previousLocalTimeStamp[0]) > 0 and previousLocalTimeStamp[0] > 0:
+                CPSLocal = (cemented_count_tele - previousLocalCemented[0]) / (timeStamp_tele - previousLocalTimeStamp[0])
 
-        # ms to sec (if reported in ms)
-        if timeStamp_tele > 9999999999 and previousLocalTimeStamp[0] > 9999999999 and BPSLocal != -1:
-            BPSLocal = BPSLocal * 1000
-            CPSLocal = CPSLocal * 1000
+            # ms to sec (if reported in ms)
+            if timeStamp_tele > 9999999999 and previousLocalTimeStamp[0] > 9999999999 and BPSLocal != -1:
+                BPSLocal = BPSLocal * 1000
+                CPSLocal = CPSLocal * 1000
 
-        if timeStamp_tele > 0:
-            previousLocalTimeStamp.append(timeStamp_tele)
-            previousLocalTimeStamp.popleft()
-        if block_count_tele > 0:
-            previousLocalMax.append(block_count_tele)
-            previousLocalMax.popleft()
-        if cemented_count_tele > 0:
-            previousLocalCemented.append(cemented_count_tele)
-            previousLocalCemented.popleft()
+            if timeStamp_tele > 0:
+                previousLocalTimeStamp.append(timeStamp_tele)
+                previousLocalTimeStamp.popleft()
+            if block_count_tele > 0:
+                previousLocalMax.append(block_count_tele)
+                previousLocalMax.popleft()
+            if cemented_count_tele > 0:
+                previousLocalCemented.append(cemented_count_tele)
+                previousLocalCemented.popleft()
 
-        #get weight
-        params = {
-            "action": "account_weight",
-            "account": localTelemetryAccount
-        }
-        reqTime = '0'
-        try:
-            resp_weight = await getRegularRPC(params)
-            reqTime = resp_weight[2]
-            if 'weight' in resp_weight[0]:
-                weight = int(resp_weight[0]['weight']) / int(1000000000000000000000000000000)
-                if (weight >= latestOnlineWeight*0.001):
-                    PRStatus = True
-                    PRStatusLocal = True #used for comparing local BPS/CPS with the rest
-                else:
-                    PRStatus = False
-        except Exception as e:
-            log.warning(timeLog("Could not read local weight from node RPC. %r" %e))
-            pass
+            #get weight
+            params = {
+                "action": "account_weight",
+                "account": localTelemetryAccount
+            }
+            reqTime = '0'
+            try:
+                resp_weight = await getRegularRPC(params)
+                reqTime = resp_weight[2]
+                if 'weight' in resp_weight[0]:
+                    weight = int(resp_weight[0]['weight']) / int(1000000000000000000000000000000)
+                    if (weight >= latestOnlineWeight*0.001):
+                        PRStatus = True
+                        PRStatusLocal = True #used for comparing local BPS/CPS with the rest
+                    else:
+                        PRStatus = False
+            except Exception as e:
+                log.warning(timeLog("Could not read local weight from node RPC. %r" %e))
+                pass
 
-        teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
-        "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
-        "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSLocal, "cps":CPSLocal,
-        "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":timeStamp_tele,
-        "tsu": 0}
+            teleTemp = {"ip":'', "protocol_version":protocol_version_number_tele, "type":"", "weight":weight, "account": localTelemetryAccount,
+            "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
+            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSLocal, "cps":CPSLocal,
+            "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":PRStatus, "req_time":reqTime, "time_stamp":timeStamp_tele,
+            "tsu": 0}
 
-        telemetryPeers.append(teleTemp) # add local account rep
+            telemetryPeers.append(teleTemp) # add local account rep
 
     except Exception as e:
         log.warning(timeLog("Could not read local telemetry from node RPC. %r" %e))
@@ -536,6 +540,7 @@ async def getAPI():
         # Use the latest updated data from telemetry websocket
         indiPeersPrevCopy = dict(indiPeersPrev)
         for key in indiPeersPrevCopy:
+            peerHasEnoughBlocks = False
             if key == 'ip':
                 continue
             metric = indiPeersPrevCopy[key]
@@ -551,54 +556,57 @@ async def getAPI():
 
             if 'blockCount' in metric:
                 block_count_tele = int(metric['blockCount'][-1])
-                countData.append(block_count_tele)
+                if block_count_tele >= minCount: #only add to stats if above limit
+                    peerHasEnoughBlocks = True
+                    countData.append(block_count_tele)
 
-            if 'timestamp' in metric:
-                timeStamp_tele = int(metric['timestamp'][-1])
+            if peerHasEnoughBlocks:
+                if 'timestamp' in metric:
+                    timeStamp_tele = int(metric['timestamp'][-1])
 
-            if 'cementCount' in metric:
-                cemented_count_tele = int(metric['cementCount'][-1])
-                cementedData.append(cemented_count_tele)
+                if 'cementCount' in metric:
+                    cemented_count_tele = int(metric['cementCount'][-1])
+                    cementedData.append(cemented_count_tele)
 
-            if 'unchecked_count' in metric:
-                unchecked_count_tele = int(metric['unchecked_count'])
-                uncheckedData.append(unchecked_count_tele)
+                if 'unchecked_count' in metric:
+                    unchecked_count_tele = int(metric['unchecked_count'])
+                    uncheckedData.append(unchecked_count_tele)
 
-            if 'account_count' in metric:
-                account_count_tele = int(metric['account_count'])
-            if 'bandwidth_cap' in metric:
-                bandwidth_cap_tele = metric['bandwidth_cap']
-            if 'peer_count' in metric:
-                peer_count_tele = int(metric['peer_count'])
-                peersData.append(peer_count_tele)
-            if 'protocol_version' in metric:
-                protocol_version_number_tele = int(metric['protocol_version'])
-            if 'major_version' in metric:
-                major_version_tele = metric['major_version']
-            if 'minor_version' in metric:
-                minor_version_tele = metric['minor_version']
-            if 'patch_version' in metric:
-                patch_version_tele = metric['patch_version']
-            if 'pre_release_version' in metric:
-                pre_release_version_tele = metric['pre_release_version']
-            if 'uptime' in metric:
-                uptime_tele = metric['uptime']
-            if 'address' in metric:
-                address_tele = metric['address']
-            if 'port' in metric:
-                port_tele = metric['port']
-            if 'bps' in metric:
-                BPSPeer = metric['bps']
-            if 'cps' in metric:
-                CPSPeer = metric['cps']
+                if 'account_count' in metric:
+                    account_count_tele = int(metric['account_count'])
+                if 'bandwidth_cap' in metric:
+                    bandwidth_cap_tele = metric['bandwidth_cap']
+                if 'peer_count' in metric:
+                    peer_count_tele = int(metric['peer_count'])
+                    peersData.append(peer_count_tele)
+                if 'protocol_version' in metric:
+                    protocol_version_number_tele = int(metric['protocol_version'])
+                if 'major_version' in metric:
+                    major_version_tele = metric['major_version']
+                if 'minor_version' in metric:
+                    minor_version_tele = metric['minor_version']
+                if 'patch_version' in metric:
+                    patch_version_tele = metric['patch_version']
+                if 'pre_release_version' in metric:
+                    pre_release_version_tele = metric['pre_release_version']
+                if 'uptime' in metric:
+                    uptime_tele = metric['uptime']
+                if 'address' in metric:
+                    address_tele = metric['address']
+                if 'port' in metric:
+                    port_tele = metric['port']
+                if 'bps' in metric:
+                    BPSPeer = metric['bps']
+                if 'cps' in metric:
+                    CPSPeer = metric['cps']
 
-            teleTemp = {"ip":'['+address_tele+']:'+port_tele, "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
-            "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
-            "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSPeer, "cps":CPSPeer,
-            "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":False, "req_time":'0', "time_stamp":timeStamp_tele,
-            "tsu": tsuDiff}
+                teleTemp = {"ip":'['+address_tele+']:'+port_tele, "protocol_version":protocol_version_number_tele, "type":"", "weight":-1, "account": "",
+                "block_count":block_count_tele, "cemented_count":cemented_count_tele, "unchecked_count":unchecked_count_tele,
+                "account_count":account_count_tele, "bandwidth_cap":bandwidth_cap_tele, "peer_count":peer_count_tele, "bps":BPSPeer, "cps":CPSPeer,
+                "vendor_version":str(major_version_tele) + '.' + str(minor_version_tele) + '.' + str(patch_version_tele) + '.' + str(pre_release_version_tele), "uptime":uptime_tele, "PR":False, "req_time":'0', "time_stamp":timeStamp_tele,
+                "tsu": tsuDiff}
 
-            telemetryPeers.append(teleTemp)
+                telemetryPeers.append(teleTemp)
 
     except Exception as e:
         log.warning(timeLog("Could not read raw telemetry from node RPC. %r" %e))
