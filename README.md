@@ -6,7 +6,7 @@ A real-time statistical tool to check Nano network health. Using data from publi
 [Public Site](https://nanoticker.info)
 
 ## Install
-bash <(curl -Ss https://my-netdata.io/kickstart.sh) --no-updates
+bash <(curl -Ss https://my-netdata.io/kickstart.sh) --no-updates --stable-channel
 chmod +x autocopy.sh
 ./autocopy.sh
 
