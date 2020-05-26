@@ -11,9 +11,12 @@ chmod +x autocopy.sh
 ./autocopy.sh
 
 ## Debug the plugins
-cd /usr/libexec/netdata/plugins.d/
+grep python /var/log/netdata/error.log
+
 /usr/libexec/netdata/plugins.d/python.d.plugin repstats debug trace
 /usr/libexec/netdata/plugins.d/python.d.plugin repstats-b debug trace
+/usr/libexec/netdata/plugins.d/python.d.plugin 1 debug repstats
+/usr/libexec/netdata/plugins.d/python.d.plugin 1 debug repstats-b
 
 ## Config netdata
 nano /etc/netdata/netdata.conf
