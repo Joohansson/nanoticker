@@ -5,14 +5,25 @@ A real-time statistical tool to check Nano network health. Using data from publi
 
 [Public Site](https://nanoticker.info)
 
-## Install and run application locally
+## Install
+bash <(curl -Ss https://my-netdata.io/kickstart.sh) --no-updates
+chmod +x autocopy.sh
+./autocopy.sh
 
+## Debug the plugins
+cd /usr/libexec/netdata/plugins.d/
+/usr/libexec/netdata/plugins.d/python.d.plugin repstats debug trace
+/usr/libexec/netdata/plugins.d/python.d.plugin repstats-b debug trace
 
-## Notes
+## Config netdata
+nano /etc/netdata/netdata.conf
 
-
-## How to use
-
+    hostname = NanoTicker
+    history = 100800
+    update every = 6
+    memory mode = dbengine
+    page cache size = 500
+    dbengine disk space = 500
 
 ## Developer instructions
 
