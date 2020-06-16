@@ -2,7 +2,7 @@
 <!-- SPDX-License-Identifier: GPL-3.0-or-later -->
 <html lang="en">
 <head>
-	<title>NanoTicker - Beta</title>
+	<title>NanoTicker</title>
 	<meta name="application-name" content="netdata">
 
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -13,9 +13,9 @@
 	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
 	<meta property="og:locale" content="en_US" />
-	<meta property="og:url" content="https://beta.nanoticker.info"/>
+	<meta property="og:url" content="https://nanoticker.info"/>
 	<meta property="og:type" content="website"/>
-	<meta property="og:site_name" content="NanoTicker - Beta"/>
+	<meta property="og:site_name" content="NanoTicker"/>
 	<meta property="og:title" content="NanoTicker - Realtime Performance"/>
 	<meta property="og:description" content="Displays combined statistics from public Nano monitors along with individual node stats." />
 
@@ -54,15 +54,12 @@
   <script>
     //CUSTOM VARS
     var monitorsUpdateInterval = 10000; //Interval for client side update
-    var monitorFile = 'https://b-monitor.repnode.org/monitors-beta.json'
-    var statFile = 'https://b-monitor.repnode.org/stats-beta.json'
-    //var monitorFile = 'https://json.nanoticker.info/monitors-beta.json'
-    //var statFile = 'https://json.nanoticker.info/stats-beta.json'
-    //var explorerBaseUrl = 'https://beta.nanocrawler.cc/explorer/account/'
-    var explorerBaseUrl = 'https://b.repnode.org/account/'
+    var monitorFile = 'json/monitors-v21.json'
+    var statFile = 'json/stats-v21.json'
+    var explorerBaseUrl = 'https://nanocrawler.cc/explorer/account/'
     //var prColor = '#4a90e2'
-    var GAPageName = 'beta-net'
-    var GATableName = 'Table-beta'
+    var GAPageName = 'main-net'
+    var GATableName = 'Table-main'
   </script>
   <!-- Google Analytics -->
   <script>
@@ -106,11 +103,11 @@
         Value from the top node.">Checked and Confirmed [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats-b_local.block_count_max"
+				<div data-netdata="repstats_local.block_count_max"
 					data-title="Checked Blocks Max"
 				  data-decimal-digits="0"
-					data-common-max="repstats-b_local.block_count_max"
-					data-common-min="repstats-b_local.block_count_max"
+					data-common-max="repstats_local.block_count_max"
+					data-common-min="repstats_local.block_count_max"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -119,11 +116,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats-b_local.block_count_max_pr"
+				<div data-netdata="repstats_local.block_count_max_pr"
 					data-title="PR: Checked Blocks Max"
 				  data-decimal-digits="0"
-					data-common-max="repstats-b_local.block_count_max_pr"
-					data-common-min="repstats-b_local.block_count_max_pr"
+					data-common-max="repstats_local.block_count_max_pr"
+					data-common-min="repstats_local.block_count_max_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -138,11 +135,11 @@
         Value taken from the peer with the highest block / cemented count.">BPS and CPS 30 sec average [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats-b_local.tps_max"
+				<div data-netdata="repstats_local.tps_max"
 					data-title="TPS Average Max"
 					data-decimal-digits="3"
-					data-common-max="repstats-b_local.tps_max"
-					data-common-min="repstats-b_local.tps_max"
+					data-common-max="repstats_local.tps_max"
+					data-common-min="repstats_local.tps_max"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -152,11 +149,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats-b_local.tps_max_pr"
+				<div data-netdata="repstats_local.tps_max_pr"
 					data-title="PR: TPS Average Max"
 					data-decimal-digits="3"
-					data-common-max="repstats-b_local.tps_max_pr"
-					data-common-min="repstats-b_local.tps_max_pr"
+					data-common-max="repstats_local.tps_max_pr"
+					data-common-min="repstats_local.tps_max_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -172,11 +169,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Unchecked Blocks</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.unchecked"
+        <div data-netdata="repstats_local.unchecked"
           data-title="Unchecked"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.unchecked"
-          data-common-min="repstats-b_local.unchecked"
+          data-common-max="repstats_local.unchecked"
+          data-common-min="repstats_local.unchecked"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -186,11 +183,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.unchecked_pr"
+        <div data-netdata="repstats_local.unchecked_pr"
           data-title="PR: Unchecked"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.unchecked_pr"
-          data-common-min="repstats-b_local.unchecked_pr"
+          data-common-max="repstats_local.unchecked_pr"
+          data-common-min="repstats_local.unchecked_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -206,11 +203,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
 	    </div>
 	    <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.peers"
+        <div data-netdata="repstats_local.peers"
           data-title="Peers"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.peers"
-          data-common-min="repstats-b_local.peers"
+          data-common-max="repstats_local.peers"
+          data-common-min="repstats_local.peers"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -220,11 +217,11 @@
         ></div>
 	    </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.peers_pr"
+        <div data-netdata="repstats_local.peers_pr"
           data-title="PR: Peers"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.peers_pr"
-          data-common-min="repstats-b_local.peers_pr"
+          data-common-max="repstats_local.peers_pr"
+          data-common-min="repstats_local.peers_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -240,11 +237,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Active Difficulty</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.multiplier"
+        <div data-netdata="repstats_local.multiplier"
           data-title="Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats-b_local.multiplier"
-          data-common-min="repstats-b_local.multiplier"
+          data-common-max="repstats_local.multiplier"
+          data-common-min="repstats_local.multiplier"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -253,11 +250,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.multiplier_pr"
+        <div data-netdata="repstats_local.multiplier_pr"
           data-title="PR: Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats-b_local.multiplier_pr"
-          data-common-min="repstats-b_local.multiplier_pr"
+          data-common-max="repstats_local.multiplier_pr"
+          data-common-min="repstats_local.multiplier_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -273,11 +270,11 @@
         Nodes with a block count below 50% of the maximum block count is not included.">Connected Data Points</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.supported"
+        <div data-netdata="repstats_local.supported"
           data-title="Stat Support"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.supported"
-          data-common-min="repstats-b_local.supported"
+          data-common-max="repstats_local.supported"
+          data-common-min="repstats_local.supported"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -286,11 +283,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.supported_pr"
+        <div data-netdata="repstats_local.supported_pr"
           data-title="PR: Stat Support"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.supported_pr"
-          data-common-min="repstats-b_local.supported_pr"
+          data-common-max="repstats_local.supported_pr"
+          data-common-min="repstats_local.supported_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -308,11 +305,11 @@
         Median value from all monitored nodes.">Checked and Confirmed [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats-b_local.block_count_median"
+				<div data-netdata="repstats_local.block_count_median"
 					data-title="Block Count Median"
 				  data-decimal-digits="0"
-					data-common-max="repstats-b_local.block_count_median"
-					data-common-min="repstats-b_local.block_count_median"
+					data-common-max="repstats_local.block_count_median"
+					data-common-min="repstats_local.block_count_median"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -321,11 +318,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats-b_local.block_count_median_pr"
+				<div data-netdata="repstats_local.block_count_median_pr"
 					data-title="PR: Block Count Median"
 				  data-decimal-digits="0"
-					data-common-max="repstats-b_local.block_count_median_pr"
-					data-common-min="repstats-b_local.block_count_median_pr"
+					data-common-max="repstats_local.block_count_median_pr"
+					data-common-min="repstats_local.block_count_median_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -340,11 +337,11 @@
         Median value from all monitored nodes.">BPS and CPS 30 sec average [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats-b_local.tps_median"
+				<div data-netdata="repstats_local.tps_median"
 					data-title="TPS Average Median"
 					data-decimal-digits="3"
-					data-common-max="repstats-b_local.tps_median"
-					data-common-min="repstats-b_local.tps_median"
+					data-common-max="repstats_local.tps_median"
+					data-common-min="repstats_local.tps_median"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -354,11 +351,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats-b_local.tps_median_pr"
+				<div data-netdata="repstats_local.tps_median_pr"
 					data-title="PR: TPS Average Median"
 					data-decimal-digits="3"
-					data-common-max="repstats-b_local.tps_median_pr"
-					data-common-min="repstats-b_local.tps_median_pr"
+					data-common-max="repstats_local.tps_median_pr"
+					data-common-min="repstats_local.tps_median_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -377,11 +374,11 @@
         <b>ave min</b>: The lowest average value, taken from one node">Block Confirmation Time [MEDIAN]</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.confirmations"
+        <div data-netdata="repstats_local.confirmations"
           data-title="Percentiles over 10min or max 2048 blocks | P50=Median"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.confirmations"
-          data-common-min="repstats-b_local.confirmations"
+          data-common-max="repstats_local.confirmations"
+          data-common-min="repstats_local.confirmations"
           data-chart-library="dygraph"
           data-dygraph-theme="logscale"
           data-width="90%"
@@ -391,11 +388,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.confirmations_pr"
+        <div data-netdata="repstats_local.confirmations_pr"
           data-title="PR: Percentiles over 10min or max 2048 blocks | P50=Median"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.confirmations_pr"
-          data-common-min="repstats-b_local.confirmations_pr"
+          data-common-max="repstats_local.confirmations_pr"
+          data-common-min="repstats_local.confirmations_pr"
           data-chart-library="dygraph"
           data-dygraph-theme="logscale"
           data-width="90%"
@@ -411,11 +408,11 @@
         Max and Median from all monitored nodes.">Block Diff Status</span>
 	    </div>
 	    <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats-b_local.block_diff"
+        <div data-netdata="repstats_local.block_diff"
           data-title="Block Diff"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.block_diff"
-          data-common-min="repstats-b_local.block_diff"
+          data-common-max="repstats_local.block_diff"
+          data-common-min="repstats_local.block_diff"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -424,11 +421,11 @@
         ></div>
 	    </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats-b_local.block_diff_pr"
+        <div data-netdata="repstats_local.block_diff_pr"
           data-title="PR: Block Diff"
           data-decimal-digits="0"
-          data-common-max="repstats-b_local.block_diff_pr"
-          data-common-min="repstats-b_local.block_diff_pr"
+          data-common-max="repstats_local.block_diff_pr"
+          data-common-min="repstats_local.block_diff_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -443,11 +440,11 @@
          Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
        </div>
        <div class="div-graph-data chart-normal">
-         <div data-netdata="repstats-b_local.api_time"
+         <div data-netdata="repstats_local.api_time"
            data-title="API Process"
            data-decimal-digits="0"
-           data-common-max="repstats-b_local.api_time"
-           data-common-min="repstats-b_local.api_time"
+           data-common-max="repstats_local.api_time"
+           data-common-min="repstats_local.api_time"
            data-chart-library="dygraph"
            data-width="90%"
            data-height="100%"
@@ -456,11 +453,11 @@
          ></div>
        </div>
        <div class="div-graph-data chart-pr">
-         <div data-netdata="repstats-b_local.api_time_pr"
+         <div data-netdata="repstats_local.api_time_pr"
            data-title="PR: API Process"
            data-decimal-digits="0"
-           data-common-max="repstats-b_local.api_time_pr"
-           data-common-min="repstats-b_local.api_time_pr"
+           data-common-max="repstats_local.api_time_pr"
+           data-common-min="repstats_local.api_time_pr"
            data-chart-library="dygraph"
            data-width="90%"
            data-height="100%"
@@ -479,11 +476,11 @@
          <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [repnode.org]</span>
        </div>
        <div class="div-graph-data">
-         <div data-netdata="repstats-b_local.peerstat"
+         <div data-netdata="repstats_local.peerstat"
            data-title="Protocol and weight from connected nodes"
            data-decimal-digits="1"
            data-common-max="100"
-           data-common-min="repstats-b_local.peerstat"
+           data-common-min="repstats_local.peerstat"
            data-units="%"
            data-chart-library="dygraph"
            data-width="90%"
