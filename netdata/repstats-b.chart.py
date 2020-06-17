@@ -124,9 +124,9 @@ CHARTS = {
         'options': [None, 'Peers & Stake', '%', 'Protocol and weight from connected nodes','reps.peerstat', 'line'],
         'lines': [
             ["latest_version", None, 'absolute',1,1000],
-            ["tcp", None, 'absolute',1,1000],
+            #["tcp", None, 'absolute',1,1000],
             ["stake_req", None, 'absolute',1,1000],
-            ["stake_latest", None, 'absolute',1,1000],
+            #["stake_latest", None, 'absolute',1,1000],
             ["stake_tot", None, 'absolute',1,1000]
         ]
     },

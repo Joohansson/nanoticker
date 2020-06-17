@@ -473,9 +473,7 @@
        <div class="div-header">
          <span class="title" title="Portion of connected nodes and portion of weight of the current supply.<br/>
          <b>latest_version:</b> Nodes running on latest version<br/>
-         <b>tcp:</b> Nodes running tcp<br/>
          <b>stake_req:</b> Required weight needed for confirmations<br/>
-         <b>stake_latest:</b> Connected weight on latest version<br/>
          <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [repnode.org]</span>
        </div>
        <div class="div-graph-data">
@@ -589,7 +587,7 @@
   function timeConverter(UNIX_timestamp){
       var a = new Date(UNIX_timestamp * 1000);
       var year = a.getFullYear();
-      var month = "0" + a.getMonth()+1;
+      var month = "0" + (a.getMonth()+1).toString();
       var date = "0" + a.getDate();
       var hour = a.getHours();
       var min = "0" + a.getMinutes();

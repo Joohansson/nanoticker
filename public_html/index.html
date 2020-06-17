@@ -29,7 +29,7 @@
 
   <meta name="nano" content="xrb_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo"/>
 
-	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20200114-1">
+	<link rel="stylesheet" type="text/css" href="css/reps.css?ver=20200617-1">
   <!--<link rel="stylesheet" href="css/jquery-ui-1.12.1.min.css">-->
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css">
@@ -53,9 +53,9 @@
   <!-- INIT -->
   <script>
     //CUSTOM VARS
-    var monitorsUpdateInterval = 15000; //Interval for client side update
-    var monitorFile = 'json/monitors.json'
-    var statFile = 'json/stats.json'
+    var monitorsUpdateInterval = 30000; //Interval for client side update
+    var monitorFile = 'json/monitors-v21.json'
+    var statFile = 'json/stats-v21.json'
     var explorerBaseUrl = 'https://nanocrawler.cc/explorer/account/'
     //var prColor = '#4a90e2'
     var GAPageName = 'main-net'
@@ -78,7 +78,7 @@
 <div class="div-main">
   <div class="title-text">
     <h1>NanoTicker - Network Performance</h1>
-    <h5>Combined measurements across public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover titles for info.</h5>
+    <h5>Combined measurements across public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover/touch titles for info.</h5>
     <div>
       <span class="title" title="Hide all charts for better performance.<br/>
       Can help on mobile to refresh charts.">Charts</span>
@@ -103,11 +103,11 @@
         Value from the top node.">Checked and Confirmed [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats_local.block_count_max"
+				<div data-netdata="repstats_v21_local.block_count_max"
 					data-title="Checked Blocks Max"
 				  data-decimal-digits="0"
-					data-common-max="repstats_local.block_count_max"
-					data-common-min="repstats_local.block_count_max"
+					data-common-max="repstats_v21_local.block_count_max"
+					data-common-min="repstats_v21_local.block_count_max"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -116,11 +116,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats_local.block_count_max_pr"
+				<div data-netdata="repstats_v21_local.block_count_max_pr"
 					data-title="PR: Checked Blocks Max"
 				  data-decimal-digits="0"
-					data-common-max="repstats_local.block_count_max_pr"
-					data-common-min="repstats_local.block_count_max_pr"
+					data-common-max="repstats_v21_local.block_count_max_pr"
+					data-common-min="repstats_v21_local.block_count_max_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -131,15 +131,15 @@
 		</div>
     <div class="div-graph">
 			<div class="div-header">
-        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5 min.<br/>
-        Value from the top node.">BPS and CPS 2 min average [MAX]</span>
+        <span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 30 sec.<br/>
+        Value taken from the peer with the highest block / cemented count.">BPS and CPS 30 sec average [MAX]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats_local.tps_max"
+				<div data-netdata="repstats_v21_local.tps_max"
 					data-title="TPS Average Max"
 					data-decimal-digits="3"
-					data-common-max="repstats_local.tps_max"
-					data-common-min="repstats_local.tps_max"
+					data-common-max="repstats_v21_local.tps_max"
+					data-common-min="repstats_v21_local.tps_max"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -149,11 +149,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats_local.tps_max_pr"
+				<div data-netdata="repstats_v21_local.tps_max_pr"
 					data-title="PR: TPS Average Max"
 					data-decimal-digits="3"
-					data-common-max="repstats_local.tps_max_pr"
-					data-common-min="repstats_local.tps_max_pr"
+					data-common-max="repstats_v21_local.tps_max_pr"
+					data-common-min="repstats_v21_local.tps_max_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -169,11 +169,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Unchecked Blocks</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.unchecked"
+        <div data-netdata="repstats_v21_local.unchecked"
           data-title="Unchecked"
           data-decimal-digits="0"
-          data-common-max="repstats_local.unchecked"
-          data-common-min="repstats_local.unchecked"
+          data-common-max="repstats_v21_local.unchecked"
+          data-common-min="repstats_v21_local.unchecked"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -183,11 +183,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.unchecked_pr"
+        <div data-netdata="repstats_v21_local.unchecked_pr"
           data-title="PR: Unchecked"
           data-decimal-digits="0"
-          data-common-max="repstats_local.unchecked_pr"
-          data-common-min="repstats_local.unchecked_pr"
+          data-common-max="repstats_v21_local.unchecked_pr"
+          data-common-min="repstats_v21_local.unchecked_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -203,11 +203,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Connected Peers</span>
 	    </div>
 	    <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.peers"
+        <div data-netdata="repstats_v21_local.peers"
           data-title="Peers"
           data-decimal-digits="0"
-          data-common-max="repstats_local.peers"
-          data-common-min="repstats_local.peers"
+          data-common-max="repstats_v21_local.peers"
+          data-common-min="repstats_v21_local.peers"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -217,11 +217,11 @@
         ></div>
 	    </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.peers_pr"
+        <div data-netdata="repstats_v21_local.peers_pr"
           data-title="PR: Peers"
           data-decimal-digits="0"
-          data-common-max="repstats_local.peers_pr"
-          data-common-min="repstats_local.peers_pr"
+          data-common-max="repstats_v21_local.peers_pr"
+          data-common-min="repstats_v21_local.peers_pr"
           data-dygraph-valuerange="0, data-common-max"
           data-chart-library="dygraph"
           data-width="90%"
@@ -237,11 +237,11 @@
         Maximum, Median and Minimum from all monitored nodes.">Active Difficulty</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.multiplier"
+        <div data-netdata="repstats_v21_local.multiplier"
           data-title="Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats_local.multiplier"
-          data-common-min="repstats_local.multiplier"
+          data-common-max="repstats_v21_local.multiplier"
+          data-common-min="repstats_v21_local.multiplier"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -250,11 +250,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.multiplier_pr"
+        <div data-netdata="repstats_v21_local.multiplier_pr"
           data-title="PR: Difficulty"
           data-decimal-digits="3"
-          data-common-max="repstats_local.multiplier_pr"
-          data-common-min="repstats_local.multiplier_pr"
+          data-common-max="repstats_v21_local.multiplier_pr"
+          data-common-min="repstats_v21_local.multiplier_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -267,14 +267,14 @@
       <div class="div-header">
         <span class="title" title="Number of unique measurements used in this system.<br/>
         The top number represents the max amount of discovered monitors.<br/>
-        Nodes with a block count below 50% of the maximum block count is not included.">Connected Monitors</span>
+        Nodes with a block count below 50% of the maximum block count is not included.">Connected Data Points</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.supported"
+        <div data-netdata="repstats_v21_local.supported"
           data-title="Stat Support"
           data-decimal-digits="0"
-          data-common-max="repstats_local.supported"
-          data-common-min="repstats_local.supported"
+          data-common-max="repstats_v21_local.supported"
+          data-common-min="repstats_v21_local.supported"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -283,11 +283,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.supported_pr"
+        <div data-netdata="repstats_v21_local.supported_pr"
           data-title="PR: Stat Support"
           data-decimal-digits="0"
-          data-common-max="repstats_local.supported_pr"
-          data-common-min="repstats_local.supported_pr"
+          data-common-max="repstats_v21_local.supported_pr"
+          data-common-min="repstats_v21_local.supported_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -305,11 +305,11 @@
         Median value from all monitored nodes.">Checked and Confirmed [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats_local.block_count_median"
+				<div data-netdata="repstats_v21_local.block_count_median"
 					data-title="Block Count Median"
 				  data-decimal-digits="0"
-					data-common-max="repstats_local.block_count_median"
-					data-common-min="repstats_local.block_count_median"
+					data-common-max="repstats_v21_local.block_count_median"
+					data-common-min="repstats_v21_local.block_count_median"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -318,11 +318,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats_local.block_count_median_pr"
+				<div data-netdata="repstats_v21_local.block_count_median_pr"
 					data-title="PR: Block Count Median"
 				  data-decimal-digits="0"
-					data-common-max="repstats_local.block_count_median_pr"
-					data-common-min="repstats_local.block_count_median_pr"
+					data-common-max="repstats_v21_local.block_count_median_pr"
+					data-common-min="repstats_v21_local.block_count_median_pr"
 					data-chart-library="dygraph"
 					data-width="90%"
 					data-height="100%"
@@ -333,15 +333,15 @@
 		</div>
 		<div class="div-graph">
 			<div class="div-header">
-				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 5 min.<br/>
-        Median value from all monitored nodes.">BPS and CPS 2 min average [MEDIAN]</span>
+				<span class="title" title="BPS (blocks per second) and CPS (confirmations per second) averaged over 30 sec.<br/>
+        Median value from all monitored nodes.">BPS and CPS 30 sec average [MEDIAN]</span>
 			</div>
 			<div class="div-graph-data chart-normal">
-				<div data-netdata="repstats_local.tps_median"
+				<div data-netdata="repstats_v21_local.tps_median"
 					data-title="TPS Average Median"
 					data-decimal-digits="3"
-					data-common-max="repstats_local.tps_median"
-					data-common-min="repstats_local.tps_median"
+					data-common-max="repstats_v21_local.tps_median"
+					data-common-min="repstats_v21_local.tps_median"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -351,11 +351,11 @@
 				></div>
 			</div>
       <div class="div-graph-data chart-pr">
-				<div data-netdata="repstats_local.tps_median_pr"
+				<div data-netdata="repstats_v21_local.tps_median_pr"
 					data-title="PR: TPS Average Median"
 					data-decimal-digits="3"
-					data-common-max="repstats_local.tps_median_pr"
-					data-common-min="repstats_local.tps_median_pr"
+					data-common-max="repstats_v21_local.tps_median_pr"
+					data-common-min="repstats_v21_local.tps_median_pr"
 					data-dygraph-valuerange="0, data-common-max"
 					data-chart-library="dygraph"
 					data-width="90%"
@@ -374,11 +374,11 @@
         <b>ave min</b>: The lowest average value, taken from one node">Block Confirmation Time [MEDIAN]</span>
       </div>
       <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.confirmations"
+        <div data-netdata="repstats_v21_local.confirmations"
           data-title="Percentiles over 10min or max 2048 blocks | P50=Median"
           data-decimal-digits="0"
-          data-common-max="repstats_local.confirmations"
-          data-common-min="repstats_local.confirmations"
+          data-common-max="repstats_v21_local.confirmations"
+          data-common-min="repstats_v21_local.confirmations"
           data-chart-library="dygraph"
           data-dygraph-theme="logscale"
           data-width="90%"
@@ -388,11 +388,11 @@
         ></div>
       </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.confirmations_pr"
+        <div data-netdata="repstats_v21_local.confirmations_pr"
           data-title="PR: Percentiles over 10min or max 2048 blocks | P50=Median"
           data-decimal-digits="0"
-          data-common-max="repstats_local.confirmations_pr"
-          data-common-min="repstats_local.confirmations_pr"
+          data-common-max="repstats_v21_local.confirmations_pr"
+          data-common-min="repstats_v21_local.confirmations_pr"
           data-chart-library="dygraph"
           data-dygraph-theme="logscale"
           data-width="90%"
@@ -408,11 +408,11 @@
         Max and Median from all monitored nodes.">Block Diff Status</span>
 	    </div>
 	    <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_local.block_diff"
+        <div data-netdata="repstats_v21_local.block_diff"
           data-title="Block Diff"
           data-decimal-digits="0"
-          data-common-max="repstats_local.block_diff"
-          data-common-min="repstats_local.block_diff"
+          data-common-max="repstats_v21_local.block_diff"
+          data-common-min="repstats_v21_local.block_diff"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -421,11 +421,11 @@
         ></div>
 	    </div>
       <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_local.block_diff_pr"
+        <div data-netdata="repstats_v21_local.block_diff_pr"
           data-title="PR: Block Diff"
           data-decimal-digits="0"
-          data-common-max="repstats_local.block_diff_pr"
-          data-common-min="repstats_local.block_diff_pr"
+          data-common-max="repstats_v21_local.block_diff_pr"
+          data-common-min="repstats_v21_local.block_diff_pr"
           data-chart-library="dygraph"
           data-width="90%"
           data-height="100%"
@@ -440,11 +440,11 @@
          Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
        </div>
        <div class="div-graph-data chart-normal">
-         <div data-netdata="repstats_local.api_time"
+         <div data-netdata="repstats_v21_local.api_time"
            data-title="API Process"
            data-decimal-digits="0"
-           data-common-max="repstats_local.api_time"
-           data-common-min="repstats_local.api_time"
+           data-common-max="repstats_v21_local.api_time"
+           data-common-min="repstats_v21_local.api_time"
            data-chart-library="dygraph"
            data-width="90%"
            data-height="100%"
@@ -453,11 +453,11 @@
          ></div>
        </div>
        <div class="div-graph-data chart-pr">
-         <div data-netdata="repstats_local.api_time_pr"
+         <div data-netdata="repstats_v21_local.api_time_pr"
            data-title="PR: API Process"
            data-decimal-digits="0"
-           data-common-max="repstats_local.api_time_pr"
-           data-common-min="repstats_local.api_time_pr"
+           data-common-max="repstats_v21_local.api_time_pr"
+           data-common-min="repstats_v21_local.api_time_pr"
            data-chart-library="dygraph"
            data-width="90%"
            data-height="100%"
@@ -472,15 +472,14 @@
          <b>latest_version:</b> Nodes running on latest version<br/>
          <b>tcp:</b> Nodes running tcp<br/>
          <b>stake_req:</b> Required weight needed for confirmations<br/>
-         <b>stake_latest:</b> Connected weight on latest version<br/>
-         <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [LOCAL NODE]</span>
+         <b>stake_tot:</b> Total connected weight">Protocol and Connected Weight [nanoticker.info]</span>
        </div>
        <div class="div-graph-data">
-         <div data-netdata="repstats_local.peerstat"
+         <div data-netdata="repstats_v21_local.peerstat"
            data-title="Protocol and weight from connected nodes"
            data-decimal-digits="1"
            data-common-max="100"
-           data-common-min="repstats_local.peerstat"
+           data-common-min="repstats_v21_local.peerstat"
            data-units="%"
            data-chart-library="dygraph"
            data-width="90%"
@@ -494,8 +493,8 @@
   <div class="section"></div>
   <div class="table-info">
     <span class="title" title="Discovered monitors with a block count above 50% of max block count.<br/>
-    Emty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Connected Monitors (</span>
-    <span class="title" id="monitorCount"></span><span class="title"> ) - </span>
+    Empty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Data from </span>
+    <span class="title" id="monitorCount"></span><span class="title"> Monitors and </span><span class="title" id="telemetryCount"></span><span class="title"> Telemetries - </span>
     <span class="title" id="monitorLastUpdated"></span>
   </div>
   <div class="monitors-wrapper">
@@ -512,7 +511,9 @@
           <th scope="col">Peers</th>
           <th scope="col">Conf. Median [ms]</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">API Time [ms]</th>
+	        <th scope="col">BPS</th>
+          <th scope="col">CPS</th>
+          <th scope="col">TSU</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -529,7 +530,9 @@
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
           <th scope="col">Difficulty</th>
-	        <th scope="col">API Time</th>
+	        <th scope="col">BPS</th>
+          <th scope="col">CPS</th>
+          <th scope="col">TSU</th>
           <th scope="col">Version</th>
           <th scope="col">DB</th>
           <th scope="col">Account</th>
@@ -559,7 +562,9 @@
   var maxPeers = 0
   var maxConf = 0
   var maxMultiplier = 0
-  var maxAPI = 0
+  var maxBPS = 0
+  var maxCPS = 0
+  var maxTSU = 0
 
   var minChecked = Number.MAX_VALUE
   var minConfirmed = Number.MAX_VALUE
@@ -568,7 +573,9 @@
   var minPeers = Number.MAX_VALUE
   var minConf = Number.MAX_VALUE
   var minMultiplier = Number.MAX_VALUE
-  var minAPI = Number.MAX_VALUE
+  var minBPS = Number.MAX_VALUE
+  var minCPS = Number.MAX_VALUE
+  var minTSU = Number.MAX_VALUE
 
   var firstTimeSort = true
   var firstTimeSearch = true
@@ -578,7 +585,7 @@
   function timeConverter(UNIX_timestamp){
       var a = new Date(UNIX_timestamp * 1000);
       var year = a.getFullYear();
-      var month = "0" + a.getMonth()+1;
+      var month = "0" + (a.getMonth()+1).toString();
       var date = "0" + a.getDate();
       var hour = a.getHours();
       var min = "0" + a.getMinutes();
@@ -794,7 +801,7 @@
           else {
             if (data) {
               if (data.multiplier != null) {
-                diff = parseFloat(data.multiplier.replace(/,/g, '')) - minMultiplier
+                diff = parseFloat(parseFloat(data.multiplier.replace(/,/g, ''))) - minMultiplier
               }
             }
             $('#order-info').html( 'Min Multiplier: ' + addCommas(parseInt(minMultiplier*1000)/1000) + ' | Diff: ' + diff)
@@ -805,21 +812,61 @@
           var diff = ''
           if (order[0][1] == 'desc') {
             if (data) {
-              if (data.procTime != null) {
-                diff = addCommas(maxAPI - parseInt(data.procTime.replace(/,/g, '')))
+              if (data.bps != null) {
+                diff = addCommas(maxBPS- parseFloat(data.bps.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max API Time: ' + addCommas(maxAPI) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max BPS: ' + addCommas(parseInt(maxBPS*10)/10) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
-              if (data.procTime != null) {
-                diff = parseInt(data.procTime.replace(/,/g, '')) - minAPI
+              if (data.bps != null) {
+                diff = parseFloat(parseFloat(data.bps.replace(/,/g, ''))) - minBPS
               }
             }
-            $('#order-info').html( 'Min API time: ' + addCommas(minAPI) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min BPS: ' + addCommas(parseInt(minBPS*10)/10) + ' | Diff: ' + diff)
           }
           break
+
+      case 10:
+          var diff = ''
+          if (order[0][1] == 'desc') {
+            if (data) {
+              if (data.cps != null) {
+                diff = addCommas(maxCPS- parseFloat(data.cps.replace(/,/g, '')))
+              }
+            }
+            $('#order-info').html( 'Max CPS: ' + addCommas(parseInt(maxCPS*10)/10) + ' | Diff: ' + diff)
+          }
+          else {
+            if (data) {
+              if (data.cps != null) {
+                diff = parseFloat(parseFloat(data.cps.replace(/,/g, ''))) - minCPS
+              }
+            }
+            $('#order-info').html( 'Min CPS: ' + addCommas(parseInt(minCPS*10)/10) + ' | Diff: ' + diff)
+          }
+          break
+
+        case 11:
+            var diff = ''
+            if (order[0][1] == 'desc') {
+              if (data) {
+                if (data.tsu != null) {
+                  diff = addCommas(maxTSU- parseFloat(data.tsu.replace(/,/g, '')))
+                }
+              }
+              $('#order-info').html( 'Max TSU: ' + addCommas(parseInt(maxTSU*10)/10) + ' | Diff: ' + diff)
+            }
+            else {
+              if (data) {
+                if (data.tsu != null) {
+                  diff = parseFloat(parseFloat(data.tsu.replace(/,/g, ''))) - minTSU
+                }
+              }
+              $('#order-info').html( 'Min TSU: ' + addCommas(parseInt(minTSU*10)/10) + ' | Diff: ' + diff)
+            }
+            break
 
       default:
         $('#order-info').html( 'Sort any number column and select a row to compare')
@@ -830,14 +877,17 @@
     //Update last updated time and monitor count
     $.getJSON( statFile, function(data) {
       $('#monitorLastUpdated').text(timeConverter(data.lastUpdatedUnix))
-      var PRs = 0
+      var monitors = 0
       if (filterPR) {
-        PRs = data.lenBlockCount_pr
+        monitors = data.monitorCount_pr
+        telemetries = data.telemetryCount_pr
       }
       else {
-        PRs = data.lenBlockCount
+        monitors = data.monitorCount
+        telemetries = data.telemetryCount
       }
-      $('#monitorCount').text(PRs)
+      $('#monitorCount').text(monitors)
+      $('#telemetryCount').text(telemetries)
       latestOnlineWeight =  data.pStakeOnline
     })
   }
@@ -859,6 +909,9 @@
         dataSrc: function(data) {
           //Correct the data
           $.each(data, function (index, entry) {
+            if (entry['isTelemetry'] == true) {
+              data[index]['name'] = 'T-'+data[index]['name']
+            }
             if(entry['name'] == '') {
               data[index]['name'] = 'N/A'
             }
@@ -966,17 +1019,43 @@
               data[index]['multiplier'] = addCommas(parseInt(entry['multiplier']*1000)/1000)
             }
 
-            if (entry['procTime'] < 0) {
-              data[index]['procTime'] = null
+            if (entry['bps'] < 0) {
+              data[index]['bps'] = null
             }
             else {
-              if (entry['procTime'] > maxAPI) {
-                maxAPI = entry['procTime']
+              if (entry['bps'] > maxBPS) {
+                maxBPS = entry['bps']
               }
-              if (entry['procTime'] < minAPI) {
-                minAPI = entry['procTime']
+              if (entry['bps'] < minBPS) {
+                minBPS = entry['bps']
               }
-              data[index]['procTime'] = addCommas(entry['procTime'])
+              data[index]['bps'] = addCommas(parseInt(entry['bps']*10)/10)
+            }
+
+            if (entry['cps'] < 0) {
+              data[index]['cps'] = null
+            }
+            else {
+              if (entry['cps'] > maxCPS) {
+                maxCPS = entry['cps']
+              }
+              if (entry['cps'] < minCPS) {
+                minCPS = entry['cps']
+              }
+              data[index]['cps'] = addCommas(parseInt(entry['cps']*10)/10)
+            }
+
+            if (entry['tsu'] < 0) {
+              data[index]['tsu'] = null
+            }
+            else {
+              if (entry['tsu'] > maxTSU) {
+                maxTSU = entry['tsu']
+              }
+              if (entry['tsu'] < minTSU) {
+                minTSU = entry['tsu']
+              }
+              data[index]['tsu'] = addCommas(parseInt(entry['tsu']*10)/10)
             }
 
             if (entry['version'] < 0) {
@@ -1016,7 +1095,9 @@
           { data : "numPeers", type: "num-fmt" },
           { data : "confMedian", type: "num-fmt"},
           { data : "multiplier", type: "num-fmt" },
-          { data : "procTime", type: "num-fmt" },
+          { data : "bps", type: "num-fmt" },
+          { data : "cps", type: "num-fmt" },
+          { data : "tsu", type: "num-fmt" },
           { data : "version" },
           { data : "storeVendor" },
           { data : "nanoNodeAccount" }
@@ -1062,13 +1143,19 @@
             orderData: [9, 7, 0]
         },{
             targets: [10],
-            orderData: [10, 0]
+            orderData: [10, 7, 0]
         },{
             targets: [11],
-            orderData: [11, 0]
+            orderData: [11, 7, 0]
         },{
             targets: [12],
-            orderData: [12, 0],
+            orderData: [12, 0]
+        },{
+            targets: [13],
+            orderData: [13, 0]
+        },{
+            targets: [14],
+            orderData: [14, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
@@ -1212,7 +1299,9 @@
     maxPeers = 0
     maxConf = 0
     maxMultiplier = 0
-    maxAPI = 0
+    maxBPS = 0
+    maxCPS = 0
+    maxTSU = 0
 
     minChecked = Number.MAX_VALUE
     minConfirmed = Number.MAX_VALUE
@@ -1221,7 +1310,9 @@
     minPeers = Number.MAX_VALUE
     minConf = Number.MAX_VALUE
     minMultiplier = Number.MAX_VALUE
-    minAPI = Number.MAX_VALUE
+    minBPS = Number.MAX_VALUE
+    minCPS = Number.MAX_VALUE
+    minTSU = Number.MAX_VALUE
 
     updateTableStats()
 
@@ -1384,7 +1475,7 @@
   <!--<script type="text/javascript" src="http://remotenode.nano:19999/dashboard.js"></script>-->
   <!--<script type="text/javascript" src="dashboard.js?v20190816"></script>-->
   <script type="text/javascript">var netdataServer = "https://node.nanoticker.info";</script>
-  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?ver=20200114-1"></script>
+  <script type="text/javascript" src="https://node.nanoticker.info/dashboard_custom.js?v20200617-1"></script>
 
   <script>
   // Set options for TV operation

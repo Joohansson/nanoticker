@@ -183,13 +183,16 @@ def medianNormal(lst):
         return (sortedLst[index] + sortedLst[index + 1])/2.0
 
 async def fetch(session, url):
-    async with session.get(url) as response:
-        try:
-            if (response.status == 200):
-                r = await response.text()
-                return r
-        except:
-            pass
+    try:
+        async with session.get(url) as response:
+            try:
+                if (response.status == 200):
+                    r = await response.text()
+                    return r
+            except:
+                pass
+    except:
+        pass
 
 async def getMonitor(url):
     try:
@@ -232,7 +235,7 @@ async def getTelemetryRPC(params, ipv6):
             except:
                 log.warning(timeLog("Bad telemtry response from node. Probably timeout."))
                 return [{}, False, params['address'], ipv6, 0, time.time(), r]
-    except Exception as e:
+    except:
         pass
 
 async def getRegularRPC(params):
@@ -254,6 +257,8 @@ async def getRegularRPC(params):
 
     except asyncio.TimeoutError as t:
         log.warning(timeLog("RPC communication timed out"))
+        pass
+    except:
         pass
 
 # Each websocket message will reset the timer and when enough time has passed between two messages the API function is called and timer reset
@@ -697,6 +702,8 @@ async def getAPI():
         except asyncio.TimeoutError as t:
             #log.warning(timeLog('Monitor API read timeout: %r' %t))
             pass
+        except Exception as e:
+            log.warning(timeLog(e))
 
         for i, task in enumerate(tasks):
             try:
@@ -711,6 +718,10 @@ async def getAPI():
                 #for example when tasks timeout
                 log.warning(timeLog('Could not read response. Error: %r' %e))
                 pass
+
+            finally:
+                if task.done() and not task.cancelled():
+                    task.exception()  # this doesn't raise anything, just mark exception retrieved
 
     syncData = []
     conf50Data = []
@@ -1620,6 +1631,10 @@ async def getPeers():
                 except Exception as e:
                     pass
 
+                finally:
+                    if task.done() and not task.cancelled():
+                        task.exception()  # this doesn't raise anything, just mark exception retrieved
+
         #Update the final list
         reps = validPaths.copy()
         #log.info(reps)
@@ -2000,5 +2015,6 @@ log.info(timeLog("Starting script"))
 
 try:
     loop.run_until_complete(asyncio.wait(futures))
+    #asyncio.run(getPeers(), debug=True)
 except KeyboardInterrupt:
     pass

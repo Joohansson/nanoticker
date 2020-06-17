@@ -9,7 +9,7 @@ import json
 from collections import deque #for array shifting
 
 # default module values (can be overridden per job in `config`)
-update_every = 20 #update chart every x second (changing this will change TPS Ave interval to interval*x sec)
+update_every = 30 #update chart every x second
 priority = 1000 #where it will appear on the main stat page and menu (60000 will place it last)
 #retries = 60
 
