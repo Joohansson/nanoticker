@@ -35,6 +35,7 @@ if DEV:
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
     localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account
+    websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 elif BETA:
     nodeUrl = 'http://127.0.0.1:55000' #beta
@@ -47,6 +48,7 @@ elif BETA:
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
     localTelemetryAccount = 'nano_1repnode4qpnebqobohfaxcgbrhtumfs6emijugpdkrcxb3jettdaw95xwio' #telemetry is retrived with another command for this account
+    websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 else:
     nodeUrl = 'http://[::1]:7076' #main
@@ -59,6 +61,7 @@ else:
     activeCurrency = 'nano' #nano, banano or nano-beta
     ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
+    websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 # For pushing stats to the blockchain
 source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
@@ -83,7 +86,6 @@ runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
 websocketCountDownLimit = 1 #call API if x sec has passed since last websocket message
-websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 """CONSTANTS"""
 pLatestVersionStat = 0 #percentage running latest protocol version
