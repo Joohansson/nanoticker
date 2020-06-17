@@ -53,9 +53,9 @@ else:
     telemetryAddress = '127.0.0.1'
     telemetryPort = '7075'
     websocketAddress  = 'ws://[::1]:54321'
-    logFile="/root/py/nano/repstat.log"
-    statFile = '/var/www/repstat/public_html/json/stats.json' #placed in a web server for public access
-    monitorFile = '/var/www/repstat/public_html/json/monitors.json' #placed in a web server for public access
+    logFile="/root/py/nano/repstat-v21.log"
+    statFile = '/var/www/repstat/public_html/json/stats-v21.json' #placed in a web server for public access
+    monitorFile = '/var/www/repstat/public_html/json/monitors-v21.json' #placed in a web server for public access
     activeCurrency = 'nano' #nano, banano or nano-beta
     ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
@@ -391,7 +391,7 @@ async def getAPI():
 
         # get block count
         params = {
-            "action": "node_telemetry",
+            "action": "telemetry",
             "address": telemetryAddress,
             "port": telemetryPort
         }
