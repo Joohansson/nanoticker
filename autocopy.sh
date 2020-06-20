@@ -2,7 +2,7 @@
 #!/bin/bash
 # Copy source files to netdata directories
 echo "Copy plugin"
-cp netdata/repstats.chart.py /usr/libexec/netdata/python.d/
+cp netdata/repstats_v21.chart.py /usr/libexec/netdata/python.d/
 cp netdata/repstats-b.chart.py /usr/libexec/netdata/python.d/
 
 echo "Copy plugin configs"
