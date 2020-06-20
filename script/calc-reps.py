@@ -14,6 +14,7 @@ import requests
 import re
 import logging
 import websockets
+import numpy as np
 from decimal import Decimal
 from collections import deque #for array shifting
 
@@ -367,7 +368,6 @@ async def getAPI():
     global pStakeTotalStat
     global pStakeRequiredStat
     global pStakeLatestVersionStat
-    global peerInfo
     global activeCurrency
     global latestGlobalBlocks
     global latestGlobalPeers
@@ -1071,8 +1071,10 @@ async def getAPI():
     telemetryCount = 0
     BPSMax = 0
     BPSMedian = 0
+    BPSp75 = 0
     CPSMax = 0
     CPSMedian = 0
+    CPSp75 = 0
 
     #PR ONLY
     blockCountMedian_pr = 0
@@ -1110,8 +1112,10 @@ async def getAPI():
     telemetryCount_pr = 0
     BPSMax_pr = 0
     BPSMedian_pr = 0
+    BPSp75_pr = 0
     CPSMax_pr = 0
     CPSMedian_pr = 0
+    CPSp75_pr = 0
 
     statData = None
 
@@ -1187,6 +1191,7 @@ async def getAPI():
                     BPSMax = data[0]
 
             BPSMedian = float(median(medianArray))
+            BPSp75 = float(np.percentile(medianArray, 75))
 
         medianArray = []
         if len(cpsData) > 0:
@@ -1197,6 +1202,7 @@ async def getAPI():
                     CPSMax = data[0]
 
             CPSMedian = float(median(medianArray))
+            CPSp75 = float(np.percentile(medianArray, 75))
 
         #PR ONLY
         if len(countData_pr) > 0:
@@ -1255,6 +1261,7 @@ async def getAPI():
                     BPSMax_pr = data[0]
 
             BPSMedian_pr = float(median(medianArray))
+            BPSp75_pr = float(np.percentile(medianArray, 75))
 
         medianArray = []
         if len(cpsData_pr) > 0:
@@ -1265,6 +1272,7 @@ async def getAPI():
                     CPSMax_pr = data[0]
 
             CPSMedian_pr = float(median(medianArray))
+            CPSp75_pr = float(np.percentile(medianArray, 75))
 
         #Write output file
         statData = {\
@@ -1309,8 +1317,10 @@ async def getAPI():
             "telemetryCount":telemetryCount,\
             "BPSMax":BPSMax,\
             "BPSMedian":BPSMedian,\
+            "BPSp75":BPSp75,\
             "CPSMax":CPSMax,\
             "CPSMedian":CPSMedian,\
+            "CPSp75":CPSp75,\
             #PR ONLY START
             "blockCountMedian_pr":int(blockCountMedian_pr),\
             "blockCountMax_pr":int(blockCountMax_pr),\
@@ -1353,8 +1363,10 @@ async def getAPI():
             "telemetryCount_pr":telemetryCount_pr,\
             "BPSMax_pr":BPSMax_pr,\
             "BPSMedian_pr":BPSMedian_pr,\
+            "BPSp75_pr":BPSp75_pr,\
             "CPSMax_pr":CPSMax_pr,\
             "CPSMedian_pr":CPSMedian_pr,\
+            "CPSp75_pr":CPSp75_pr,\
             #PR ONLY END
             "pLatestVersionStat":pLatestVersionStat,\
             "pTypesStat":pTypesStat,\
@@ -1402,7 +1414,6 @@ async def getPeers():
     global pStakeTotalStat
     global pStakeRequiredStat
     global pStakeLatestVersionStat
-    global peerInfo
     global latestOnlineWeight
 
     while 1:
@@ -1411,7 +1422,6 @@ async def getPeers():
         pVersions = []
         pStakeTot = 0
         pStakeReq = 0
-        pStakeLatest = 0
         supply = 133248061996216572282917317807824970865
 
         #log.info(timeLog("Verifying peers"))
@@ -1428,14 +1438,14 @@ async def getPeers():
             if 'peers' in resp[0]:
                 peers = resp[0]['peers']
                 for ipv6,value in peers.items():
-                    if ipv6 is '':
+                    if ipv6 == '':
                         continue
                     if '[::ffff:' in ipv6: #ipv4
                         ip = re.search('ffff:(.*)\]:', ipv6).group(1)
                     else: #ipv6
                         ip = '[' + re.search('\[(.*)\]:', ipv6).group(1) +']'
 
-                    if ip is not "":
+                    if ip != "":
                         #Only try to find more monitors from peer IP in main network
                         if not BETA:
                             #Combine with previous list and ignore duplicates
@@ -1483,7 +1493,7 @@ async def getPeers():
         #Grab voting weight stat
         params = {
             "action": "confirmation_quorum",
-            "peer_details": False,
+            "peer_details": True,
         }
         try:
             resp = await getRegularRPC(params)
@@ -1491,6 +1501,16 @@ async def getPeers():
                 pStakeTot = resp[0]['peers_stake_total']
                 pStakeReq = resp[0]['peers_stake_required']
                 latestOnlineWeight = int(resp[0]['online_stake_total']) / int(1000000000000000000000000000000) #used for calculating PR status
+
+                #Find matching IP and include weight in original peer list
+                for peer in resp[0]['peers']:
+                    for i,cPeer in enumerate(pPeers):
+                        if peer['ip'] == cPeer['ip'] and peer['ip'] != '':
+                            # append the relevant PR stats here as well
+                            weight = int(peer['weight']) / int(1000000000000000000000000000000)
+
+                            pPeers[i] = dict(cPeer, **{"weight": weight}) #update previous vaule
+                            continue
 
         except Exception as e:
             log.warning(timeLog("Could not read quorum from node RPC. %r" %e))
@@ -1512,53 +1532,60 @@ async def getPeers():
             pass
 
         #PERCENTAGE STATS
-        maxVersion = 0
-        versionCounter = 0
-        if len(pVersions) > 0:
-            maxVersion = int(max(pVersions))
-            #Calculate percentage of nodes on latest version
+        try:
+            maxVersion = 0
             versionCounter = 0
-            for version in pVersions:
-                if int(version) == maxVersion:
-                    versionCounter += 1
+            if len(pVersions) > 0:
+                maxVersion = int(max(pVersions))
+                #Calculate percentage of nodes on latest version
+                versionCounter = 0
+                for version in pVersions:
+                    if int(version) == maxVersion:
+                        versionCounter += 1
 
-        #Require at least 5 monitors to be at latest version to use as base, or use second latest version
-        if versionCounter < 5 and len(pVersions) > 0:
-            #extract second largest number by first removing duplicates
-            simplified = list(set(pVersions))
-            simplified.sort()
-            maxVersion = int(simplified[-2])
-            versionCounter = 0
-            for version in pVersions:
-                if int(version) == maxVersion:
-                    versionCounter += 1
+            #Require at least 5 monitors to be at latest version to use as base, or use second latest version
+            if versionCounter < 5 and len(pVersions) > 0:
+                #extract second largest number by first removing duplicates
+                simplified = list(set(pVersions))
+                simplified.sort()
+                maxVersion = int(simplified[-2])
+                versionCounter = 0
+                for version in pVersions:
+                    if int(version) == maxVersion:
+                        versionCounter += 1
 
-        if len(pVersions) > 0:
-            pLatestVersionStat = versionCounter / int(len(pVersions)) * 100
-        else:
-            pLatestVersionStat = 0
+            if len(pVersions) > 0:
+                pLatestVersionStat = versionCounter / int(len(pVersions)) * 100
+            else:
+                pLatestVersionStat = 0
 
-        pStakeTotalStat = int(pStakeTot) / int(supply) * 100
-        pStakeRequiredStat = int(pStakeReq) / int(supply) * 100
+            pStakeTotalStat = int(pStakeTot) / int(supply) * 100
+            pStakeRequiredStat = int(pStakeReq) / int(supply) * 100
 
-        #Calculate portion of weight and TCP in the latest versions
-        combinedWeightInLatest = 0
-        TCPInLatestCounter = 0
-        for peer in pPeers:
-            if int(peer['version']) == int(maxVersion):
-                combinedWeightInLatest = combinedWeightInLatest + int(peer['weight'])
+            #Calculate portion of weight and TCP in the latest versions
+            combinedWeightInLatest = 0
+            TCPInLatestCounter = 0
+            for peer in pPeers:
+                if int(peer['version']) == int(maxVersion):
+                    combinedWeightInLatest = combinedWeightInLatest + int(peer['weight'])
 
-            if (peer['type'] == 'tcp'):
-                TCPInLatestCounter += 1
+                if (peer['type'] == 'tcp'):
+                    TCPInLatestCounter += 1
 
-        pStakeLatestVersionStat = int(combinedWeightInLatest) / int(supply) * 100
+            if (latestOnlineWeight > 0):
+                pStakeLatestVersionStat = int(combinedWeightInLatest) / latestOnlineWeight * 100
 
-        if len(pPeers) > 0:
-            pTypesStat = TCPInLatestCounter / int(len(pPeers)) * 100
-        else:
-            pTypesStat = 0
+            if len(pPeers) > 0:
+                pTypesStat = TCPInLatestCounter / int(len(pPeers)) * 100
+            else:
+                pTypesStat = 0
+
+        except Exception as e:
+            log.warning(timeLog("Could not calculate weight stat. %r" %e))
+            pass
 
         #Get monitors from Ninja API
+        """
         try:
             r = requests.get(ninjaMonitors, timeout=30)
             monitors = r.json()
@@ -1587,6 +1614,7 @@ async def getPeers():
         except Exception as e:
             pass
             #log.warning(timeLog("Could not read monitors from ninja. %r" %e))
+        """
 
         #Apply blacklist
         for i,node in enumerate(monitorPaths):
@@ -1826,7 +1854,7 @@ async def websocketLoop():
                                 cementD.append(cemented_count_tele)
                                 cementD.popleft()
                                 indiPeersPrev[address_tele + ':' + port_tele] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD,
-                                'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version_number':protocol_version_number_tele,
+                                'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version':protocol_version_number_tele,
                                 'account_count':account_count_tele, 'bandwidth_cap_tele':bandwidth_cap_tele, 'uptime_tele':uptime_tele,
                                 'major_version':major_version_tele, 'minor_version':minor_version_tele, 'patch_version':patch_version_tele, 'pre_release_version':pre_release_version_tele,
                                 'address':address_tele, 'port':port_tele, 'timestamp_local': time.time()}
@@ -1865,7 +1893,7 @@ async def websocketLoop():
                                     CPSPeer = CPSPeer * 1000
 
                                 indiPeersPrev[ip] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD,
-                                'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version_number':protocol_version_number_tele,
+                                'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version':protocol_version_number_tele,
                                 'account_count':account_count_tele, 'bandwidth_cap_tele':bandwidth_cap_tele, 'uptime_tele':uptime_tele,
                                 'major_version':major_version_tele, 'minor_version':minor_version_tele, 'patch_version':patch_version_tele, 'pre_release_version':pre_release_version_tele,
                                 'address':address_tele, 'port':port_tele, 'bps':BPSPeer, 'cps':CPSPeer, 'timestamp_local': time.time()}

@@ -70,7 +70,9 @@ CHARTS = {
         'options': [None, 'TPS Median', 'tx/s', 'TPS 10 min','reps.tps', 'line'],
         'lines': [
             ["bps_median_10", None, 'absolute', 1, 1000],
-            ["cps_median_10", None, 'absolute', 1, 1000]
+            ["cps_median_10", None, 'absolute', 1, 1000],
+            ["bps_p75", None, 'absolute', 1, 1000],
+            ["cps_p75", None, 'absolute', 1, 1000]
         ]
     },
     'confirmations': {
@@ -126,7 +128,7 @@ CHARTS = {
             ["latest_version", None, 'absolute',1,1000],
             #["tcp", None, 'absolute',1,1000],
             ["stake_req", None, 'absolute',1,1000],
-            #["stake_latest", None, 'absolute',1,1000],
+            ["stake_latest", None, 'absolute',1,1000],
             ["stake_tot", None, 'absolute',1,1000]
         ]
     },
@@ -172,7 +174,9 @@ CHARTS = {
         'options': [None, 'TPS Median', 'tx/s', 'TPS 10 min','reps.tps', 'line'],
         'lines': [
             ["bps_median_10_pr", None, 'absolute', 1, 1000],
-            ["cps_median_10_pr", None, 'absolute', 1, 1000]
+            ["cps_median_10_pr", None, 'absolute', 1, 1000],
+            ["bps_p75_pr", None, 'absolute', 1, 1000],
+            ["cps_p75_pr", None, 'absolute', 1, 1000]
         ]
     },
     'confirmations_pr': {
@@ -255,7 +259,7 @@ class Service(UrlService):
             ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_multiplier','lenMultiplier',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
-            ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000)]
+            ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('bps_p75','BPSp75',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000),('cps_p75','CPSp75',float,1000)]
 
         apiKeys_pr = [('saved_blocks_max_pr','blockCountMax_pr',int,1), ('saved_blocks_median_pr','blockCountMedian_pr',int,1), ('confirmed_max_pr','cementedMax_pr',int,1), ('confirmed_median_pr','cementedMedian_pr',int,1),
             ('unchecked_max_pr','uncheckedMax_pr',int,1),('unchecked_median_pr','uncheckedMedian_pr',int,1),('unchecked_min_pr','uncheckedMin_pr',int,1),('peers_max_pr','peersMax_pr',int,1),
@@ -267,7 +271,7 @@ class Service(UrlService):
             ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_multiplier_pr','lenMultiplier_pr',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
-            ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000)]
+            ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('bps_p75_pr','BPSp75_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000),('cps_p75_pr','CPSp75_pr',float,1000)]
 
         r = dict()
 
