@@ -505,21 +505,21 @@
     <table id="dtMonitors" class="table table-striped table-sm" cellspacing="0" width="100%">
       <thead>
         <tr>
-          <th scope="col">Name</th>
-          <th scope="col">PR</th>
-          <th scope="col">Checked</th>
-          <th scope="col">Confirmed</th>
-          <th scope="col">Unchecked</th>
-          <th scope="col">Weight</th>
-          <th scope="col">Peers</th>
-          <th scope="col">Conf. Median [ms]</th>
-          <th scope="col">Difficulty</th>
-	        <th scope="col">BPS</th>
-          <th scope="col">CPS</th>
-          <th scope="col">TSU</th>
-          <th scope="col">Version</th>
-          <th scope="col">DB</th>
-          <th scope="col">Account</th>
+          <th scope="col" title="Rep name. Suffix T- means telemetry data exists">Name</th>
+          <th scope="col" title="Enough weight to be a Principal Representative">PR</th>
+          <th scope="col" title="Stored blocks">Checked</th>
+          <th scope="col" title="Confirmed blocks">Confirmed</th>
+          <th scope="col" title="Unchecked blocks">Unchecked</th>
+          <th scope="col" title="Voting weight">Weight</th>
+          <th scope="col" title="Number of connected peers">Peers</th>
+          <th scope="col" title="Median confirmation time past 10min or max 2048 blocks">Conf. Median [ms]</th>
+          <th scope="col" title="Proof of Work difficulty multiplier">Difficulty</th>
+	        <th scope="col" title="Recorded blocks per second">BPS</th>
+          <th scope="col" title="Confirmed blocks per second">CPS</th>
+          <th scope="col" title="Time Since Update (relative the global last updated time)">TSU</th>
+          <th scope="col" title="Node version">Version</th>
+          <th scope="col" title="Database version">DB</th>
+          <th scope="col" title="Recorded representative account">Account</th>
         </tr>
       </thead>
       <tfoot>
