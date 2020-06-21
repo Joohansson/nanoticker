@@ -60,7 +60,7 @@ else:
     statFile = '/var/www/repstat/public_html/json/stats-v21.json' #placed in a web server for public access
     monitorFile = '/var/www/repstat/public_html/json/monitors-v21.json' #placed in a web server for public access
     activeCurrency = 'nano' #nano, banano or nano-beta
-    ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors' #beta
+    ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
@@ -1585,14 +1585,13 @@ async def getPeers():
             pass
 
         #Get monitors from Ninja API
-        """
         try:
             r = requests.get(ninjaMonitors, timeout=30)
             monitors = r.json()
 
             if r is not None:
-                if len(r.json()) > 0:
-                    for monitor in r.json():
+                if len(monitors) > 0:
+                    for monitor in monitors:
                         try:
                             url = monitor['monitor']['url']
                             #Correct bad ending in some URLs like /api.php which will be added later
@@ -1614,7 +1613,6 @@ async def getPeers():
         except Exception as e:
             pass
             #log.warning(timeLog("Could not read monitors from ninja. %r" %e))
-        """
 
         #Apply blacklist
         for i,node in enumerate(monitorPaths):
