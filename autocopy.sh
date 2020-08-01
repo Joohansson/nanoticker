@@ -6,8 +6,8 @@ cp netdata/repstats_v21.chart.py /usr/libexec/netdata/python.d/
 cp netdata/repstats-b.chart.py /usr/libexec/netdata/python.d/
 
 echo "Copy plugin configs"
-cp netdata/repstats.conf /usr/lib/netdata/conf.d/python.d
-cp netdata/repstats.conf /etc/netdata/python.d/
+cp netdata/repstats_v21.conf /usr/lib/netdata/conf.d/python.d
+cp netdata/repstats_v21.conf /etc/netdata/python.d/
 cp netdata/repstats-b.conf /usr/lib/netdata/conf.d/python.d
 cp netdata/repstats-b.conf /etc/netdata/python.d/
 
