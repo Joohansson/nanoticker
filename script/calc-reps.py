@@ -1564,8 +1564,10 @@ async def getPeers():
 
             #Calculate portion of weight and TCP in the latest versions
             combinedWeightInLatest = 0
+            combinedTotalWeight = 0
             TCPInLatestCounter = 0
             for peer in pPeers:
+                combinedTotalWeight = combinedTotalWeight + (int(peer['weight'])*int(1000000000000000000000000000000))
                 if int(peer['version']) == int(maxVersion):
                     combinedWeightInLatest = combinedWeightInLatest + (int(peer['weight'])*int(1000000000000000000000000000000))
 
@@ -1573,7 +1575,7 @@ async def getPeers():
                     TCPInLatestCounter += 1
 
             if (int(pStakeTot) > 0):
-                pStakeLatestVersionStat = int(combinedWeightInLatest) / int(pStakeTot) * 100
+                pStakeLatestVersionStat = int(combinedWeightInLatest) / int(combinedTotalWeight) * 100
 
             if len(pPeers) > 0:
                 pTypesStat = TCPInLatestCounter / int(len(pPeers)) * 100
