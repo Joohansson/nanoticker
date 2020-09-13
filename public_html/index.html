@@ -495,8 +495,11 @@
   <div class="table-info">
     <span class="title" title="Discovered monitors with a block count above 50% of max block count.<br/>
     Empty cells means corresponding NodeMonitor does not have full support. Please consider upgrading!">Data from </span>
-    <span class="title" id="monitorCount"></span><span class="title"> Monitors and </span><span class="title" id="telemetryCount"></span><span class="title"> Telemetries - </span>
+    <span class="title" id="monitorCount"></span><span class="title"> Monitors / </span><span class="title" id="telemetryCount"></span><span class="title"> Telemetries - </span>
     <span class="title" id="monitorLastUpdated"></span>
+  </div>
+  <div class="table-info">
+    <span>Filtered Weight: </span><span class="title" id="visibleWeight" title="Duplicates can happen when monitors are being used together with telemetry data"></span>
   </div>
   <div class="monitors-wrapper">
     <div id="order-info"></div>
@@ -1263,6 +1266,37 @@
       }
       else {
         firstTimeSearch =  false
+      }
+
+      // Calculate the weight of filtered rows
+      let totalWeightVisible = 0
+      let totalWeight = 0
+      let tableNodes = 0
+      
+      table.rows().every(function () {
+        if (this.data().weight) {
+          totalWeight = totalWeight + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
+        }
+      });
+
+      table.rows({filter: 'applied'}).every(function () {
+        tableNodes++
+        if (this.data().weight) {
+          if (filterPR) {
+            if (this.data().PR == 'X') {
+              totalWeightVisible = totalWeightVisible + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
+            }
+          }
+          else {
+            totalWeightVisible = totalWeightVisible + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
+          }
+        }
+      });
+      if (totalWeight > 0) {
+        $('#visibleWeight').text(addCommas(totalWeightVisible) + ' / ' + addCommas(totalWeight) + ' (' + Math.round((totalWeightVisible / totalWeight) * 1000) / 10 + '%) - ' + tableNodes + ' nodes')
+      }
+      else {
+        $('#visibleWeight').text('N/A')
       }
     })
   }
