@@ -1271,29 +1271,34 @@
       // Calculate the weight of filtered rows
       let totalWeightVisible = 0
       let totalWeight = 0
+      let totalNodes = 0
       let tableNodes = 0
       
       table.rows().every(function () {
+        totalNodes++
         if (this.data().weight) {
           totalWeight = totalWeight + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
         }
       });
 
       table.rows({filter: 'applied'}).every(function () {
-        tableNodes++
-        if (this.data().weight) {
-          if (filterPR) {
-            if (this.data().PR == 'X') {
+        if (filterPR) {
+          if (this.data().PR == 'X') {
+            tableNodes++
+            if (this.data().weight) {
               totalWeightVisible = totalWeightVisible + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
             }
           }
-          else {
+        }
+        else {
+          tableNodes++
+          if (this.data().weight) {
             totalWeightVisible = totalWeightVisible + parseInt(this.data().weight.replace(/[,()\s]/g, ''))
           }
         }
       });
       if (totalWeight > 0) {
-        $('#visibleWeight').text(addCommas(totalWeightVisible) + ' / ' + addCommas(totalWeight) + ' (' + Math.round((totalWeightVisible / totalWeight) * 1000) / 10 + '%) - ' + tableNodes + ' nodes')
+        $('#visibleWeight').text(addCommas(totalWeightVisible) + ' / ' + addCommas(totalWeight) + ' (' + Math.round((totalWeightVisible / totalWeight) * 1000) / 10 + '%) - ' + tableNodes + ' / ' + totalNodes + ' nodes')
       }
       else {
         $('#visibleWeight').text('N/A')
