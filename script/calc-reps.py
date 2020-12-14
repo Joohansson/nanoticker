@@ -64,18 +64,13 @@ else:
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
-# For pushing stats to the blockchain
+# For pushing stats to the blockchain (no longer used)
 source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
-#source_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
 rep_account = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar'
-priv_key = '31d30eda437f3a243212fd2aebfa0f855a230a1aa237344f0eb7d233c35974ea'
-#priv_key = '4FD52C089CE842CF60C0F97E053B066B3BC8C1650DC618E11C77D72ED2FB0992'
+priv_key = ''
 cph_account = 'nano_1cph1t1yp3nb9wq3zkh6q69yxq5ikwz4rt3jiy9kqxdmbyjz48shrmt9neyn'
 peers_account = 'nano_1peers1jrgie5gji5oasgi5zawc1bjb9r138e88g4ia9to56dih7sp5p19xy'
 difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuuq3f4frt'
-#cph_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
-#peers_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
-#difficulty_account = 'nano_3oiqirkpqje1yohdrm8hq4pu1yp7hwwddjgdbftcau63rjyppi15q6858asy'
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
@@ -2038,7 +2033,7 @@ ignore_aiohttp_ssl_error(loop) #ignore python bug
 if (BETA):
     futures = [getPeers(), websocketLoop(), websocketCountDown()]
 else:
-    futures = [getPeers(), websocketLoop(), websocketCountDown(), pushStats()]
+    futures = [getPeers(), websocketLoop(), websocketCountDown()]
 #futures = [getAPI()]
 #futures = [getPeers()]
 log.info(timeLog("Starting script"))
