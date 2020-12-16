@@ -20,7 +20,9 @@ cp netdata/css/bootstrap-darkly.css //usr/share/netdata/web/css/
 cp netdata/css/dashboard.darkest.css //usr/share/netdata/web/css/
 cp netdata/css/dashboard.darkly.css //usr/share/netdata/web/css/
 
-echo "Copy dashboard main page"
+echo "Create folders in var/www and copy dashboard main page"
+mkdir -p /var/www/repstat/
+mkdir -p /var/www/repstat-beta/
 cp -R public_html/ /var/www/repstat/public_html
 cp -R public_html/ /var/www/repstat-beta/public_html
 rm /var/www/repstat-beta/public_html/index.html
