@@ -7,7 +7,7 @@ A real-time statistical tool to check Nano network health. Using data from publi
 
 ## Requirements
 - Ubuntu 20.04 preferred (18 possible)
-- Apache and PHP: sudo apt install apache2 php libapache2-mod-php
+- Apache: sudo apt install apache2
 
 ## Install
 
