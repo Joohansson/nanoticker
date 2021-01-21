@@ -56,7 +56,7 @@ else:
     telemetryAddress = '127.0.0.1'
     telemetryPort = '7075'
     websocketAddress  = 'ws://[::1]:54321'
-    logFile="/root/py/nano/repstat.log"
+    logFile="/root/logs/repstat.log"
     statFile = '/var/www/repstat/public_html/json/stats.json' #placed in a web server for public access
     monitorFile = '/var/www/repstat/public_html/json/monitors.json' #placed in a web server for public access
     activeCurrency = 'nano' #nano, banano or nano-beta
@@ -64,13 +64,20 @@ else:
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
-# For pushing stats to the blockchain (no longer used)
-source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
-rep_account = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar'
+# Speed test source account
+source_account = ''
 priv_key = ''
-cph_account = 'nano_1cph1t1yp3nb9wq3zkh6q69yxq5ikwz4rt3jiy9kqxdmbyjz48shrmt9neyn'
-peers_account = 'nano_1peers1jrgie5gji5oasgi5zawc1bjb9r138e88g4ia9to56dih7sp5p19xy'
-difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuuq3f4frt'
+speedtest_websocket = '' # Preferably in another country
+speedtest_websocket_ping_offset = 20 #ping/2 ms latency for the websocket node to be deducted from the speed delay
+
+
+# For pushing stats to the blockchain (no longer used)
+# source_account = 'nano_1ticker1j6fax9ke4jajppaj6gcuhfys9sph3hhprq3ewj31z4qndbcb5feq'
+# rep_account = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar'
+# priv_key = ''
+# cph_account = 'nano_1cph1t1yp3nb9wq3zkh6q69yxq5ikwz4rt3jiy9kqxdmbyjz48shrmt9neyn'
+# peers_account = 'nano_1peers1jrgie5gji5oasgi5zawc1bjb9r138e88g4ia9to56dih7sp5p19xy'
+# difficulty_account = 'nano_1diff1tojcgttgewe1pkm4yyjwbbb51oewbro3wtsnxjrtz5i9iuuq3f4frt'
 
 """LESS CUSTOM VARS"""
 minCount = 1 #initial required block count
@@ -82,6 +89,7 @@ runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
 websocketCountDownLimit = 1 #call API if x sec has passed since last websocket message
+runSpeedTestEvery = 60 #run speed test every X sec
 
 """CONSTANTS"""
 pLatestVersionStat = 0 #percentage running latest protocol version
@@ -133,6 +141,11 @@ websocketTimer = time.time()
 websocketCountDownTimer = time.time()
 startTime = time.time()
 apiShouldCall = False
+
+# speed test memory
+speedtest_latest = []
+speedtest_latest_ms = [200]
+speedtest_last_valid = time.time()
 
 logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
@@ -382,6 +395,7 @@ async def getAPI():
     global previousLocalTimeStamp
     global indiPeersPrev
     global startTime
+    global speedtest_latest_ms
 
     PRStatusLocal = False
 
@@ -1371,6 +1385,7 @@ async def getAPI():
             "pStakeOnline":latestOnlineWeight,\
             "lastUpdated":str(datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')),\
             "lastUpdatedUnix":str(time.time()),\
+            "speedTest":str(round(medianNormal(speedtest_latest_ms))),\
             }
 
         #save to global vars used for pushing to blockchain later
@@ -1736,6 +1751,147 @@ async def publishStatBlock(source_account, priv_key, dest_account, rep_account, 
 
     return hash
 
+# publish speed test (change block)
+async def publishSpeedTest(source_account, priv_key, rep_account):
+    # get info from sending account
+    params = {
+        'action': 'account_info',
+        'account': source_account,
+        'count': 1,
+        'pending': 'false'
+    }
+    adjustedbal = '0'
+
+    try:
+        # log.info(timeLog("Getting info"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=60)
+        account_info = resp.json()
+
+        # calculate the state block balance after the send
+        adjustedbal = str(int(account_info['balance']))
+        # get previous hash
+        if 'frontier' in account_info:
+            prev = account_info["frontier"]
+        else:
+            log.error(timeLog("Source account not opened yet"))
+            return False
+
+    except Exception as e:
+        log.error(timeLog("Could not get block info. %r" %e))
+        return False
+
+    # create send block
+    params = {
+        'action': 'block_create',
+        'type': 'state',
+        'account': source_account,
+        'link': '0',
+        'balance': adjustedbal,
+        'representative': rep_account,
+        'previous': prev,
+        'key': priv_key
+    }
+
+    try:
+        # log.info(timeLog("Creating block"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=120)
+        block = resp.json()['block']
+        hash = resp.json()['hash']
+        if len(hash) != 64:
+            log.error(timeLog("Could not create block. %r" %e))
+            return False
+
+    except Exception as e:
+        log.error(timeLog("Could not create block. %r" %e))
+        return False
+
+    # send the transactions
+    params = {
+        'action': 'process',
+        'block': block
+    }
+    try:
+        # log.info(timeLog("Publishing block"))
+        resp = requests.post(url=nodeUrl, json=params, timeout=60)
+        hash = resp.json()['hash']
+        if len(hash) != 64:
+            log.error(timeLog("Could not send block. %r" %e))
+
+    except Exception as e:
+        log.error(timeLog("Could not send block. %r" %e))
+        return False
+
+    return hash
+
+async def speedTest():
+    global speedtest_latest
+    global speedtest_last_valid
+    historyLength = 10
+
+    while True:
+        try:
+            response = await publishSpeedTest(source_account, priv_key, source_account)
+            if len(response) == 64:
+                speedtest_latest.append({'hash': response, 'time': int(time.time() * 1000) })
+                # Only save historic hashes for 10 x speedTestInterval sec
+                if len(speedtest_latest) > historyLength:
+                    speedtest_latest.pop(0)
+
+                # Check if the last websocket response was too long ago, add 0 to the buffer to indicate timeout
+                if time.time() - speedtest_last_valid > historyLength * runSpeedTestEvery:
+                    log.info(timeLog("Speedtest not performed in " + time.time() - speedtest_last_valid + " sec"))
+                    speedtest_latest_ms.append(0)
+                    if len(speedtest_latest_ms) > 5:
+                        speedtest_latest_ms.pop(0)
+
+            await asyncio.sleep(runSpeedTestEvery)
+        except Exception as e:
+            log.error(timeLog("Could not speed test. %r" %e))
+            await asyncio.sleep(runSpeedTestEvery)
+
+# websocket listener for speed test
+async def speedTestWebsocket():
+    global speedtest_latest
+    global speedtest_latest_ms
+    global speedtest_last_valid
+
+    # Predefined subscription message
+    msg = {
+        "action": "subscribe",
+        "topic": "confirmation",
+        "options": {
+          "accounts": [source_account]
+        }
+    }
+    try:
+        async with websockets.connect(speedtest_websocket) as websocket:
+            await websocket.send(json.dumps(msg))
+            while 1:
+                rec = json.loads(await websocket.recv())
+                # calculate time diff
+                duration = 0
+                if 'message' in rec:
+                    try:
+                        for test in speedtest_latest:
+                            if test['hash'] == rec['message']['hash']:
+                                duration = int(time.time() * 1000) - test['time'] - speedtest_websocket_ping_offset
+                                speedtest_last_valid = time.time()
+                                speedtest_latest_ms.append(duration)
+                                if len(speedtest_latest_ms) > 5:
+                                    speedtest_latest_ms.pop(0)
+                                break
+                        #log.info(timeLog("Speedtest: " + duration))
+                        
+
+                    except Exception as e:
+                        log.error(timeLog("Failed with speed test websocket. %r" %e))
+
+    except Exception as e:
+        log.error(timeLog("Websocket connection error"))
+        # wait 5sec and reconnect
+        await asyncio.sleep(5)
+        await speedTestWebsocket()
+
 #Websocket subscription for telemetry
 async def websocketLoop():
     global previousMaxBlockCount
@@ -2033,7 +2189,8 @@ ignore_aiohttp_ssl_error(loop) #ignore python bug
 if (BETA):
     futures = [getPeers(), websocketLoop(), websocketCountDown()]
 else:
-    futures = [getPeers(), websocketLoop(), websocketCountDown()]
+    futures = [getPeers(), websocketLoop(), websocketCountDown(), speedTest(), speedTestWebsocket()]
+    #futures = [speedTest(), speedTestWebsocket()]
 #futures = [getAPI()]
 #futures = [getPeers()]
 log.info(timeLog("Starting script"))

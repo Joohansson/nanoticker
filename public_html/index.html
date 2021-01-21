@@ -404,6 +404,24 @@
       </div>
     </div>
     <div class="div-graph">
+      <div class="div-graph">
+        <div class="div-header">
+          <span class="title" title="Time in milliseconds that it takes for a block published from one node to be confirmed on another using a websocket listener. Median value over 5min.">Transaction Delay Node-Node (Germany->Norway)</span>
+        </div>
+        <div class="div-graph-data">
+          <div data-netdata="repstats_v21_local.speedstat"
+            data-title="TX Time"
+            data-decimal-digits="0"
+            data-common-max="repstats_v21_local.speedstat"
+            data-common-min="repstats_v21_local.speedstat"
+            data-chart-library="dygraph"
+            data-width="90%"
+            data-height="100%"
+            data-after="-4500"
+            data-colors="#7ad96e"
+          ></div>
+        </div>
+      </div>
 	    <div class="div-header">
         <span class="title" title="Difference from maximum recorded blocks.<br/>
         Max and Median from all monitored nodes.">Block Diff Status</span>
@@ -435,38 +453,6 @@
         ></div>
 	    </div>
 	   </div>
-     <div class="div-graph">
-       <div class="div-header">
-         <span class="title" title="Time in milliseconds that each monitor API itself consumes for RPC commands (after each cache expiration).<br/>
-         Maximum, Median and Minimum from all monitored nodes.">Node Monitor API Processing</span>
-       </div>
-       <div class="div-graph-data chart-normal">
-         <div data-netdata="repstats_v21_local.api_time"
-           data-title="API Process"
-           data-decimal-digits="0"
-           data-common-max="repstats_v21_local.api_time"
-           data-common-min="repstats_v21_local.api_time"
-           data-chart-library="dygraph"
-           data-width="90%"
-           data-height="100%"
-           data-after="-4500"
-           data-colors="#e87474 #7ad96e #747de8"
-         ></div>
-       </div>
-       <div class="div-graph-data chart-pr">
-         <div data-netdata="repstats_v21_local.api_time_pr"
-           data-title="PR: API Process"
-           data-decimal-digits="0"
-           data-common-max="repstats_v21_local.api_time_pr"
-           data-common-min="repstats_v21_local.api_time_pr"
-           data-chart-library="dygraph"
-           data-width="90%"
-           data-height="100%"
-           data-after="-4500"
-           data-colors="#e87474 #7ad96e #747de8"
-         ></div>
-       </div>
-     </div>
      <div class="div-graph">
        <div class="div-header">
          <span class="title" title="Portion of connected nodes and portion of weight of the current supply.<br/>

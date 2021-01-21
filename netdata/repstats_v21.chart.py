@@ -24,7 +24,7 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 # charts order (can be overridden if you want less charts, or different order)
 
 ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median',\
-'confirmations', 'block_diff', 'multiplier', 'api_time', 'supported', 'peerstat',\
+'confirmations', 'block_diff', 'multiplier', 'api_time', 'supported', 'peerstat', 'speedstat',\
 'block_count_max_pr', 'block_count_median_pr', 'unchecked_pr', 'peers_pr', 'tps_max_pr', 'tps_median_pr',\
 'confirmations_pr', 'block_diff_pr', 'multiplier_pr', 'api_time_pr', 'supported_pr']
 
@@ -132,6 +132,12 @@ CHARTS = {
             ["stake_tot", None, 'absolute',1,1000]
         ]
     },
+    'speedstat': {
+        'options': [None, 'P2P Speed', 'ms', 'Transaction speed node to node','reps.speedstat', 'line'],
+        'lines': [
+            ["speed", "median_5min", None, 'absolute']
+        ]
+    },
     #PR ONLY
     'block_count_max_pr': {
         'options': [None, 'Blocks Max', 'blocks', 'Checked Blocks','reps.blocks', 'area'],
@@ -231,7 +237,7 @@ CHARTS = {
 class Service(UrlService):
     def __init__(self, configuration=None, name=None):
         UrlService.__init__(self, configuration=configuration, name=name)
-        self.url = self.configuration.get('url', 'https://nanoticker.info/json/stats-v21.json')
+        self.url = self.configuration.get('url', 'https://nanoticker.info/json/stats.json')
         self.order = ORDER
         self.definitions = CHARTS
 
@@ -258,7 +264,7 @@ class Service(UrlService):
             ('supported_blocks','lenBlockCount',int,1),('supported_cemented','lenCemented',int,1),('supported_peers','lenPeers',int,1),
             ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_multiplier','lenMultiplier',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
-            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
+            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),('speed','speedTest',int,1),
             ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('bps_p75','BPSp75',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000),('cps_p75','CPSp75',float,1000)]
 
         apiKeys_pr = [('saved_blocks_max_pr','blockCountMax_pr',int,1), ('saved_blocks_median_pr','blockCountMedian_pr',int,1), ('confirmed_max_pr','cementedMax_pr',int,1), ('confirmed_median_pr','cementedMedian_pr',int,1),
@@ -270,7 +276,7 @@ class Service(UrlService):
             ('supported_blocks_pr','lenBlockCount_pr',int,1),('supported_cemented_pr','lenCemented_pr',int,1),('supported_peers_pr','lenPeers_pr',int,1),
             ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_multiplier_pr','lenMultiplier_pr',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
-            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),
+            ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),('speed','speedTest',int,1),
             ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('bps_p75_pr','BPSp75_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000),('cps_p75_pr','CPSp75_pr',float,1000)]
 
         r = dict()
