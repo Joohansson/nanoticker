@@ -1820,18 +1820,6 @@ async def publishSpeedTest(source_account, priv_key, rep_account):
         'work': work,
     }
 
-    # create send block
-    params = {
-        'action': 'block_create',
-        'type': 'state',
-        'account': source_account,
-        'link': '0',
-        'balance': adjustedbal,
-        'representative': rep_account,
-        'previous': prev,
-        'key': priv_key
-    }
-
     try:
         # log.info(timeLog("Creating block"))
         resp = requests.post(url=nodeUrl, json=params, timeout=120)
