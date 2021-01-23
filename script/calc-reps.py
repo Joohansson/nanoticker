@@ -15,6 +15,7 @@ import re
 import logging
 import websockets
 import numpy as np
+from pathlib import Path
 from decimal import Decimal
 from collections import deque #for array shifting
 
@@ -22,7 +23,7 @@ from collections import deque #for array shifting
 import repList
 
 """CUSTOM VARS"""
-BETA = True #SET TO False FOR MAIN NET
+BETA = False #SET TO False FOR MAIN NET
 DEV = False #SET TO True when developing
 
 if DEV:
@@ -65,10 +66,14 @@ else:
     websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 # Speed test source account
+workUrl = 'http://127.0.0.1:9971'
+workDiff = 'fffffffd55555555' # 3x
 source_account = ''
 priv_key = ''
-speedtest_websocket = '' # Preferably in another country
-speedtest_websocket_ping_offset = 20 #ping/2 ms latency for the websocket node to be deducted from the speed delay
+speedtest_websocket_1 = 'ws://example.com' # Preferably in another country
+speedtest_websocket_2 = '' # Leave blank if you don't have one
+speedtest_websocket_ping_offset_1 = 45 #ping/2 ms latency for the websocket node to be deducted from the speed delay
+speedtest_websocket_ping_offset_2 = 20 #ping/2 ms latency for the websocket node to be deducted from the speed delay
 
 
 # For pushing stats to the blockchain (no longer used)
@@ -147,7 +152,9 @@ speedtest_latest = []
 speedtest_latest_ms = [200]
 speedtest_last_valid = time.time()
 
-logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a', format='%(name)s - %(levelname)s - %(message)s')
+filename = Path(logFile)
+filename.touch(exist_ok=True)
+logging.basicConfig(level=logging.INFO,filename=logFile, filemode='a+', format='%(name)s - %(levelname)s - %(message)s')
 log = logging.getLogger(__name__)
 
 #Calculate the average value of the 50% middle percentile from a list
@@ -1780,6 +1787,39 @@ async def publishSpeedTest(source_account, priv_key, rep_account):
         log.error(timeLog("Could not get block info. %r" %e))
         return False
 
+    work_params = {
+        'action': 'work_generate',
+        'hash': prev,
+        'use_peers': 'true',
+        'difficulty': workDiff,
+    }
+
+    work = ''
+    try:
+        #print("Creating work")
+        resp = requests.post(url=workUrl, json=work_params, timeout=60)
+        work = resp.json()['work']
+        if len(work) != 16:
+            log.error(timeLog("Could not create work. %r" %e))
+            return False
+
+    except Exception as e:
+        log.error(timeLog("Could not create work. %r" %e))
+        return False
+
+    # create send block
+    params = {
+        'action': 'block_create',
+        'type': 'state',
+        'account': source_account,
+        'link': '0',
+        'balance': adjustedbal,
+        'representative': rep_account,
+        'previous': prev,
+        'key': priv_key,
+        'work': work,
+    }
+
     # create send block
     params = {
         'action': 'block_create',
@@ -1838,7 +1878,7 @@ async def speedTest():
                     speedtest_latest.pop(0)
 
                 # Check if the last websocket response was too long ago, add 0 to the buffer to indicate timeout
-                if time.time() - speedtest_last_valid > historyLength * runSpeedTestEvery:
+                if time.time() - speedtest_last_valid > float(historyLength * runSpeedTestEvery):
                     log.info(timeLog("Speedtest not performed in " + time.time() - speedtest_last_valid + " sec"))
                     speedtest_latest_ms.append(0)
                     if len(speedtest_latest_ms) > 5:
@@ -1864,7 +1904,7 @@ async def speedTestWebsocket():
         }
     }
     try:
-        async with websockets.connect(speedtest_websocket) as websocket:
+        async with websockets.connect(speedtest_websocket_1) as websocket:
             await websocket.send(json.dumps(msg))
             while 1:
                 rec = json.loads(await websocket.recv())
@@ -1872,15 +1912,16 @@ async def speedTestWebsocket():
                 duration = 0
                 if 'message' in rec:
                     try:
-                        for test in speedtest_latest:
+                        for i,test in enumerate(speedtest_latest):
                             if test['hash'] == rec['message']['hash']:
-                                duration = int(time.time() * 1000) - test['time'] - speedtest_websocket_ping_offset
+                                speedtest_latest[i]['hash'] = '' # reset so the other websocket doesn't record
+                                duration = int(time.time() * 1000) - test['time'] - speedtest_websocket_ping_offset_1
                                 speedtest_last_valid = time.time()
                                 speedtest_latest_ms.append(duration)
                                 if len(speedtest_latest_ms) > 5:
                                     speedtest_latest_ms.pop(0)
                                 break
-                        #log.info(timeLog("Speedtest: " + duration))
+                        log.info(timeLog("Speedtest1: " + str(duration)))
                         
 
                     except Exception as e:
@@ -1891,6 +1932,50 @@ async def speedTestWebsocket():
         # wait 5sec and reconnect
         await asyncio.sleep(5)
         await speedTestWebsocket()
+
+# websocket listener for speed test backup
+async def speedTestWebsocketBackup():
+    global speedtest_latest
+    global speedtest_latest_ms
+    global speedtest_last_valid
+
+    # Predefined subscription message
+    msg = {
+        "action": "subscribe",
+        "topic": "confirmation",
+        "options": {
+          "accounts": [source_account]
+        }
+    }
+    try:
+        async with websockets.connect(speedtest_websocket_2) as websocket:
+            await websocket.send(json.dumps(msg))
+            while 1:
+                rec = json.loads(await websocket.recv())
+                # calculate time diff
+                duration = 0
+                if 'message' in rec:
+                    try:
+                        for i,test in enumerate(speedtest_latest):
+                            if test['hash'] == rec['message']['hash']:
+                                speedtest_latest[i]['hash'] = '' # reset so the other websocket doesn't record
+                                duration = int(time.time() * 1000) - test['time'] - speedtest_websocket_ping_offset_2
+                                speedtest_last_valid = time.time()
+                                speedtest_latest_ms.append(duration)
+                                if len(speedtest_latest_ms) > 5:
+                                    speedtest_latest_ms.pop(0)
+                                break
+                        log.info(timeLog("Speedtest2: " + str(duration)))
+                        
+
+                    except Exception as e:
+                        log.error(timeLog("Failed with speed test websocket. %r" %e))
+
+    except Exception as e:
+        log.error(timeLog("Websocket connection error"))
+        # wait 5sec and reconnect
+        await asyncio.sleep(5)
+        await speedTestWebsocketBackup()
 
 #Websocket subscription for telemetry
 async def websocketLoop():
@@ -2189,8 +2274,10 @@ ignore_aiohttp_ssl_error(loop) #ignore python bug
 if (BETA):
     futures = [getPeers(), websocketLoop(), websocketCountDown()]
 else:
-    futures = [getPeers(), websocketLoop(), websocketCountDown(), speedTest(), speedTestWebsocket()]
-    #futures = [speedTest(), speedTestWebsocket()]
+    if speedtest_websocket_2 != '':
+        futures = [getPeers(), websocketLoop(), websocketCountDown(), speedTest(), speedTestWebsocket(), speedTestWebsocketBackup()]
+    else:
+        futures = [getPeers(), websocketLoop(), websocketCountDown(), speedTest(), speedTestWebsocket()]
 #futures = [getAPI()]
 #futures = [getPeers()]
 log.info(timeLog("Starting script"))
