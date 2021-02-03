@@ -70,7 +70,7 @@ workUrl = 'http://127.0.0.1:9971'
 workDiff = 'fffffffd55555555' # 3x
 source_account = ''
 priv_key = ''
-speedtest_websocket_1 = 'ws://example.com' # Preferably in another country
+speedtest_websocket_1 = '' # Preferably in another country
 speedtest_websocket_2 = '' # Leave blank if you don't have one
 speedtest_websocket_ping_offset_1 = 45 #ping/2 ms latency for the websocket node to be deducted from the speed delay
 speedtest_websocket_ping_offset_2 = 20 #ping/2 ms latency for the websocket node to be deducted from the speed delay
@@ -1800,7 +1800,7 @@ async def publishSpeedTest(source_account, priv_key, rep_account):
         resp = requests.post(url=workUrl, json=work_params, timeout=60)
         work = resp.json()['work']
         if len(work) != 16:
-            log.error(timeLog("Could not create work. %r" %e))
+            log.error(timeLog("Could not create work. Bad length."))
             return False
 
     except Exception as e:
@@ -1831,6 +1831,7 @@ async def publishSpeedTest(source_account, priv_key, rep_account):
 
     except Exception as e:
         log.error(timeLog("Could not create block. %r" %e))
+        log.error(resp)
         return False
 
     # send the transactions
@@ -1859,18 +1860,21 @@ async def speedTest():
     while True:
         try:
             response = await publishSpeedTest(source_account, priv_key, source_account)
-            if len(response) == 64:
+            if response and len(response) == 64:
                 speedtest_latest.append({'hash': response, 'time': int(time.time() * 1000) })
                 # Only save historic hashes for 10 x speedTestInterval sec
                 if len(speedtest_latest) > historyLength:
                     speedtest_latest.pop(0)
 
-                # Check if the last websocket response was too long ago, add 0 to the buffer to indicate timeout
-                if time.time() - speedtest_last_valid > float(historyLength * runSpeedTestEvery):
-                    log.info(timeLog("Speedtest not performed in " + time.time() - speedtest_last_valid + " sec"))
-                    speedtest_latest_ms.append(0)
-                    if len(speedtest_latest_ms) > 5:
-                        speedtest_latest_ms.pop(0)
+            else:
+                log.error(timeLog("Could not speed test. Invalid work"))
+
+            # Check if the last websocket response was too long ago, add 0 to the buffer to indicate timeout
+            if time.time() - speedtest_last_valid > float(historyLength * runSpeedTestEvery):
+                log.info(timeLog("Speedtest not performed in " + str(time.time() - speedtest_last_valid) + " sec"))
+                speedtest_latest_ms.append(0)
+                if len(speedtest_latest_ms) > 5:
+                    speedtest_latest_ms.pop(0)
 
             await asyncio.sleep(runSpeedTestEvery)
         except Exception as e:
