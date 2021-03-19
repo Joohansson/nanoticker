@@ -23,7 +23,7 @@ from collections import deque #for array shifting
 import repList
 
 """CUSTOM VARS"""
-BETA = False #SET TO False FOR MAIN NET
+BETA = True #SET TO False FOR MAIN NET
 DEV = False #SET TO True when developing
 
 if DEV:
@@ -1514,9 +1514,9 @@ async def getPeers():
         }
         try:
             resp = await getRegularRPC(params)
-            if 'peers_stake_total' in resp[0] and 'peers_stake_required' in resp[0] and 'online_stake_total' in resp[0]:
+            if 'peers_stake_total' in resp[0] and 'quorum_delta' in resp[0] and 'online_stake_total' in resp[0]:
                 pStakeTot = resp[0]['peers_stake_total']
-                pStakeReq = resp[0]['peers_stake_required']
+                pStakeReq = resp[0]['quorum_delta']
                 latestOnlineWeight = int(resp[0]['online_stake_total']) / int(1000000000000000000000000000000) #used for calculating PR status
 
                 #Find matching IP and include weight in original peer list
