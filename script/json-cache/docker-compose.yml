@@ -1,0 +1,12 @@
+version: "3.4"
+services:
+  jsoncache:
+    build: .
+    container_name: jsoncache
+    ports:
+      - "9950:9950"
+    volumes:
+      - /var/www/repstat/public_html/json/monitors.json:/monitors.json
+      - /var/www/repstat/public_html/json/stats.json:/stats.json
+      - /var/www/repstat-beta/public_html/json/monitors-beta.json:/monitors-beta.json
+      - /var/www/repstat-beta/public_html/json/stats-beta.json:/stats-beta.json

@@ -23,7 +23,7 @@ from collections import deque #for array shifting
 import repList
 
 """CUSTOM VARS"""
-BETA = True #SET TO False FOR MAIN NET
+BETA = False #SET TO False FOR MAIN NET
 DEV = False #SET TO True when developing
 
 if DEV:
@@ -45,8 +45,8 @@ elif BETA:
     telemetryPort = '54000'
     websocketAddress  = 'ws://127.0.0.1:57000'
     logFile="repstat.log"
-    statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
-    monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
+    statFile = '/var/www/repstat-beta/public_html/json/stats-beta.json' #placed in a web server for public access
+    monitorFile = '/var/www/repstat-beta/public_html/json/monitors-beta.json' #placed in a web server for public access
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
     localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account

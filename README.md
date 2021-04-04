@@ -60,5 +60,13 @@ nano /etc/netdata/netdata.conf
     page cache size = 500
     dbengine disk space = 500
 
+## Performance
+The nanoticker frontend requires two json files to be read by each connected client every 30sec. The disk read could be minimized by running the json-cache proxy server as intermediate cache system.
+- Can be run as docker or docker compose
+- The json files that are output by the calc-reps.py will be read by the proxy. For example set the paths in the docker-compose.yml
+- Then point the repstats_v21.conf and/or repstats-b.conf to the proxy (localhost:9950/?file=stats)
+- Also point the index.html to the proxy (localhost:9950/?file=stats and localhost:9950/?file=monitors)
+- For beta network: localhost:9950/?file=stats-beta and localhost:9950/?file=monitors-beta
+
 
 Find this useful? Send me a Nano donation at `nano_1gur37mt5cawjg5844bmpg8upo4hbgnbbuwcerdobqoeny4ewoqshowfakfo`

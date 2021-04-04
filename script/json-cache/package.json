@@ -1,0 +1,22 @@
+{
+  "name": "json-cache",
+  "version": "1.0.0",
+  "description": "Cache json files for nanoticker",
+  "main": "json-cache.js",
+  "license": "MIT",
+  "repository": "https://github.com/joohansson/nanoticker",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node -r esm json-cache.js"
+  },
+  "homepage": "https://github.com/joohansson/nanoticker",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "esm": "^3.2.25",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "helmet": "^4.4.1",
+    "http": "0.0.1-security",
+    "node-cache": "^5.1.2"
+  }
+}
