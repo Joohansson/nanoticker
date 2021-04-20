@@ -1153,11 +1153,11 @@
             render: function ( data, type, row, meta ) {
                 if(type === 'display'){
                   if (data.includes('nano_')) {
-                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '">' +
+                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '" target="_blank">' +
                     data.slice(0, 10) + '..' + data.slice(-5) + '</a>'
                   }
                   else {
-                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '">' +
+                    data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '" target="_blank">' +
                     data.slice(0, 9) + '..' + data.slice(-5) + '</a>'
                   }
                 }
