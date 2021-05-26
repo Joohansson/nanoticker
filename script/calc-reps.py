@@ -27,15 +27,16 @@ BETA = False #SET TO False FOR MAIN NET
 DEV = False #SET TO True when developing
 
 if DEV:
-    nodeUrl = 'http://[::1]:55000' #beta
+    nodeUrl = 'http://127.0.0.1:55000'
     telemetryAddress = '127.0.0.1'
-    telemetryPort = '54001'
-    websocketAddress  = 'ws://127.0.0.1:57000'
+    telemetryPort = '7075'
+    websocketAddress  = 'ws://127.0.0.1:54321'
     logFile="repstat.log"
-    statFile = '/var/www/monitor/stats-beta.json' #placed in a web server for public access
-    monitorFile = '/var/www/monitor/monitors-beta.json' #placed in a web server for public access
-    activeCurrency = 'nano-beta' #nano, banano or nano-beta
-    ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
+    statFile = 'stats.json' #placed in a web server for public access
+    monitorFile = 'monitors.json' #placed in a web server for public access
+    activeCurrency = 'nano' #nano, banano or nano-beta
+    ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
+    aliasUrl = 'https://mynano.ninja/api/accounts/aliases'
     localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
@@ -49,6 +50,7 @@ elif BETA:
     monitorFile = '/root/scripts/nginx/html/repstat-beta/json/monitors-beta.json' #placed in a web server for public access
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
+    aliasUrl = ''
     localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
@@ -62,12 +64,13 @@ else:
     monitorFile = '/root/scripts/nginx/html/repstat/json/monitors.json' #placed in a web server for public access
     activeCurrency = 'nano' #nano, banano or nano-beta
     ninjaMonitors = 'https://mynano.ninja/api/accounts/monitors'
+    aliasUrl = 'https://mynano.ninja/api/accounts/aliases'
     localTelemetryAccount = 'nano_1iuz18n4g4wfp9gf7p1s8qkygxw7wx9qfjq6a9aq68uyrdnningdcjontgar' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 180 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 # Speed test source account
 workUrl = 'http://127.0.0.1:9971'
-workDiff = 'fffffffd55555555' # 3x
+workDiff = 'fffffff800000000' # 1x
 source_account = ''
 priv_key = ''
 speedtest_websocket_1 = '' # Preferably in another country
@@ -141,6 +144,9 @@ previousLocalCemented = deque([0]*checkCPSEvery)
 # individual BPS CPS object
 indiPeersPrev = {'ip':{}}
 
+# account / alias pairs
+aliases = []
+
 # Websocket control timer for when to call monitor API
 websocketTimer = time.time()
 websocketCountDownTimer = time.time()
@@ -149,7 +155,7 @@ apiShouldCall = False
 
 # speed test memory
 speedtest_latest = []
-speedtest_latest_ms = [200]
+speedtest_latest_ms = [0]
 speedtest_last_valid = time.time()
 
 filename = Path(logFile)
@@ -1034,15 +1040,28 @@ async def getAPI():
                 if int(teleRep['block_count']) < minCount:
                     continue
 
+                # check if alias exist and use that instead of IP
+                aliasSet = False
+                for aliasAccount in aliases:
+                    if not 'account' in aliasAccount or not 'alias' in aliasAccount:
+                        continue
+                    if aliasAccount['account'] == teleRep['account']:
+                        ip = aliasAccount['alias']
+                        if ip == '':
+                            ip = 'No Name'
+                        aliasSet = True
+                        break
+
                 # extract ip
-                if teleRep['ip'] != "":
-                    if '[::ffff:' in teleRep['ip']: #ipv4
-                        ip = re.search('ffff:(.*)\]:', teleRep['ip']).group(1)
-                        ip = ip.split('.')[0] + '.x.x.' + ip.split('.')[3]
-                    else: #ipv6
-                        ip = '[' + re.search('\[(.*)\]:', teleRep['ip']).group(1) +']'
-                else:
-                    ip = ""
+                if not aliasSet:
+                    if teleRep['ip'] != "":
+                        if '[::ffff:' in teleRep['ip']: #ipv4
+                            ip = re.search('ffff:(.*)\]:', teleRep['ip']).group(1)
+                            ip = ip.split('.')[0] + '.x.x.' + ip.split('.')[3]
+                        else: #ipv6
+                            ip = '[' + re.search('\[(.*)\]:', teleRep['ip']).group(1) +']'
+                    else:
+                        ip = ""
 
                 tempRep = {'name':ip, 'nanoNodeAccount':teleRep['account'],
                 'version':teleRep['vendor_version'], 'protocolVersion':teleRep['protocol_version'], 'storeVendor':'', 'currentBlock':teleRep['block_count'], 'cementedBlocks':teleRep['cemented_count'],
@@ -1432,6 +1451,7 @@ async def getPeers():
     global pStakeRequiredStat
     global pStakeLatestVersionStat
     global latestOnlineWeight
+    global aliases
 
     while 1:
         startTime = time.time() #to measure the loop speed
@@ -1632,6 +1652,16 @@ async def getPeers():
         except Exception as e:
             pass
             #log.warning(timeLog("Could not read monitors from ninja. %r" %e))
+
+        # Get aliases from URL
+        if aliasUrl != '':
+            try:
+                r = requests.get(aliasUrl, timeout=30)
+                aliases = r.json()
+
+            except Exception as e:
+                pass
+                #log.warning(timeLog("Could not read aliases from ninja. %r" %e))
 
         #Apply blacklist
         for i,node in enumerate(monitorPaths):
@@ -2263,7 +2293,7 @@ loop = asyncio.get_event_loop()
 #PYTHON >3.7
 ignore_aiohttp_ssl_error(loop) #ignore python bug
 
-if (BETA):
+if BETA or DEV:
     futures = [getPeers(), websocketLoop(), websocketCountDown()]
 else:
     if speedtest_websocket_2 != '':
