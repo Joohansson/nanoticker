@@ -1017,7 +1017,7 @@ async def getAPI():
                     multiplierData_pr.append(multiplier)
 
             # combined reps from monitors and telemetry data
-            supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount,
+            supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount.replace('xrb_','nano_'),
             'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
             'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'bps':bps, 'cps':cps,
             'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch,
