@@ -1,26 +1,11 @@
 #Default starting node list. Beta net
 repsInitB = [
-  'https://beta.api.nanocrawler.cc',
   'https://monitor-beta.mynano.ninja',
   'http://beta.warai.me',
   'http://benna.just-dmitry.ru',
-  'https://beta.nanoskynode.com',
-  'https://b.repnode.org',
   'https://nano-faucet.org/beta/monitor',
-  'http://beta.nanode.cc',
-  'https://json.nanoticker.info',
-  'http://95.216.205.225',
-  'http://kamikaze.awiki.org/betaNanoNodeMonitor',
-  'http://173.249.54.87:8080',
-  'http://165.22.133.254',
+  'https://monitor-beta.nanoticker.info/',
   'http://116.202.107.97',
-  'http://dotcom-beta.duckdns.org',
-  'http://50.99.115.219:8081',
-  'http://95.216.157.85/testnetapi.htm',
-  'http://beta.nanocean.org/monitor',
-  'http://147.135.119.173',
-  'http://192.241.152.85',
-  'https://beta.nanolock.ca',
 ]
 
 #Default starting node list. Main net
@@ -32,7 +17,6 @@ repsInitM = [
   'http://139.59.181.118',
   'https://node.mansour.io',
   'https://node2.nano-node.space',
-  'https://brainblocks.io/monitor',
   'http://188.226.156.108',
   'http://64.92.20.61',
   'http://138.197.201.243',
@@ -47,7 +31,6 @@ repsInitM = [
   'https://monitor.nanoticker.info',
   'https://bananorama.info',
   'http://188.166.54.69',
-  'https://yapraiwallet.space/nanoNodeMonitor',
   'http://nano.n9mtq4.com',
   'https://monitor.mynano.ninja',
   'http://188.166.165.143',
@@ -258,6 +241,7 @@ repsInitM = [
   'http://167.71.245.153',
   'https://node.polyrun.app',
   'https://www.naneska.com',
+  'https://node.erawan.me'
 ]
 
 #Black lists (excluded from NanoTicker)
