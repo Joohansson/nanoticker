@@ -24,9 +24,9 @@ priority = 1000 #where it will appear on the main stat page and menu (60000 will
 # charts order (can be overridden if you want less charts, or different order)
 
 ORDER = ['block_count_max', 'block_count_median', 'unchecked', 'peers', 'tps_max', 'tps_median',\
-'confirmations', 'block_diff', 'multiplier', 'api_time', 'supported', 'peerstat', 'speedstat',\
+'confirmations', 'block_diff', 'multiplier', 'bwlimits', 'api_time', 'supported', 'peerstat', 'speedstat',\
 'block_count_max_pr', 'block_count_median_pr', 'unchecked_pr', 'peers_pr', 'tps_max_pr', 'tps_median_pr',\
-'confirmations_pr', 'block_diff_pr', 'multiplier_pr', 'api_time_pr', 'supported_pr']
+'confirmations_pr', 'block_diff_pr', 'multiplier_pr', 'bwlimits_pr', 'api_time_pr', 'supported_pr']
 
 CHARTS = {
     'block_count_max': {
@@ -95,6 +95,16 @@ CHARTS = {
 
         ]
     },
+    'bwlimits': {
+        'options': [None, 'Bandwidth Limit', 'Mbps', 'Bandwidth Limit','reps.bwlimit', 'line'],
+        'lines': [
+            ["bw_p10", None, 'absolute',8,1000000],
+            ["bw_p25", None, 'absolute',8,1000000],
+            ["bw_p50", None, 'absolute',8,1000000],
+            ["bw_p75", None, 'absolute',8,1000000],
+            ["bw_p90", None, 'absolute',8,1000000]
+        ]
+    },
     'multiplier': {
         'options': [None, 'Difficulty', 'multiplier', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
@@ -117,9 +127,9 @@ CHARTS = {
             ["supported_blocks", "block count", None, 'absolute'],
             ["supported_cemented", "cemented", None, 'absolute'],
             ["supported_peers", "peers", None, 'absolute'],
-            ["supported_conf", "conf times", None, 'absolute'],
+            ["supported_conf", "conf times", None, 'absolute']
             #["supported_proc", "proc time", None, 'absolute'],
-            ["supported_multiplier", "difficulty", None, 'absolute']
+            #["supported_multiplier", "difficulty", None, 'absolute']
         ]
     },
     'peerstat': {
@@ -205,6 +215,16 @@ CHARTS = {
 
         ]
     },
+    'bwlimits_pr': {
+        'options': [None, 'Bandwidth Limit', 'Mbps', 'Bandwidth Limit','reps.bwlimit', 'line'],
+        'lines': [
+            ["bw_p10_pr", None, 'absolute',8,1000000],
+            ["bw_p25_pr", None, 'absolute',8,1000000],
+            ["bw_p50_pr", None, 'absolute',8,1000000],
+            ["bw_p75_pr", None, 'absolute',8,1000000],
+            ["bw_p90_pr", None, 'absolute',8,1000000]
+        ]
+    },
     'multiplier_pr': {
         'options': [None, 'difficulty', 'multiplier', 'Difficulty','reps.multiplier', 'line'],
         'lines': [
@@ -227,9 +247,9 @@ CHARTS = {
             ["supported_blocks_pr", "block count", None, 'absolute'],
             ["supported_cemented_pr", "cemented", None, 'absolute'],
             ["supported_peers_pr", "peers", None, 'absolute'],
-            ["supported_conf_pr", "conf times", None, 'absolute'],
+            ["supported_conf_pr", "conf times", None, 'absolute']
             #["supported_proc_pr", "proc time", None, 'absolute'],
-            ["supported_multiplier_pr", "difficulty", None, 'absolute']
+            #["supported_multiplier_pr", "difficulty", None, 'absolute']
         ]
     },
 }
@@ -265,7 +285,8 @@ class Service(UrlService):
             ('supported_conf','lenConf50',int,1),('supported_proc','lenProcTime',int,1),('supported_multiplier','lenMultiplier',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),('speed','speedTest',int,1),
-            ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('bps_p75','BPSp75',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000),('cps_p75','CPSp75',float,1000)]
+            ('bps_max_10','BPSMax',float,1000),('bps_median_10','BPSMedian',float,1000),('bps_p75','BPSp75',float,1000),('cps_max_10','CPSMax',float,1000),('cps_median_10','CPSMedian',float,1000),('cps_p75','CPSp75',float,1000),
+            ('bw_p10','bwLimit10',int,1),('bw_p25','bwLimit25',int,1),('bw_p50','bwLimit50',int,1),('bw_p75','bwLimit75',int,1),('bw_p90','bwLimit90',int,1)]
 
         apiKeys_pr = [('saved_blocks_max_pr','blockCountMax_pr',int,1), ('saved_blocks_median_pr','blockCountMedian_pr',int,1), ('confirmed_max_pr','cementedMax_pr',int,1), ('confirmed_median_pr','cementedMedian_pr',int,1),
             ('unchecked_max_pr','uncheckedMax_pr',int,1),('unchecked_median_pr','uncheckedMedian_pr',int,1),('unchecked_min_pr','uncheckedMin_pr',int,1),('peers_max_pr','peersMax_pr',int,1),
@@ -277,7 +298,8 @@ class Service(UrlService):
             ('supported_conf_pr','lenConf50_pr',int,1),('supported_proc_pr','lenProcTime_pr',int,1),('supported_multiplier_pr','lenMultiplier_pr',int,1),
             ('latest_version','pLatestVersionStat',float,1000),('tcp','pTypesStat',float,1000),('stake_tot','pStakeTotalStat',float,1000),
             ('stake_req','pStakeRequiredStat',float,1000),('stake_latest','pStakeLatestVersionStat',float,1000),('speed','speedTest',int,1),
-            ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('bps_p75_pr','BPSp75_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000),('cps_p75_pr','CPSp75_pr',float,1000)]
+            ('bps_max_10_pr','BPSMax_pr',float,1000),('bps_median_10_pr','BPSMedian_pr',float,1000),('bps_p75_pr','BPSp75_pr',float,1000),('cps_max_10_pr','CPSMax_pr',float,1000),('cps_median_10_pr','CPSMedian_pr',float,1000),('cps_p75_pr','CPSp75_pr',float,1000),
+            ('bw_p10_pr','bwLimit10_pr',int,1),('bw_p25_pr','bwLimit25_pr',int,1),('bw_p50_pr','bwLimit50_pr',int,1),('bw_p75_pr','bwLimit75_pr',int,1),('bw_p90_pr','bwLimit90_pr',int,1)]
 
         r = dict()
 

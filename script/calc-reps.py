@@ -51,7 +51,7 @@ elif BETA:
     activeCurrency = 'nano-beta' #nano, banano or nano-beta
     ninjaMonitors = 'https://beta.mynano.ninja/api/accounts/monitors' #beta
     aliasUrl = ''
-    localTelemetryAccount = 'nano_3jsonxwips1auuub94kd3osfg98s6f4x35ksshbotninrc1duswrcauidnue' #telemetry is retrived with another command for this account
+    localTelemetryAccount = 'nano_1json51qn9t7cqebcds1b7f9t3cffbki7qanudqpo67xcpowpt1org1p9rus' #telemetry is retrived with another command for this account
     websocketPeerDropLimit = 60 #telemetry data from nodes not reported withing this interval (seconds) will be dropped from the list (until they report again)
 
 else:
@@ -73,6 +73,7 @@ workUrl = 'http://127.0.0.1:9971'
 workDiff = 'fffffff800000000' # 1x
 source_account = ''
 priv_key = ''
+speedtest_rep = ''
 speedtest_websocket_1 = '' # Preferably in another country
 speedtest_websocket_2 = '' # Leave blank if you don't have one
 speedtest_websocket_ping_offset_1 = 45 #ping/2 ms latency for the websocket node to be deducted from the speed delay
@@ -97,7 +98,7 @@ runPeersEvery = 120 #run peer check every X sec
 runStatEvery = 3600 #publish stats to blockchain every x sec
 maxURLRequests = 250 #maximum concurrent requests
 websocketCountDownLimit = 1 #call API if x sec has passed since last websocket message
-runSpeedTestEvery = 60 #run speed test every X sec
+runSpeedTestEvery = 120 #run speed test every X sec
 
 """CONSTANTS"""
 pLatestVersionStat = 0 #percentage running latest protocol version
@@ -143,6 +144,9 @@ previousLocalCemented = deque([0]*checkCPSEvery)
 
 # individual BPS CPS object
 indiPeersPrev = {'ip':{}}
+
+# IPs that has a monitor. To get rid of duplicates in telemetry
+monitorIPExistArray = {'ip':{}}
 
 # account / alias pairs
 aliases = []
@@ -683,6 +687,11 @@ async def getAPI():
     cpsData = []
     bpsData_pr = []
     cpsData_pr = []
+
+    # Append bandwidth data
+    bwData = []
+    bwData_pr = []
+
     try:
         # Also include block_count to determine correct max values later
         for p in telemetryPeers:
@@ -701,6 +710,12 @@ async def getAPI():
                 cpsData.append(list)
                 if (p['PR'] == True):
                     cpsData_pr.append(list)
+
+            if p['bandwidth_cap'] != -1:
+                bw = int(p['bandwidth_cap'])
+                bwData.append(bw)
+                if (p['PR'] == True):
+                    bwData_pr.append(bw)
 
     except Exception as e:
         log.warning(timeLog("Could not append BPS and CPS data. %r" %e))
@@ -921,12 +936,25 @@ async def getAPI():
 
             bps = -1
             cps = -1
+            bw = -1
 
             try:
                 #Match IP and replace weight and telemetry data
                 skipPeer = False
                 for p in telemetryPeers:
-                    if str(nanoNodeAccount) == str(p['account']):
+                    # first check if the account exist in the monitorIPExistArray (monitors whose URL was guessed from IP)
+                    tempIP = p['ip']
+                    ipFound = False
+                    if tempIP != "":
+                        if '[::ffff:' in tempIP: #ipv4
+                            tempIP = re.search('ffff:(.*)\]:', tempIP).group(1)
+
+                        for ip in monitorIPExistArray:
+                            if tempIP == ip and monitorIPExistArray[ip]['account'] == str(nanoNodeAccount): #include this
+                                ipFound = True
+                                break
+
+                    if str(nanoNodeAccount) == str(p['account']) or ipFound:
                         if int(p['weight']) != -1: #only update if it has been given
                             weight = int(p['weight'])
 
@@ -956,6 +984,8 @@ async def getAPI():
                             cps = float(p['cps'])
                         if p['tsu'] != -1:
                             tsu = float(p['tsu'])
+                        if p['bandwidth_cap'] != -1:
+                            bw = int(p['bandwidth_cap'])
                         if p['PR'] == True:
                             PRStatus = True
                             monitorCount_pr += 1
@@ -1021,7 +1051,7 @@ async def getAPI():
             'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
             'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'bps':bps, 'cps':cps,
             'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch,
-            'tsu':tsu})
+            'bandwidthCap':bw, 'tsu':tsu})
             fail = False
 
         else:
@@ -1035,6 +1065,18 @@ async def getAPI():
                 if teleRep['account'] == supRep['nanoNodeAccount']: #do not include this
                     found = True
                     break
+
+            # do not include telemetry IPs that was found by the monitor path guessing
+            tempIP = teleRep['ip']
+            if tempIP != "":
+                if '[::ffff:' in tempIP: #ipv4
+                    tempIP = re.search('ffff:(.*)\]:', tempIP).group(1)
+
+                for ip in monitorIPExistArray:
+                    if tempIP == ip: #do not include this
+                        found = True
+                        break
+
             if not found:
                 #skip if the node is out of sync
                 if int(teleRep['block_count']) < minCount:
@@ -1111,6 +1153,14 @@ async def getAPI():
     CPSMedian = 0
     CPSp75 = 0
 
+    bwLimit1 = 0
+    bwLimit10 = 0
+    bwLimit25 = 0
+    bwLimit50 = 0
+    bwLimit75 = 0
+    bwLimit90 = 0
+    bwLimit99 = 0
+
     #PR ONLY
     blockCountMedian_pr = 0
     cementedMedian_pr = 0
@@ -1151,6 +1201,14 @@ async def getAPI():
     CPSMax_pr = 0
     CPSMedian_pr = 0
     CPSp75_pr = 0
+
+    bwLimit1_pr = 0
+    bwLimit10_pr = 0
+    bwLimit25_pr = 0
+    bwLimit50_pr = 0
+    bwLimit75_pr = 0
+    bwLimit90_pr = 0
+    bwLimit99_pr = 0
 
     statData = None
 
@@ -1232,12 +1290,27 @@ async def getAPI():
         if len(cpsData) > 0:
             for data in cpsData:
                 medianArray.append(data[0]) # add the bps
-                # find the matching max block count and use that bps as max (even if it's technically not max). It's to avoid bootstrapping result
+                # find the matching max block count and use that cps as max (even if it's technically not max). It's to avoid bootstrapping result
                 if (data[1] == cementedMax):
                     CPSMax = data[0]
 
             CPSMedian = float(median(medianArray))
             CPSp75 = float(np.percentile(medianArray, 75))
+
+        # Bandwidth limit percentiles (replace 0 with 10Gbit/s because it count as unlimited)
+        medianArray = []
+        if len(bwData) > 0:
+            for data in bwData:
+                if data == 0:
+                    data = 1250000000
+                medianArray.append(data)
+            bwLimit1 = int(np.percentile(medianArray, 1))
+            bwLimit10 = int(np.percentile(medianArray, 10))
+            bwLimit25 = int(np.percentile(medianArray, 25))
+            bwLimit50 = int(np.percentile(medianArray, 50))
+            bwLimit75 = int(np.percentile(medianArray, 75))
+            bwLimit90 = int(np.percentile(medianArray, 90))
+            bwLimit99 = int(np.percentile(medianArray, 99))
 
         #PR ONLY
         if len(countData_pr) > 0:
@@ -1309,6 +1382,21 @@ async def getAPI():
             CPSMedian_pr = float(median(medianArray))
             CPSp75_pr = float(np.percentile(medianArray, 75))
 
+        # Bandwidth limit percentiles (replace 0 with 10Gbit/s because it count as unlimited)
+        medianArray = []
+        if len(bwData_pr) > 0:
+            for data in bwData_pr:
+                if data == 0:
+                    data = 1250000000
+                medianArray.append(data)
+            bwLimit1_pr = int(np.percentile(medianArray, 1))
+            bwLimit10_pr = int(np.percentile(medianArray, 10))
+            bwLimit25_pr = int(np.percentile(medianArray, 25))
+            bwLimit50_pr = int(np.percentile(medianArray, 50))
+            bwLimit75_pr = int(np.percentile(medianArray, 75))
+            bwLimit90_pr = int(np.percentile(medianArray, 90))
+            bwLimit99_pr = int(np.percentile(medianArray, 99))
+
         #Write output file
         statData = {\
             "blockCountMedian":int(blockCountMedian),\
@@ -1356,6 +1444,14 @@ async def getAPI():
             "CPSMax":CPSMax,\
             "CPSMedian":CPSMedian,\
             "CPSp75":CPSp75,\
+            "bwLimit1":bwLimit1,\
+            "bwLimit10":bwLimit10,\
+            "bwLimit25":bwLimit25,\
+            "bwLimit50":bwLimit50,\
+            "bwLimit75":bwLimit75,\
+            "bwLimit90":bwLimit90,\
+            "bwLimit99":bwLimit99,\
+                            
             #PR ONLY START
             "blockCountMedian_pr":int(blockCountMedian_pr),\
             "blockCountMax_pr":int(blockCountMax_pr),\
@@ -1402,6 +1498,13 @@ async def getAPI():
             "CPSMax_pr":CPSMax_pr,\
             "CPSMedian_pr":CPSMedian_pr,\
             "CPSp75_pr":CPSp75_pr,\
+            "bwLimit1_pr":bwLimit1_pr,\
+            "bwLimit10_pr":bwLimit10_pr,\
+            "bwLimit25_pr":bwLimit25_pr,\
+            "bwLimit50_pr":bwLimit50_pr,\
+            "bwLimit75_pr":bwLimit75_pr,\
+            "bwLimit90_pr":bwLimit90_pr,\
+            "bwLimit99_pr":bwLimit99_pr,\
             #PR ONLY END
             "pLatestVersionStat":pLatestVersionStat,\
             "pTypesStat":pTypesStat,\
@@ -1452,6 +1555,7 @@ async def getPeers():
     global pStakeLatestVersionStat
     global latestOnlineWeight
     global aliases
+    global monitorIPExistArray
 
     while 1:
         startTime = time.time() #to measure the loop speed
@@ -1463,6 +1567,8 @@ async def getPeers():
 
         #log.info(timeLog("Verifying peers"))
         monitorPaths = repsInit.copy()
+        monitorIPPaths = {'ip':{}}
+        monitorIPExistArray = {'ip':{}}
 
         #Grab connected peer IPs from the node
         params = {
@@ -1488,35 +1594,43 @@ async def getPeers():
                             #Combine with previous list and ignore duplicates
                             exists = False
                             for url in monitorPaths:
-                                if 'http://'+ip == url:
+                                path = 'http://'+ip
+                                if path == url:
                                     exists = True
                                     break
                             if not exists:
-                                monitorPaths.append('http://'+ip)
+                                monitorPaths.append(path)
+                                monitorIPPaths[ip] = path
 
                             exists = False
                             for url in monitorPaths:
-                                if 'http://'+ip+'/nano' == url:
+                                path = 'http://'+ip+'/nano'
+                                if path == url:
                                     exists = True
                                     break
                             if not exists:
-                                monitorPaths.append('http://'+ip+'/nano')
+                                monitorPaths.append(path)
+                                monitorIPPaths[ip] = path
 
                             exists = False
                             for url in monitorPaths:
-                                if 'http://'+ip+'/nanoNodeMonitor' == url:
+                                path = 'http://'+ip+'/nanoNodeMonitor'
+                                if path == url:
                                     exists = True
                                     break
                             if not exists:
-                                monitorPaths.append('http://'+ip+'/nanoNodeMonitor')
+                                monitorPaths.append(path)
+                                monitorIPPaths[ip] = path
 
                             exists = False
                             for url in monitorPaths:
-                                if 'http://'+ip+'/monitor' == url:
+                                path = 'http://'+ip+'/monitor'
+                                if path == url:
                                     exists = True
                                     break
                             if not exists:
-                                monitorPaths.append('http://'+ip+'/monitor')
+                                monitorPaths.append(path)
+                                monitorIPPaths[ip] = path
 
                         #Read protocol version and type
                         pVersions.append(value['protocol_version'])
@@ -1673,6 +1787,7 @@ async def getPeers():
         #Verify all URLS
         validPaths = []
         repAccounts = []
+
         """Split URLS in max X concurrent requests"""
         for chunk in chunks(monitorPaths, maxURLRequests):
             tasks = []
@@ -1703,6 +1818,10 @@ async def getPeers():
                                 break
                         if not exists:
                             validPaths.append(task.result()[1])
+                            # Check if path exist among special IP paths
+                            for key in monitorIPPaths:
+                                if monitorIPPaths[key] == task.result()[1]:
+                                    monitorIPExistArray[key] = {'account':task.result()[0]}
                         repAccounts.append(task.result()[0])
 
                 except Exception as e:
@@ -1889,7 +2008,7 @@ async def speedTest():
 
     while True:
         try:
-            response = await publishSpeedTest(source_account, priv_key, source_account)
+            response = await publishSpeedTest(source_account, priv_key, speedtest_rep)
             if response and len(response) == 64:
                 speedtest_latest.append({'hash': response, 'time': int(time.time() * 1000) })
                 # Only save historic hashes for 10 x speedTestInterval sec
@@ -2113,7 +2232,7 @@ async def websocketLoop():
                                 cementD.popleft()
                                 indiPeersPrev[address_tele + ':' + port_tele] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD,
                                 'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version':protocol_version_number_tele,
-                                'account_count':account_count_tele, 'bandwidth_cap_tele':bandwidth_cap_tele, 'uptime_tele':uptime_tele,
+                                'account_count':account_count_tele, 'bandwidth_cap':bandwidth_cap_tele, 'uptime':uptime_tele,
                                 'major_version':major_version_tele, 'minor_version':minor_version_tele, 'patch_version':patch_version_tele, 'pre_release_version':pre_release_version_tele,
                                 'address':address_tele, 'port':port_tele, 'timestamp_local': time.time()}
 
@@ -2152,7 +2271,7 @@ async def websocketLoop():
 
                                 indiPeersPrev[ip] = {'timestamp': timeD, 'blockCount': blockD, 'cementCount': cementD,
                                 'unchecked_count': unchecked_count_tele, 'peer_count':peer_count_tele, 'protocol_version':protocol_version_number_tele,
-                                'account_count':account_count_tele, 'bandwidth_cap_tele':bandwidth_cap_tele, 'uptime_tele':uptime_tele,
+                                'account_count':account_count_tele, 'bandwidth_cap':bandwidth_cap_tele, 'uptime':uptime_tele,
                                 'major_version':major_version_tele, 'minor_version':minor_version_tele, 'patch_version':patch_version_tele, 'pre_release_version':pre_release_version_tele,
                                 'address':address_tele, 'port':port_tele, 'bps':BPSPeer, 'cps':CPSPeer, 'timestamp_local': time.time()}
 

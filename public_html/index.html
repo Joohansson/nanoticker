@@ -81,7 +81,8 @@
 <div class="div-main">
   <div class="title-text">
     <h1>NanoTicker - Network Performance</h1>
-    <h5>Combined measurements across public <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Nano Node Monitors</a>. Hover/touch titles for info.</h5>
+    <h5>Combined data from Nano nodes using telemetry and <a href="https://github.com/NanoTools/nanoNodeMonitor" target="_blank">Monitors</a>. Hover/touch titles for info.</h5>
+    <!--<div style="background-color: #823281; width: 700px; display: inline-block; padding: 10px; margin: 20px;"><p style="color: white;">Nanoticker has been hosted since 2019 for free and without ads. If you would like me to continue doing that, please consider sending a <span style="color: #00dcff;" class="link-span" onClick="showDonateModal()">Nano donation</span> or sponsor me via <a style="color: #00dcff !important;" href="https://github.com/sponsors/joohansson" target="_blank">Github</a></p></div>-->
     <div>
       <span class="title" title="Hide all charts for better performance.<br/>
       Can help on mobile to refresh charts.">Charts</span>
@@ -236,38 +237,6 @@
     </div>
     <div class="div-graph">
       <div class="div-header">
-        <span class="title" title="Active difficulty multiplier.<br/>
-        Maximum, Median and Minimum from all monitored nodes.">Active Difficulty</span>
-      </div>
-      <div class="div-graph-data chart-normal">
-        <div data-netdata="repstats_v21_local.multiplier"
-          data-title="Difficulty"
-          data-decimal-digits="3"
-          data-common-max="repstats_v21_local.multiplier"
-          data-common-min="repstats_v21_local.multiplier"
-          data-chart-library="dygraph"
-          data-width="90%"
-          data-height="100%"
-          data-after="-4500"
-          data-colors="#e87474 #7ad96e #747de8"
-        ></div>
-      </div>
-      <div class="div-graph-data chart-pr">
-        <div data-netdata="repstats_v21_local.multiplier_pr"
-          data-title="PR: Difficulty"
-          data-decimal-digits="3"
-          data-common-max="repstats_v21_local.multiplier_pr"
-          data-common-min="repstats_v21_local.multiplier_pr"
-          data-chart-library="dygraph"
-          data-width="90%"
-          data-height="100%"
-          data-after="-4500"
-          data-colors="#e87474 #7ad96e #747de8"
-        ></div>
-      </div>
-    </div>
-    <div class="div-graph">
-      <div class="div-header">
         <span class="title" title="Number of unique measurements used in this system.<br/>
         The top number represents the max amount of discovered monitors.<br/>
         Nodes with a block count below 50% of the maximum block count is not included.">Connected Data Points</span>
@@ -296,6 +265,43 @@
           data-height="100%"
           data-after="-4500"
           data-colors="#d7d7d7 #747de8 #7ad96e #e7893d #e87474 #e174e8"
+        ></div>
+      </div>
+    </div><div class="div-graph">
+      <div class="div-header">
+        <span class="title" title="Bandwidth limit defined for each node (here as Mbps instead of MB/s).<br/>
+        <b>The percentiles represent distributions of nodes:</b><br/>
+        <b>p10</b>: 10% of nodes are below this value (and 90% above)<br>
+        <b>p50</b>: Median. 50% are below and 50% are above this value.<br/>
+        <b>p90</b>: 90% of nodes are below this value (and 10% above)<br/>
+        <b>Nodes with 0 (unlimited) have been converted to 10 Gbps</b>">Node Bandwidth Limit [MEDIAN] [Mbit/s]</span>
+      </div>
+      <div class="div-graph-data chart-normal">
+        <div data-netdata="repstats_v21_local.bwlimits"
+          data-title="Percentiles of limited nodes | P50=Median"
+          data-decimal-digits="1"
+          data-common-max="repstats_v21_local.bwlimits"
+          data-common-min="repstats_v21_local.bwlimits"
+          data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d6d86e #747de8 #7ad96e #e7893d #e87474"
+        ></div>
+      </div>
+      <div class="div-graph-data chart-pr">
+        <div data-netdata="repstats_v21_local.bwlimits_pr"
+          data-title="PR: Percentiles of limited nodes | P50=Median"
+          data-decimal-digits="1"
+          data-common-max="repstats_v21_local.bwlimits_pr"
+          data-common-min="repstats_v21_local.bwlimits_pr"
+          data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
+          data-width="90%"
+          data-height="100%"
+          data-after="-4500"
+          data-colors="#d6d86e #747de8 #7ad96e #e7893d #e87474"
         ></div>
       </div>
     </div>
@@ -418,6 +424,7 @@
             data-common-max="repstats_v21_local.speedstat"
             data-common-min="repstats_v21_local.speedstat"
             data-chart-library="dygraph"
+            data-dygraph-theme="logscale"
             data-width="90%"
             data-height="100%"
             data-after="-4500"
@@ -436,6 +443,7 @@
           data-common-max="repstats_v21_local.block_diff"
           data-common-min="repstats_v21_local.block_diff"
           data-chart-library="dygraph"
+          data-dygraph-theme="logscale"
           data-width="90%"
           data-height="100%"
           data-after="-4500"
@@ -503,7 +511,7 @@
           <th scope="col" title="Voting weight">Weight</th>
           <th scope="col" title="Number of connected peers">Peers</th>
           <th scope="col" title="Median confirmation time past 10min or max 2048 blocks">Conf. Median [ms]</th>
-          <th scope="col" title="Proof of Work difficulty multiplier">Difficulty</th>
+          <th scope="col" title="Bandwidth limit set per node. Here Mbit/s instead of node config MB/s. Nodes with 0 (unlimited) is converted to 10Gbps">BW Limit [Mbps]</th>
 	        <th scope="col" title="Recorded blocks per second">BPS</th>
           <th scope="col" title="Confirmed blocks per second">CPS</th>
           <th scope="col" title="Time Since Update (relative the global last updated time)">TSU</th>
@@ -522,7 +530,7 @@
           <th scope="col">Weight</th>
           <th scope="col">Peers</th>
           <th scope="col">Confirmation</th>
-          <th scope="col">Difficulty</th>
+          <th scope="col">BW Limit</th>
 	        <th scope="col">BPS</th>
           <th scope="col">CPS</th>
           <th scope="col">TSU</th>
@@ -554,7 +562,7 @@
   var maxWeight = 0
   var maxPeers = 0
   var maxConf = 0
-  var maxMultiplier = 0
+  var maxBandwidthCap = 0
   var maxBPS = 0
   var maxCPS = 0
   var maxTSU = 0
@@ -565,7 +573,7 @@
   var minWeight = Number.MAX_VALUE
   var minPeers = Number.MAX_VALUE
   var minConf = Number.MAX_VALUE
-  var minMultiplier = Number.MAX_VALUE
+  var minBandwidthCap = Number.MAX_VALUE
   var minBPS = Number.MAX_VALUE
   var minCPS = Number.MAX_VALUE
   var minTSU = Number.MAX_VALUE
@@ -785,19 +793,19 @@
           var diff = ''
           if (order[0][1] == 'desc') {
             if (data) {
-              if (data.multiplier != null) {
-                diff = addCommas(maxMultiplier - parseFloat(data.multiplier.replace(/,/g, '')))
+              if (data.bandwidthCap != null) {
+                diff = addCommas(maxBandwidthCap - parseFloat(data.bandwidthCap.replace(/,/g, '')))
               }
             }
-            $('#order-info').html( 'Max Multiplier: ' + addCommas(parseInt(maxMultiplier*1000)/1000) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Max BandwidthCap: ' + addCommas(parseInt(maxBandwidthCap)) + ' | Diff: ' + diff)
           }
           else {
             if (data) {
-              if (data.multiplier != null) {
-                diff = parseFloat(parseFloat(data.multiplier.replace(/,/g, ''))) - minMultiplier
+              if (data.bandwidthCap != null) {
+                diff = parseFloat(parseFloat(data.bandwidthCap.replace(/,/g, ''))) - minBandwidthCap
               }
             }
-            $('#order-info').html( 'Min Multiplier: ' + addCommas(parseInt(minMultiplier*1000)/1000) + ' | Diff: ' + diff)
+            $('#order-info').html( 'Min BandwidthCap: ' + addCommas(parseInt(minBandwidthCap)) + ' | Diff: ' + diff)
           }
           break
 
@@ -999,17 +1007,22 @@
               data[index]['numPeers'] = addCommas(entry['numPeers'])
             }
 
-            if (entry['multiplier'] < 0) {
-              data[index]['multiplier'] = null
+            if (entry['bandwidthCap'] < 0) {
+              data[index]['bandwidthCap'] = null
+            }
+            else if (entry['bandwidthCap'] == 0) {
+                data[index]['bandwidthCap'] = 10000
             }
             else {
-              if (entry['multiplier'] > maxMultiplier) {
-                maxMultiplier = entry['multiplier']
+              bwConverted = parseInt(entry['bandwidthCap']/1000000*8*10)/10
+              if (bwConverted > maxBandwidthCap) {
+                maxBandwidthCap = bwConverted
               }
-              if (entry['multiplier'] < minMultiplier) {
-                minMultiplier = entry['multiplier']
+              if (bwConverted < minBandwidthCap) {
+                minBandwidthCap = bwConverted
               }
-              data[index]['multiplier'] = addCommas(parseInt(entry['multiplier']*1000)/1000)
+              // convert from bytes/s to Mbit/s with one decimal
+              data[index]['bandwidthCap'] = addCommas(bwConverted)
             }
 
             if (entry['bps'] < 0) {
@@ -1087,7 +1100,7 @@
           { data : "weight", type: "num-fmt" },
           { data : "numPeers", type: "num-fmt" },
           { data : "confMedian", type: "num-fmt"},
-          { data : "multiplier", type: "num-fmt" },
+          { data : "bandwidthCap", type: "num-fmt" },
           { data : "bps", type: "num-fmt" },
           { data : "cps", type: "num-fmt" },
           { data : "tsu", type: "num-fmt" },
@@ -1327,7 +1340,7 @@
     maxWeight = 0
     maxPeers = 0
     maxConf = 0
-    maxMultiplier = 0
+    maxBandwidthCap = 0
     maxBPS = 0
     maxCPS = 0
     maxTSU = 0
@@ -1338,7 +1351,7 @@
     minWeight = Number.MAX_VALUE
     minPeers = Number.MAX_VALUE
     minConf = Number.MAX_VALUE
-    minMultiplier = Number.MAX_VALUE
+    minBandwidthCap = Number.MAX_VALUE
     minBPS = Number.MAX_VALUE
     minCPS = Number.MAX_VALUE
     minTSU = Number.MAX_VALUE
