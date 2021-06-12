@@ -122,7 +122,7 @@ CHARTS = {
         ]
     },
     'supported': {
-        'options': [None, 'Supported', 'monitors', 'NodeMonitors Support','reps.supported', 'line'],
+        'options': [None, 'Supported', 'data-points', 'NodeMonitors Support','reps.supported', 'line'],
         'lines': [
             ["supported_blocks", "block count", None, 'absolute'],
             ["supported_cemented", "cemented", None, 'absolute'],
@@ -242,7 +242,7 @@ CHARTS = {
         ]
     },
     'supported_pr': {
-        'options': [None, 'Supported', 'monitors', 'NodeMonitors Support','reps.supported', 'line'],
+        'options': [None, 'Supported', 'data-points', 'NodeMonitors Support','reps.supported', 'line'],
         'lines': [
             ["supported_blocks_pr", "block count", None, 'absolute'],
             ["supported_cemented_pr", "cemented", None, 'absolute'],
