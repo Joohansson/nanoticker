@@ -998,61 +998,69 @@ async def getAPI():
                 pass
 
             #skip if the node is out of sync
-            if skipPeer == True:
-                continue
+            try:
+                if skipPeer == True:
+                    continue
 
-            if (sync > 0):
-                syncData.append(sync)
-                if (PRStatus):
-                    syncData_pr.append(sync)
+                if (sync > 0):
+                    syncData.append(sync)
+                    if (PRStatus):
+                        syncData_pr.append(sync)
 
-            if (conf50 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
-                conf50Data.append(conf50)
-                if (PRStatus):
-                    conf50Data_pr.append(conf50)
+                if (conf50 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                    conf50Data.append(conf50)
+                    if (PRStatus):
+                        conf50Data_pr.append(conf50)
 
-            if (conf75 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
-                conf75Data.append(conf75)
-                if (PRStatus):
-                    conf75Data_pr.append(conf75)
+                if (conf75 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                    conf75Data.append(conf75)
+                    if (PRStatus):
+                        conf75Data_pr.append(conf75)
 
-            if (conf90 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
-                conf90Data.append(conf90)
-                if (PRStatus):
-                    conf90Data_pr.append(conf90)
+                if (conf90 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                    conf90Data.append(conf90)
+                    if (PRStatus):
+                        conf90Data_pr.append(conf90)
 
-            if (conf99 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
-                conf99Data.append(conf99)
-                if (PRStatus):
-                    conf99Data_pr.append(conf99)
+                if (conf99 >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                    conf99Data.append(conf99)
+                    if (PRStatus):
+                        conf99Data_pr.append(conf99)
 
-            if (confAve >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
-                confAveData.append(confAve)
-                if (PRStatus):
-                    confAveData_pr.append(confAve)
+                if (confAve >= 0 and (confCount > confCountLimit or confSpan > confSpanLimit)):
+                    confAveData.append(confAve)
+                    if (PRStatus):
+                        confAveData_pr.append(confAve)
 
-            if (memory > 0):
-                memoryData.append(memory)
-                if (PRStatus):
-                    memoryData_pr.append(memory)
+                if (memory > 0):
+                    memoryData.append(memory)
+                    if (PRStatus):
+                        memoryData_pr.append(memory)
 
-            if (procTime > 0):
-                procTimeData.append(procTime)
-                if (PRStatus):
-                    procTimeData_pr.append(procTime)
+                if (procTime > 0):
+                    procTimeData.append(procTime)
+                    if (PRStatus):
+                        procTimeData_pr.append(procTime)
 
-            if (multiplier > 0):
-                multiplierData.append(multiplier)
-                if (PRStatus):
-                    multiplierData_pr.append(multiplier)
+                if (multiplier > 0):
+                    multiplierData.append(multiplier)
+                    if (PRStatus):
+                        multiplierData_pr.append(multiplier)
 
-            # combined reps from monitors and telemetry data
-            supportedReps.append({'name':name, 'nanoNodeAccount':nanoNodeAccount.replace('xrb_','nano_'),
-            'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
-            'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'bps':bps, 'cps':cps,
-            'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch,
-            'bandwidthCap':bw, 'tsu':tsu})
-            fail = False
+                # combined reps from monitors and telemetry data
+                nanoAccount = nanoNodeAccount
+                if (nanoAccount and nanoAccount != -1):
+                    nanoAccount = nanoAccount.replace('xrb_','nano_')
+                supportedReps.append({'name':name, 'nanoNodeAccount':nanoAccount,
+                'version':version, 'protocolVersion':protocolVersion, 'storeVendor':storeVendor, 'currentBlock':count, 'cementedBlocks':cemented,
+                'unchecked':unchecked, 'numPeers':peers, 'confAve':confAve, 'confMedian':conf50, 'weight':weight, 'bps':bps, 'cps':cps,
+                'memory':memory, 'procTime':procTime, 'multiplier':multiplier, 'supported':not fail, 'PR':PRStatus, 'isTelemetry':isTelemetryMatch,
+                'bandwidthCap':bw, 'tsu':tsu})
+                fail = False
+
+            except Exception as e:
+                log.warning(timeLog("Could not append supported rep. %r" %e))
+                pass
 
         else:
             log.warning(timeLog("Empty json from API calls"))
