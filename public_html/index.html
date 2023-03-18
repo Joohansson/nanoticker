@@ -1164,7 +1164,7 @@
             orderData: [14, 0],
             //Encode href from nano account
             render: function ( data, type, row, meta ) {
-                if(type === 'display'){
+                if(type === 'display' && data){
                   if (data.includes('nano_')) {
                     data = '<a href="' + explorerBaseUrl +  encodeURIComponent(data) + '" target="_blank">' +
                     data.slice(0, 10) + '..' + data.slice(-5) + '</a>'
